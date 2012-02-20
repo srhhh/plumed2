@@ -4,6 +4,7 @@
 #include "ActionPilot.h"
 #include "ActionWithValue.h"
 #include "ActionAtomistic.h"
+#include "ActionWithVirtualAtom.h"
 #include "Atoms.h"
 #include <set>
 #include "PlumedConfig.h"
@@ -451,6 +452,11 @@ void PlumedMain::justCalculate(){
       else (*p)->calculate();
       if(av)for(int i=0;i<av->getNumberOfValues();++i){
         if(av->getValue(i)->getName()=="bias") bias+=av->getValue(i)->get();
+        av->getValue(i)->setGradients();
+      }
+      ActionWithVirtualAtom*avv=dynamic_cast<ActionWithVirtualAtom*>(*p);
+      if(avv){
+        avv->setGradients();
       }
     }
   }

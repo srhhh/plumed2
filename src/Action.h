@@ -60,7 +60,7 @@ private:
 /// Switch to activate Action on this step.
   bool active;
 
-protected:
+public:
 
 /// Reference to main plumed object
   PlumedMain& plumed;

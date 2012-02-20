@@ -102,6 +102,13 @@ void ActionWithArguments::calculateNumericalDerivatives(){
   }
 }
 
+double ActionWithArguments::getProjection(unsigned i,unsigned j)const{
+  const Value* v1=arguments[i];
+  const Value* v2=arguments[j];
+  return Value::projection(*v1,*v2);
+}
+
+
 
 
 

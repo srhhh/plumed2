@@ -35,4 +35,21 @@ void ActionWithVirtualAtom::requestAtoms(const std::vector<AtomNumber> & a){
   derivatives.resize(a.size());
 }
 
+void ActionWithVirtualAtom::setGradients(){
+  Atoms&atoms(plumed.getAtoms());
+  gradients.clear();
+  for(unsigned i=0;i<getNumberOfAtoms();i++){
+    AtomNumber an=getAbsoluteIndex(i);
+    if(atoms.isVirtualAtom(an.index())){
+      const ActionWithVirtualAtom* a=atoms.getVirtualAtomsAction(an.index());
+      for(std::map<AtomNumber,Tensor>::const_iterator p=a->gradients.begin();p!=a->gradients.end();++p){
+// controllare l'ordine del matmul:
+        gradients[(*p).first]+=matmul(derivatives[i],(*p).second);
+      }
+    } else {
+      gradients[an]+=derivatives[i];
+    }
+  }
+}
+
 }
