@@ -16,52 +16,65 @@ std::string Field::documentation(){
    return ostr.str();
 }
 
-Field::~Field(){
-  delete f_interpolator;
-  for(unsigned i=0;i<df_interpolators.size();++i) delete df_interpolators[i];
-}
-
-void Field::read( const std::string& input, const unsigned nfunc, const unsigned d, const std::string & ftype, std::string& report ){
+Field::Field( const std::string ftype, const unsigned d ){
   if( ftype=="identity") fstyle=identity;
   else if( ftype=="gaussian") fstyle=gaussian;
-  else error("type " + ftype + " is not implemented in field"); 
+  else if( ftype=="cvlist" ) fstyle=cvlist;
+  else errormsg = "type " + ftype + " is not implemented in field";
+  ndx=d;
+}
 
+Field::~Field(){
+  if( fstyle!=cvlist ){
+     delete f_interpolator;
+     for(unsigned i=0;i<df_interpolators.size();++i) delete df_interpolators[i];
+  }
+}
+
+void Field::read( const std::string& input, const unsigned nfunc, std::string& report ){
   std::vector<std::string> data=Tools::getWords(input);
   std::vector<unsigned> nspline; std::vector<double> min,max; 
-  bool found_s=Tools::parseVector( data,"NSPLINE", nspline );
-  if(!found_s) error("did not find NPLINE keyword");
-  if(nspline.size()!=d){
-     std::string ll,ww;
-     Tools::convert(d,ll);
-     Tools::convert(nspline.size(),ww);
-     error("found " + ww + " values for NSPLINE when expecting only " + ll);
-  }
-  bool found_min=Tools::parseVector( data, "MIN", min );
-  if(!found_min) error("did not find MIN keyword");
-  if(min.size()!=d){ 
-     std::string ll,ww;
-     Tools::convert(d,ll);
-     Tools::convert(min.size(),ww);
-     error("found " + ww + " values for MIN when expecting only " + ll);
-  }
-  bool found_max=Tools::parseVector( data, "MAX", max );
-  if(!found_max) error("did not find MAX keyword");
-  if(max.size()!=d){ 
-     std::string ll,ww;
-     Tools::convert(d,ll);
-     Tools::convert(max.size(),ww);
-     error("found " + ww + " values for MAX when expecting only " + ll);
-  }
-  bool found_sigma=Tools::parse( data, "SIGMA", sigma );
-  if(!found_sigma) error("did not find SIGMA keyword");
 
-  if( !data.empty() ){
-      std::string err="found the following rogue keywords : ";
-      for(unsigned i=0;i<data.size();++i) err=err + data[i] + ", ";
-      error(err);
+  if( fstyle==cvlist ){
+     plumed_assert( ndx==1 );
+     min.push_back(0.); max.push_back( static_cast<double>(nfunc) ); 
+     nspline.push_back( nfunc ); sigma=1;
+  } else { 
+     bool found_s=Tools::parseVector( data,"NSPLINE", nspline );
+     if(!found_s) error("did not find NPLINE keyword");
+     if(nspline.size()!=ndx){
+        std::string ll,ww;
+        Tools::convert(ndx,ll);
+        Tools::convert(nspline.size(),ww);
+        error("found " + ww + " values for NSPLINE when expecting only " + ll);
+     }
+     bool found_min=Tools::parseVector( data, "MIN", min );
+     if(!found_min) error("did not find MIN keyword");
+     if(min.size()!=ndx){ 
+        std::string ll,ww;
+        Tools::convert(ndx,ll);
+        Tools::convert(min.size(),ww);
+        error("found " + ww + " values for MIN when expecting only " + ll);
+     }
+     bool found_max=Tools::parseVector( data, "MAX", max );
+     if(!found_max) error("did not find MAX keyword");
+     if(max.size()!=ndx){ 
+        std::string ll,ww;
+        Tools::convert(ndx,ll);
+        Tools::convert(max.size(),ww);
+        error("found " + ww + " values for MAX when expecting only " + ll);
+     }
+     bool found_sigma=Tools::parse( data, "SIGMA", sigma );
+     if(!found_sigma) error("did not find SIGMA keyword");
+
+     if( data.size()!=0 ){
+         std::string err="found the following rogue keywords : ";
+         for(unsigned i=0;i<data.size();++i) err=err + data[i] + ", ";
+         error(err);
+     }
   }
   std::ostringstream ostr;
-  ostr<<"generating "<<d<<" dimensional field min : ";
+  ostr<<"generating "<<ndx<<" dimensional field min : ";
   for(unsigned i=0;i<min.size();++i) ostr<<min[i]<<" ";
   ostr<<"max : ";
   for(unsigned i=0;i<max.size();++i) ostr<<max[i]<<" ";
@@ -73,36 +86,45 @@ void Field::read( const std::string& input, const unsigned nfunc, const unsigned
   baseq_nder.resize(nfunc); baseq_starts.resize(nfunc);
 // Set everything for grid
   unsigned np=1; for(unsigned i=0;i<nspline.size();++i) np*=nspline[i];
-  npoints=np; ndx=d;
+  npoints=np; 
 
   // Setup the interpolators
-  if( ndx==1 ) f_interpolator=new InterpolateCubic( nspline, min, max );
-  else if( ndx==2 ) f_interpolator=new InterpolateBicubic( nspline, min, max );
-  else plumed_assert(0);
+  if( fstyle!=cvlist ){
+    if( ndx==1 ) f_interpolator=new InterpolateCubic( nspline, min, max );
+    else if( ndx==2 ) f_interpolator=new InterpolateBicubic( nspline, min, max );
+    else plumed_assert(0);
+  }
 }
 
 void Field::resizeDerivatives( const unsigned D ){
   ndX=D; nper=(ndX+1)*(ndx+1); grid_buffer.resize( npoints*nper );
 
-  for(unsigned i=0;i<df_interpolators.size();++i) delete df_interpolators[i];
-  df_interpolators.resize(0);
-  std::vector<unsigned> nspline(ndx); std::vector<double> min(ndx), max(ndx);
-  f_interpolator->getNumbersOfPoints( nspline ); 
-  f_interpolator->getSplinePoint( 0, min );
-  f_interpolator->getSplinePoint( f_interpolator->getNumberOfSplinePoints()-1, max );
-  if( ndx==1 ){
-      for(unsigned i=0;i<D;++i) df_interpolators.push_back( new InterpolateCubic( nspline, min, max ) ); 
-  } else if( ndx==2 ){ 
-      for(unsigned i=0;i<D;++i) df_interpolators.push_back( new InterpolateBicubic( nspline, min, max ) );
-  } else {
-      plumed_assert(0);
+  if( fstyle!=cvlist ){
+    for(unsigned i=0;i<df_interpolators.size();++i) delete df_interpolators[i];
+    df_interpolators.resize(0);
+    std::vector<unsigned> nspline(ndx); std::vector<double> min(ndx), max(ndx);
+    f_interpolator->getNumbersOfPoints( nspline ); 
+    f_interpolator->getSplinePoint( 0, min );
+    f_interpolator->getSplinePoint( f_interpolator->getNumberOfSplinePoints()-1, max );
+    if( ndx==1 ){
+        for(unsigned i=0;i<D;++i) df_interpolators.push_back( new InterpolateCubic( nspline, min, max ) ); 
+    } else if( ndx==2 ){ 
+        for(unsigned i=0;i<D;++i) df_interpolators.push_back( new InterpolateBicubic( nspline, min, max ) );
+    } else {
+        plumed_assert(0);
+    }
   }
   forces.resize(D);
 }
 
 void Field::retrieveBoundaries( std::vector<double>& min, std::vector<double>& max ){
-  min.resize(ndx); f_interpolator->getSplinePoint( 0, min ); 
-  max.resize(ndx); f_interpolator->getSplinePoint( f_interpolator->getNumberOfSplinePoints()-1, max );
+  min.resize(ndx); max.resize(ndx);
+  if ( fstyle==cvlist ){
+    min[0]=0; max[0]=static_cast<double>( baseq_nder.size() );
+  } else {
+    f_interpolator->getSplinePoint( 0, min ); 
+    f_interpolator->getSplinePoint( f_interpolator->getNumberOfSplinePoints()-1, max );
+  }
 }
 
 void Field::clear(){
@@ -111,8 +133,13 @@ void Field::clear(){
   grid_buffer.assign( grid_buffer.size(), 0.0 );
 }
 
+void Field::get_nspline( std::vector<unsigned>& nspline ) const {
+  plumed_assert( ndx==1 );
+  nspline[0]=npoints;
+}
+
 void Field::resizeBaseQuantityBuffers( const std::vector<unsigned>& cv_sizes ){
-  plumed_assert( cv_sizes.size()==baseq_nder.size() && cv_sizes.size()==baseq_starts.size() );
+  baseq_nder.resize( cv_sizes.size() ); baseq_starts.resize( cv_sizes.size() );
   unsigned nn=0;
   for(unsigned i=0;i<cv_sizes.size();++i){
       baseq_starts[i]=nn; baseq_nder[i]=cv_sizes[i]; nn+=cv_sizes[i]+1;
@@ -136,7 +163,8 @@ void Field::gatherBaseQuantities( PlumedCommunicator& comm ){
 }
 
 void Field::getSplinePoint( const unsigned nn, std::vector<double>& pp ) const {
-  f_interpolator->getSplinePoint( nn, pp );
+  if( fstyle==cvlist ) pp[0]=static_cast<double>(nn);
+  else f_interpolator->getSplinePoint( nn, pp );
 }
 
 void Field::extractBaseQuantity( const unsigned nn, Value* val ){
@@ -157,18 +185,31 @@ double Field::calculateField( const std::vector<double>& pp ) const {
   } else if( fstyle==gaussian ) {
      double tmp=f_interpolator->get_fdf(pp);
      return exp( -tmp/(2*sigma*sigma) );
+  } else if( fstyle==cvlist ) {
+     unsigned kk; //Tools::convert(pp[0],kk);
+     kk=std::floor( pp[0] );
+     if( kk==ndX ) return 0;
+     plumed_assert( pp.size()==1 && (pp[0]-kk)==0 && kk<ndX );
+     return grid_buffer[kk*nper];
   }
   plumed_massert(0, "no field calculate style defined");
   return 0;
 }
 
 void Field::calculateFieldDerivatives( const std::vector<double>& pp, std::vector<double>& der ) const {
-  plumed_assert( der.size()==df_interpolators.size() );
+  plumed_assert( der.size()==ndX );
   if( fstyle==identity ){
      for(unsigned i=0;i<der.size();++i) der[i]=df_interpolators[i]->get_fdf(pp);
   } else if( fstyle==gaussian ) {
      double tmp=f_interpolator->get_fdf(pp); double pref=-exp( -tmp/(2*sigma*sigma) ) / ( 2*sigma*sigma );  
      for(unsigned i=0;i<der.size();++i) der[i]=pref*df_interpolators[i]->get_fdf(pp);
+  } else if( fstyle==cvlist ){
+     unsigned kk;  
+     kk=std::floor( pp[0] );
+     for(unsigned i=0;i<der.size();++i){ der[i]=0.0; } 
+     if( kk==ndX ) return;
+     plumed_assert( pp.size()==1 && (pp[0]-kk)==0 && kk<der.size() );
+     der[kk]=1.0;
   }
 }
 
@@ -177,6 +218,7 @@ void Field::gatherField( PlumedCommunicator& comm ){
 }
 
 void Field::set_tables(){
+  if( fstyle==cvlist ) return;
   std::vector<Value> vv(npoints);
   for(unsigned i=0;i<npoints;++i){
      vv[i].set( grid_buffer[i*nper] );
