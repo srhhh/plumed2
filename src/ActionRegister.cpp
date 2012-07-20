@@ -76,12 +76,14 @@ Action* ActionRegister::create(const ActionOptions&ao){
   Action* action; ActionOptions nao( ao,keys );
   if(check(ao.line[0])) action=m[ao.line[0]](nao);
   else action=NULL;
+  keys.destroyData();  // Empty the keywords object
   return action;
 }
 
 bool ActionRegister::printManual( const std::string& action ){
   if ( check(action) ){
-     Keywords keys; mk[action](keys); keys.print_html();
+     Keywords keys; mk[action](keys); 
+     keys.print_html(); keys.destroyData();
      return true;
   } else {
      return false;
