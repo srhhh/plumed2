@@ -31,6 +31,9 @@ ActionPilot::ActionPilot(const ActionOptions&ao):
 Action(ao),
 stride(1)
 {
+  plumed_massert( keywords.exists("STRIDE"), "when you create a new actionPilot object you must register the keyword "
+                                             "STRIDE and provide a description of what the action "
+                                             "is doing when it is called");
   parse("STRIDE",stride);
   log.printf("  with stride %d\n",stride);
 }
