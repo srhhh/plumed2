@@ -35,7 +35,7 @@ class Grid
  std::vector< std::vector<double> > der_;
 
 protected:
- std::vector<double> min_,max_,dx_;  
+ std::vector<double> min_,max_,dx_,maxminusmin;  
  std::vector<unsigned> nbin_;
  std::vector<bool> pbc_;
  unsigned maxsize_, dimension_;
@@ -115,14 +115,30 @@ public:
  virtual void addValueAndDerivatives(unsigned index, double value, std::vector<double>& der); 
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 
+/// add a kernel function to the grid
+ template <class T>
+ void addKernel( T& kernel );
+
 /// Write a description of the format the the grid file
  static std::string formatDocs();
 /// dump grid on file
- virtual void writeToFile(FILE*);
+ virtual void writeToFile(FILE*, const double norm=1.);
 
  virtual ~Grid(){};
 };
 
+template <class T>
+void Grid::addKernel( T& kernel ){
+  plumed_assert( kernel.ndim()==dimension_ );
+  std::vector<unsigned> nneighb=kernel.getSupport( dx_ );
+  std::vector<unsigned> neighbors=getNeighbors( kernel.getCenter(), nneighb );
+  std::vector<double> xx( max_.size() );
+  for(unsigned i=0;i<neighbors.size();++i){
+      unsigned ineigh=neighbors[i];
+      getPoint( ineigh, xx );
+      addValue( ineigh, kernel.evaluate( pbc_, maxminusmin, xx ) );
+  }
+}
   
 class SparseGrid : public Grid
 {

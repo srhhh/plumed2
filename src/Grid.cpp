@@ -66,7 +66,8 @@ Grid::Grid(const vector<double> & gmin, const vector<double> & gmax, const vecto
  maxsize_=1;
  for(unsigned int i=0;i<dimension_;++i){
   dx_.push_back( (max_[i]-min_[i])/static_cast<double>( nbin_[i] ) );
-  if( !pbc_[i] ){ max_[i] += dx_[i]; nbin_[i] += 1; }
+  if( !pbc_[i] ){ max_[i] += dx_[i]; nbin_[i] += 1; maxminusmin.push_back(0); }
+  else { maxminusmin.push_back( max_[i]-min_[i] ); }
   maxsize_*=nbin_[i];
  }
  if(doclear) clear();
@@ -410,7 +411,7 @@ void Grid::writeHeader(FILE* file){
  fprintf(file,"\n");
 }
 
-void Grid::writeToFile(FILE* file){
+void Grid::writeToFile(FILE* file, const double norm){
  vector<double> xx(dimension_);
  vector<double> der(dimension_);
  double f;
@@ -421,7 +422,7 @@ void Grid::writeToFile(FILE* file){
    else{f=getValue(i);}
    if(dimension_>1 && getIndices(i)[dimension_-2]==0){fprintf(file,"\n");} 
    for(unsigned j=0;j<dimension_;++j){fprintf(file,"%14.9f ",xx[j]);}
-   fprintf(file,"  %14.9f  ",f);
+   fprintf(file,"  %14.9f  ",f/norm);
    if(usederiv_){for(unsigned j=0;j<dimension_;++j){fprintf(file,"%14.9f ",der[j]);}}
    fprintf(file,"\n");
  }
