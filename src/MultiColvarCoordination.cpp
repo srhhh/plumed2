@@ -97,6 +97,7 @@ PLUMED_MULTICOLVAR_INIT(ao)
   std::string sw, errors; parse("SWITCH",sw);
   if(sw.length()>0){
      switchingFunction.set(sw,errors);
+     if(errors.length()>0) error("problem reading SWITCH keyword : " + errors);
   } else { 
      double r_0=-1.0, d_0; int nn, mm;
      parse("NN",nn); parse("MM",mm);
@@ -127,12 +128,12 @@ double MultiColvarCoordination::compute( const unsigned& j, const std::vector<Ve
    double value=0, dfunc; Vector distance;
 
    // Calculate the coordination number
-   double dd, sw;
+   double sw;
    for(unsigned i=1;i<pos.size();++i){
-      distance=getSeparation( pos[0], pos[i] ); dd=distance.modulo();
+      distance=getSeparation( pos[0], pos[i] ); 
       sw = switchingFunction.calculate( distance.modulo(), dfunc );
-      if( sw>=getTolerance() ){    //  nl_cut<0 ){
-         value += sw;             // switchingFunction.calculate( distance.modulo(), dfunc );
+      if( sw>=getTolerance() ){    
+         value += sw;             
          deriv[0] = deriv[0] + (-dfunc)*distance;
          deriv[i] = deriv[i] + (dfunc)*distance;
          virial = virial + (-dfunc)*Tensor(distance,distance);
