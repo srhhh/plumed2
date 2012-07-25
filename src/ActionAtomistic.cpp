@@ -183,8 +183,6 @@ void ActionAtomistic::retrieveAtoms(){
   for(unsigned j=0;j<indexes.size();j++) positions[j]=p[indexes[j].index()];
   for(unsigned j=0;j<indexes.size();j++) charges[j]=c[indexes[j].index()];
   for(unsigned j=0;j<indexes.size();j++) masses[j]=m[indexes[j].index()];
-  Colvar*cc=dynamic_cast<Colvar*>(this);
-  if(cc && cc->checkIsEnergy()) energy=atoms.getEnergy();
 }
 
 void ActionAtomistic::applyForces(){
@@ -192,13 +190,9 @@ void ActionAtomistic::applyForces(){
   Tensor           & v(atoms.virial);
   for(unsigned j=0;j<indexes.size();j++) f[indexes[j].index()]+=forces[j];
   v+=virial;
-  atoms.forceOnEnergy+=forceOnEnergy;
 }
 
 void ActionAtomistic::readAtomsFromPDB( const PDB& pdb ){
-  Colvar*cc=dynamic_cast<Colvar*>(this);
-  if(cc && cc->checkIsEnergy()) error("can't read energies from pdb files");
-
   for(unsigned j=0;j<indexes.size();j++){
       if( indexes[j].index()>pdb.size() ) error("there are not enough atoms in the input pdb file");
       if( pdb.getAtomNumbers()[j].index()!=indexes[j].index() ) error("there are atoms missing in the pdb file");  

@@ -19,7 +19,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-#include "Colvar.h"
+#include "ActionWithValue.h"
 #include "ActionRegister.h"
 #include "PlumedMain.h"
 #include "Atoms.h"
@@ -48,7 +48,7 @@ PRINT ARG=ene
 //+ENDPLUMEDOC
 
 
-class ColvarEnergy : public Colvar {
+class ColvarEnergy : public ActionWithValue {
   bool components;
 
 public:
@@ -56,6 +56,7 @@ public:
 // active methods:
   void prepare();
   virtual void calculate();
+  void apply();
   static void registerKeywords( Keywords& keys );
 };
 
@@ -66,18 +67,17 @@ using namespace std;
 PLUMED_REGISTER_ACTION(ColvarEnergy,"ENERGY")
 
 ColvarEnergy::ColvarEnergy(const ActionOptions&ao):
-PLUMED_COLVAR_INIT(ao),
+Action(ao),
+ActionWithValue(ao),
 components(false)
 {
-  assert(!checkNumericalDerivatives());
-  isEnergy=true;
+  plumed_assert(!checkNumericalDerivatives());
   addValueWithDerivatives(); setNotPeriodic();
   getPntrToValue()->resizeDerivatives(1);
 }
 
 void ColvarEnergy::registerKeywords( Keywords& keys ){
   Action::registerKeywords( keys );
-  ActionAtomistic::registerKeywords( keys );
   ActionWithValue::registerKeywords( keys );
   keys.remove("NUMERICAL_DERIVATIVES"); 
 }
@@ -88,8 +88,13 @@ void ColvarEnergy::prepare(){
 
 // calculator
 void ColvarEnergy::calculate(){
-  setValue( getEnergy() );
+  setValue( plumed.getAtoms().getEnergy() );
   getPntrToComponent(0)->addDerivative(0,1.0);
+}
+
+void ColvarEnergy::apply(){
+  std::vector<double> forces(1);
+  if( getPntrToComponent(0)->applyForce( forces ) ) plumed.getAtoms().forceOnEnergy+=forces[0];
 }
 
 }

@@ -176,7 +176,6 @@ private:
 /// This is used by apply to retrive the forces on the atoms
   std::vector<double> forces;
 protected:
-  bool isEnergy;
   void requestAtoms(const std::vector<AtomNumber> & a);
 // Set the derivatives for a particular atom equal to the input Vector
 // This routine is called setAtomsDerivatives because not because you
@@ -191,7 +190,6 @@ protected:
   const double & getForce()const;
   void apply();
 public:
-  bool checkIsEnergy(){return isEnergy;};
   Colvar(const ActionOptions&);
   ~Colvar(){};
   static void registerKeywords( Keywords& keys );

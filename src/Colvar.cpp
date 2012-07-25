@@ -20,6 +20,8 @@
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "Colvar.h"
+#include "PlumedMain.h"
+#include "Atoms.h"
 #include <vector>
 #include <string>
 
@@ -29,8 +31,7 @@ using namespace PLMD;
 Colvar::Colvar(const ActionOptions&ao):
 Action(ao),
 ActionAtomistic(ao),
-ActionWithValue(ao),
-isEnergy(false)
+ActionWithValue(ao)
 {
 }
 
@@ -42,7 +43,6 @@ void Colvar::registerKeywords( Keywords& keys ){
 }  
 
 void Colvar::requestAtoms(const vector<AtomNumber> & a){
-  plumed_massert(!isEnergy,"request atoms should not be called if this is energy");
 // Tell actionAtomistic what atoms we are getting
   ActionAtomistic::requestAtoms(a);
 // Resize the derivatives of all atoms
@@ -63,27 +63,23 @@ void Colvar::apply(){
   }
   v.zero();
 
-  if(!isEnergy){
-    for(int i=0;i<getNumberOfComponents();++i){
-      if( getPntrToComponent(i)->applyForce( forces ) ){
-       for(unsigned j=0;j<nat;++j){
-          f[j][0]+=forces[3*j+0];
-          f[j][1]+=forces[3*j+1];
-          f[j][2]+=forces[3*j+2];
-       }
-       v(0,0)+=forces[3*nat+0];
-       v(0,1)+=forces[3*nat+1];
-       v(0,2)+=forces[3*nat+2];
-       v(1,0)+=forces[3*nat+3];
-       v(1,1)+=forces[3*nat+4];
-       v(1,2)+=forces[3*nat+5];
-       v(2,0)+=forces[3*nat+6];
-       v(2,1)+=forces[3*nat+7];
-       v(2,2)+=forces[3*nat+8];
+  for(int i=0;i<getNumberOfComponents();++i){
+    if( getPntrToComponent(i)->applyForce( forces ) ){
+     for(unsigned j=0;j<nat;++j){
+        f[j][0]+=forces[3*j+0];
+        f[j][1]+=forces[3*j+1];
+        f[j][2]+=forces[3*j+2];
+     }
+     v(0,0)+=forces[3*nat+0];
+     v(0,1)+=forces[3*nat+1];
+     v(0,2)+=forces[3*nat+2];
+     v(1,0)+=forces[3*nat+3];
+     v(1,1)+=forces[3*nat+4];
+     v(1,2)+=forces[3*nat+5];
+     v(2,0)+=forces[3*nat+6];
+     v(2,1)+=forces[3*nat+7];
+     v(2,2)+=forces[3*nat+8];
     }
-   }
-  } else if( isEnergy ){
-     forces.resize(1);
-     if( getPntrToComponent(0)->applyForce( forces ) ) modifyForceOnEnergy()+=forces[0];
   }
+
 }

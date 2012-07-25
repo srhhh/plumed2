@@ -41,7 +41,6 @@ class ActionAtomistic :
   std::vector<AtomNumber> indexes;         // the set of needed atoms
   std::set<AtomNumber>  unique;
   std::vector<Vector>   positions;       // positions of the needed atoms
-  double                energy;
   Tensor                box;
   Pbc                   pbc;
   Tensor                virial;
@@ -49,7 +48,6 @@ class ActionAtomistic :
   std::vector<double>   charges;
 
   std::vector<Vector>   forces;          // forces on the needed atoms
-  double                forceOnEnergy;
 
   bool                  lockRequestAtoms; // forbid changes to request atoms
 
@@ -70,8 +68,6 @@ public:
   const Tensor & getBox()const;
 /// Get the array of all positions
   const std::vector<Vector> & getPositions()const;
-/// Get energy
-  const double & getEnergy()const;
 /// Get mass of i-th atom
   double getMass(int i)const;
 /// Get charge of i-th atom
@@ -80,8 +76,6 @@ public:
   std::vector<Vector> & modifyForces();
 /// Get a reference to virial array
   Tensor & modifyVirial();
-/// Get a reference to force on energy
-  double & modifyForceOnEnergy();
 /// Get number of available atoms
   unsigned getNumberOfAtoms()const{return indexes.size();};
 /// Compute the pbc distance between two positions
@@ -145,11 +139,6 @@ const std::vector<Vector> & ActionAtomistic::getPositions()const{
 }
 
 inline
-const double & ActionAtomistic::getEnergy()const{
-  return energy;
-}
-
-inline
 const Tensor & ActionAtomistic::getBox()const{
   return box;
 }
@@ -167,13 +156,6 @@ Tensor & ActionAtomistic::modifyVirial(){
 inline
 void ActionAtomistic::clearOutputForces(){
   for(unsigned i=0;i<forces.size();++i)forces[i].zero();
-  forceOnEnergy=0.0;
-}
-
-
-inline
-double & ActionAtomistic::modifyForceOnEnergy(){
-  return forceOnEnergy;
 }
 
 inline
