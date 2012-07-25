@@ -50,8 +50,8 @@ private:
   double rtemp;
 /// Do we need the energy (are we reweighting at a different temperature)
   bool needeng;
-/// Is there a bias acting on the system
-  bool hasbias;
+/// The biases we are using in reweighting
+  std::vector<Value*> biases;
 /// The piece of data we are inserting
   unsigned idata;
 /// The data we are going to analyze
