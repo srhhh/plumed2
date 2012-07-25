@@ -62,7 +62,14 @@ idata(0)
   else needeng=false;
 
   // Need to do stuff to get the bias
-  hasbias=false;
+  parseArgumentList("BIAS",biases);
+  // Check everything is a bias
+  std::string thename;
+  for(unsigned i=0;i<biases.size();++i){
+      thename=biases[i]->getName(); 
+      std::size_t dot=thename.find_first_of('.');
+      if(thename.substr(dot+1)!="bias") error("value " + thename + " is not a bias"); 
+  }
 }
 
 void Analysis::prepare(){
@@ -79,8 +86,10 @@ void Analysis::calculate(){
   } else {
      weights[idata]=1.0;
   }
-  if( hasbias ){
-      double bias=0.0; weights[idata]*=exp( bias/( plumed.getAtoms().getKBoltzmann()*simtemp ) );
+  if( biases.size()>0 ){
+      double bias=0.0; 
+      for(unsigned i=0;i<biases.size();++i) bias+=biases[i]->get();
+      weights[idata]*=exp( bias/( plumed.getAtoms().getKBoltzmann()*simtemp ) );
   }
   idata++;
 }
