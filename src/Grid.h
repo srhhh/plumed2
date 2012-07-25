@@ -37,7 +37,7 @@ class Grid
  std::vector< std::vector<double> > der_;
 
 protected:
- std::vector<double> min_,max_,dx_;  
+ std::vector<double> min_,max_,dx_,maxminusmin;  
  std::vector<unsigned> nbin_;
  std::vector<bool> pbc_;
  unsigned maxsize_, dimension_;
@@ -118,7 +118,7 @@ public:
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 
 /// add a kernel function to the grid
- void addKernel( Kernel* kernel );
+ void addKernel( const Kernel& kernel );
 
 /// Write a description of the format the the grid file
  static std::string formatDocs();
