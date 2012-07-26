@@ -44,11 +44,11 @@ void RMSD::setType(string mytype){
 	alignmentMethod=SIMPLE; // initialize with the simplest case: no rotation
 	if (mytype=="SIMPLE"){
 		alignmentMethod=SIMPLE;
-		log.printf("RMSD IS DONE WITH SIMPLE METHOD(NO ROTATION)\n")
+		//log.printf("RMSD IS DONE WITH SIMPLE METHOD(NO ROTATION)\n")
 	;}
 	else if (mytype=="OPTIMAL"){
 		alignmentMethod=OPTIMAL;
-		log.printf("RMSD IS DONE WITH OPTIMAL ALIGNMENT METHOD\n");
+		//log.printf("RMSD IS DONE WITH OPTIMAL ALIGNMENT METHOD\n");
 	}
 	else plumed_merror("unknown RMSD type" + mytype);
 
@@ -91,7 +91,7 @@ void RMSD::setDisplace(const vector<double> & displace){
   this->displace=displace;
 }
 
-double RMSD::calculate(const std::vector<Vector> & positions,std::vector<Vector> &derivatives, bool squared){
+double RMSD::calculate(const std::vector<Vector> & positions,std::vector<Vector> &derivatives,Log& log, bool squared){
 
   double ret=0.;
 

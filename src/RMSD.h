@@ -42,10 +42,10 @@ class RMSD
   std::vector<double> align;
   std::vector<double> displace;
   OptimalAlignment *myoptimalalignment;
-  Log &log;
+//  Log &log;
 public:
 /// initialize the log in the constructor
-  RMSD(Log & log ): myoptimalalignment(NULL),log(log){};
+  RMSD(): myoptimalalignment(NULL) {}
 /// the destructor needs to delete the myalignment object eventually
   ~RMSD();
 /// clear the structure
@@ -70,7 +70,7 @@ public:
   		                     Log &log,
   		                     std::vector<Vector>  & derivatives, bool squared=false);
 /// Compute rmsd
-  double calculate(const std::vector<Vector> & positions,std::vector<Vector> &derivatives, bool squared=false);
+  double calculate(const std::vector<Vector> & positions,std::vector<Vector> &derivatives, Log& log, bool squared=false);
 };
 
 }

@@ -76,7 +76,7 @@ void MultiColvarSecondaryStructureRMSD::setSecondaryStructure( std::vector<Vecto
     secondary_drmsd[secondary_drmsd.size()-1]->setReference( structure, bondlength );
   } else {
     std::vector<double> align( structure.size(), 1.0 );
-    secondary_rmsd.push_back( new RMSD(log) );
+    secondary_rmsd.push_back( new RMSD() );
     secondary_rmsd[secondary_rmsd.size()-1]->setType( alignType );
     secondary_rmsd[secondary_rmsd.size()-1]->setReference( structure );
     secondary_rmsd[secondary_rmsd.size()-1]->setAlign( align ); 
@@ -99,9 +99,9 @@ double MultiColvarSecondaryStructureRMSD::compute( const unsigned& j, const std:
         }
     }
   } else {
-    r=secondary_rmsd[0]->calculate( pos, deriv );
+    r=secondary_rmsd[0]->calculate( pos, deriv, log );
     for(unsigned i=1;i<secondary_rmsd.size();++i){
-        nr=secondary_rmsd[i]->calculate( pos, new_deriv );
+        nr=secondary_rmsd[i]->calculate( pos, new_deriv, log );
         if(nr<r){
            r=nr;
            for(unsigned i=0;i<new_deriv.size();++i) deriv[i]=new_deriv[i];

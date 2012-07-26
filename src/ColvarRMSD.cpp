@@ -89,7 +89,7 @@ void ColvarRMSD::registerKeywords(Keywords& keys){
 }
 
 ColvarRMSD::ColvarRMSD(const ActionOptions&ao):
-PLUMED_COLVAR_INIT(ao),rmsd(log),squared(false)
+PLUMED_COLVAR_INIT(ao),squared(false)
 {
   string reference;
   parse("REFERENCE",reference);
@@ -123,7 +123,7 @@ PLUMED_COLVAR_INIT(ao),rmsd(log),squared(false)
 
 // calculator
 void ColvarRMSD::calculate(){
-  double r=rmsd.calculate(getPositions(),derivs,squared);
+  double r=rmsd.calculate(getPositions(),derivs,log,squared);
   setValue(r);
   for(unsigned i=0;i<derivs.size();i++) setAtomsDerivatives(i,derivs[i]);
   Tensor virial;
