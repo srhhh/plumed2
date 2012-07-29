@@ -29,6 +29,17 @@
 
 namespace PLMD {
 
+class KernelOptions {
+friend class Kernel;
+private:
+  std::vector<double> pos;
+public:
+  std::vector<double> width;
+  double height;
+  bool normalize;
+  KernelOptions( const std::vector<double>& , const std::vector<double>& , const double& , const bool& );
+};
+
 class Kernel {
 private:
 /// The center of the kernel function
@@ -38,12 +49,14 @@ private:
 /// The height at the center of the kernel
   double height;
 protected:
+/// Does the kernel have derivatives
+  bool hasderivatives;
 /// Set the value of the height
   void setHeight( const double& h );
 /// Get the value of the height
   double getHeight() const;
 public:
-  Kernel( const std::vector<double>& at, const std::vector<double>& sig, const double& w ) : center(at), width(sig), height(w) {}
+  Kernel( const KernelOptions& ko ); 
 /// Return the dimensionality of the kernel
   unsigned ndim() const ;
 /// Get the position of the center of the kernel function
@@ -80,7 +93,7 @@ std::vector<double> Kernel::getCenter() const {
 
 class UniformKernel : public Kernel {
 public:
-  UniformKernel( const std::vector<double>& at, const std::vector<double>& sig, const double& w ); 
+  UniformKernel( const KernelOptions& ko ); 
   double getCutoff( double& width );
   double getValue( const std::vector<double>& diff );
 };

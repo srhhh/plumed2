@@ -2,6 +2,21 @@
 
 namespace PLMD {
 
+KernelOptions::KernelOptions( const std::vector<double>& at, const std::vector<double>& sig, const double& w, const bool& norm ):
+pos(at), 
+width(sig), 
+height(w),
+normalize(norm)
+{
+}
+
+Kernel::Kernel( const KernelOptions& ko ):
+center(ko.pos),
+width(ko.width),
+height(ko.height)
+{
+}
+
 std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ){
   plumed_assert( ndim()==dx.size() );
   std::vector<unsigned> support( dx.size() );
@@ -23,11 +38,15 @@ double Kernel::evaluate( const std::vector<bool>& pbc, const std::vector<double>
   return getValue( dx );
 }
 
-UniformKernel::UniformKernel( const std::vector<double>& at, const std::vector<double>& sig, const double& w ):
-Kernel( at,sig,w )
+UniformKernel::UniformKernel( const KernelOptions& ko ):
+Kernel(ko)
 {
-  double vol=1; for(unsigned i=0;i<sig.size();++i) vol*=0.5*sig[i];
-  setHeight( w/vol );
+  hasderivatives=false;
+  if(ko.normalize){
+    double vol=1;  
+    for(unsigned i=0;i<ko.width.size();++i) vol*=0.5*ko.width[i];
+    setHeight( ko.height/vol );
+  }
 }
 
 }

@@ -128,8 +128,9 @@ void CVHistogram::performAnalysis(){
   double weight; getDataPoint( 0, point, weight );
   normalization+=weight;
   if( kernel==uniform ){
-      UniformKernel uniform( point, bw, weight );
-      gg->addKernel( uniform );
+      UniformKernel* unif=new UniformKernel( KernelOptions(point, bw, weight,true) );
+      Kernel* kern=dynamic_cast<Kernel*>( unif );
+      gg->addKernel( kern );
   } else if( kernel==triangular ){
 //      TriangularKernel triangle( point, bw, weight );
 //      gg->add( triangle );

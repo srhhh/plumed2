@@ -264,6 +264,18 @@ vector<unsigned> Grid::getSplineNeighbors(const vector<unsigned> & indices)const
  return neighbors;
 }
 
+void Grid::addKernel( Kernel* kernel ){
+  plumed_assert( kernel->ndim()==dimension_ );
+  std::vector<unsigned> nneighb=kernel->getSupport( dx_ );
+  std::vector<unsigned> neighbors=getNeighbors( kernel->getCenter(), nneighb );
+  std::vector<double> xx( max_.size() );
+  for(unsigned i=0;i<neighbors.size();++i){
+      unsigned ineigh=neighbors[i];
+      getPoint( ineigh, xx );
+      addValue( ineigh, kernel->evaluate( pbc_, maxminusmin, xx ) );
+  }
+}
+
 double Grid::getValue(unsigned index) const {
  plumed_assert(index<maxsize_);
  return grid_[index];

@@ -25,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "KernelFunctions.h"
 
 namespace PLMD{ 
 
@@ -116,8 +117,7 @@ public:
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 
 /// add a kernel function to the grid
- template <class T>
- void addKernel( T& kernel );
+ void addKernel( Kernel* kernel );
 
 /// Write a description of the format the the grid file
  static std::string formatDocs();
@@ -126,19 +126,6 @@ public:
 
  virtual ~Grid(){};
 };
-
-template <class T>
-void Grid::addKernel( T& kernel ){
-  plumed_assert( kernel.ndim()==dimension_ );
-  std::vector<unsigned> nneighb=kernel.getSupport( dx_ );
-  std::vector<unsigned> neighbors=getNeighbors( kernel.getCenter(), nneighb );
-  std::vector<double> xx( max_.size() );
-  for(unsigned i=0;i<neighbors.size();++i){
-      unsigned ineigh=neighbors[i];
-      getPoint( ineigh, xx );
-      addValue( ineigh, kernel.evaluate( pbc_, maxminusmin, xx ) );
-  }
-}
   
 class SparseGrid : public Grid
 {
