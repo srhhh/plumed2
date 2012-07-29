@@ -2,6 +2,18 @@
 
 namespace PLMD {
 
+Kernel* KernelRegister::create( const std::string& type, const KernelOptions& ko, const bool& needderivs ){
+  Kernel* kernel;
+  if( type=="uniform" ){
+      kernel=dynamic_cast<Kernel*>( new UniformKernel(ko) ); 
+  } else {
+      return NULL;
+  }
+  if( needderivs && !kernel->hasderivatives ) return NULL;
+  return kernel;
+}
+
+
 KernelOptions::KernelOptions( const std::vector<double>& at, const std::vector<double>& sig, const double& w, const bool& norm ):
 pos(at), 
 width(sig), 

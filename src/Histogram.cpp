@@ -41,7 +41,7 @@ private:
   FILE* gridfile;
   double normalization;
   std::vector<double> point, bw;
-  enum {uniform,triangular} kernel; 
+  std::string kerneltype; 
   unsigned wgridstride;
 public:
   static void registerKeywords( Keywords& keys );
@@ -82,15 +82,14 @@ bw(getNumberOfArguments())
 
   // Read stuff for window functions
   parseVector("BANDWIDTH",bw);
+  // Read the type of kernel we are using
+  parse("KERNEL",kerneltype);
 
-  std::string wftype; parse("KERNEL",wftype);
-
-  if( wftype=="uniform" ) kernel=uniform;
-  else if( wftype=="triangular" ) kernel=triangular;
-  else error( wftype + " is not a supported type of window function"); 
+  std::vector<double> point, bw; 
+  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(point, bw, 1.0, true), false );
+  if(!kernel) error("not a valid kernel function " + kerneltype );
+  delete kernel; 
   checkRead();
-
-  if( kernel==triangular && getNumberOfArguments()!=1 ) error("cannot use triangular kernels for data that is not one dimensional"); 
 
   log.printf("  Grid min");
   for(unsigned i=0;i<gmin.size();++i) log.printf(" %f",gmin[i]);
@@ -127,14 +126,18 @@ CVHistogram::~CVHistogram(){
 void CVHistogram::performAnalysis(){
   double weight; getDataPoint( 0, point, weight );
   normalization+=weight;
-  if( kernel==uniform ){
-      UniformKernel* unif=new UniformKernel( KernelOptions(point, bw, weight,true) );
-      Kernel* kern=dynamic_cast<Kernel*>( unif );
-      gg->addKernel( kern );
-  } else if( kernel==triangular ){
-//      TriangularKernel triangle( point, bw, weight );
-//      gg->add( triangle );
-  }
+  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(point, bw, weight, true), false );
+  gg->addKernel( kernel );
+  delete kernel;
+
+//  if( kernel==uniform ){
+//      UniformKernel* unif=new UniformKernel( KernelOptions(point, bw, weight,true) );
+//      Kernel* kern=dynamic_cast<Kernel*>( unif );
+//      gg->addKernel( kern );
+//  } else if( kernel==triangular ){
+////      TriangularKernel triangle( point, bw, weight );
+////      gg->add( triangle );
+//  }
 
 // dump grid on file
   if(wgridstride>0 && getStep()%wgridstride==0){

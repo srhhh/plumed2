@@ -40,6 +40,13 @@ public:
   KernelOptions( const std::vector<double>& , const std::vector<double>& , const double& , const bool& );
 };
 
+class Kernel;
+
+class KernelRegister {
+public:
+  static Kernel* create( const std::string& type, const KernelOptions& ko, const bool& );
+};
+
 class Kernel {
 private:
 /// The center of the kernel function
@@ -49,13 +56,13 @@ private:
 /// The height at the center of the kernel
   double height;
 protected:
-/// Does the kernel have derivatives
-  bool hasderivatives;
 /// Set the value of the height
   void setHeight( const double& h );
 /// Get the value of the height
   double getHeight() const;
 public:
+/// Does the kernel have derivatives
+  bool hasderivatives;
   Kernel( const KernelOptions& ko ); 
 /// Return the dimensionality of the kernel
   unsigned ndim() const ;
