@@ -130,15 +130,6 @@ void CVHistogram::performAnalysis(){
   gg->addKernel( kernel );
   delete kernel;
 
-//  if( kernel==uniform ){
-//      UniformKernel* unif=new UniformKernel( KernelOptions(point, bw, weight,true) );
-//      Kernel* kern=dynamic_cast<Kernel*>( unif );
-//      gg->addKernel( kern );
-//  } else if( kernel==triangular ){
-////      TriangularKernel triangle( point, bw, weight );
-////      gg->add( triangle );
-//  }
-
 // dump grid on file
   if(wgridstride>0 && getStep()%wgridstride==0){
      gg->writeToFile(gridfile,normalization);
