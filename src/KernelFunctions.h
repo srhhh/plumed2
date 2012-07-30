@@ -25,6 +25,7 @@
 #include "PlumedException.h"
 #include "Tools.h"
 #include "Matrix.h"
+#include "Value.h"
 #include <vector>
 #include <math.h>
 
@@ -78,8 +79,8 @@ public:
   std::vector<unsigned> getSupport( const std::vector<double>& dx );
 /// Get how far out we need to go from the center
   virtual double getCutoff( double& width )=0;
-/// Evaluate the kernel function (this bit looks after PBCs) 
-  virtual double evaluate( const std::vector<bool>& pbc, const std::vector<double>& range, const std::vector<double>& pos );
+/// Evaluate the kernel function ) 
+  virtual double evaluate( const std::vector<Value>& pos );
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
   virtual double getValue( const double& x )=0;
 };
