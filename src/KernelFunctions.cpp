@@ -6,6 +6,8 @@ Kernel* KernelRegister::create( const std::string& type, const KernelOptions& ko
   Kernel* kernel;
   if( type=="uniform" ){
       kernel=dynamic_cast<Kernel*>( new UniformKernel(ko) ); 
+  } else if( type=="gaussian"){
+      kernel=dynamic_cast<Kernel*>( new GaussianKernel(ko) );
   } else {
       return NULL;
   }
@@ -34,7 +36,11 @@ height(ko.height)
 std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ){
   plumed_assert( ndim()==dx.size() );
   std::vector<unsigned> support( dx.size() );
-  for(unsigned i=0;i<dx.size();++i) support[i]=static_cast<unsigned>(ceil( getCutoff(width[i])/dx[i] ));
+  if(diagonal){
+     for(unsigned i=0;i<dx.size();++i) support[i]=static_cast<unsigned>(ceil( getCutoff(width[i])/dx[i] ));
+  } else {
+
+  }
   return support;
 }
 
@@ -87,6 +93,18 @@ Kernel(ko)
     }
     vol*=getDeterminant();
     setHeight( ko.height/vol );
+  }
+}
+
+GaussianKernel::GaussianKernel( const KernelOptions& ko ):
+Kernel(ko),
+DP2CUTOFF(6.25)
+{
+  hasderivatives=true;
+  if(ko.normalize){
+     double vol;
+     vol=( pow( 2*pi, 0.5*ko.pos.size() ) * pow( getDeterminant(), 0.5 ) );
+     setHeight( ko.height/vol);
   }
 }
 
