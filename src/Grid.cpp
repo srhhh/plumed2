@@ -267,21 +267,24 @@ void Grid::addKernel( Kernel* kernel ){
   plumed_assert( kernel->ndim()==dimension_ );
   std::vector<unsigned> nneighb=kernel->getSupport( dx_ );
   std::vector<unsigned> neighbors=getNeighbors( kernel->getCenter(), nneighb );
-  std::vector<double> xx( dimension_ ); std::vector<Value> vv( dimension_ );
+  std::vector<double> xx( dimension_ ); std::vector<Value*> vv( dimension_ );
   for(unsigned i=0;i<dimension_;++i){
-      if( pbc_[i] ) vv[i].setDomain( min_[i], max_[i] );
-      else vv[i].setNotPeriodic();
+      vv[i]=new Value();
+      if( pbc_[i] ) vv[i]->setDomain( min_[i], max_[i] );
+      else vv[i]->setNotPeriodic();
   }
 
   double newval; std::vector<double> der( dimension_ ); 
   for(unsigned i=0;i<neighbors.size();++i){
       unsigned ineigh=neighbors[i];
       getPoint( ineigh, xx );
-      for(unsigned j=0;j<dimension_;++j) vv[j].set(xx[j]);
+      for(unsigned j=0;j<dimension_;++j) vv[j]->set(xx[j]);
       newval = kernel->evaluate( vv, der, usederiv_ );
       if( usederiv_ ) addValueAndDerivatives( ineigh, newval, der );
       else addValue( ineigh, newval );
   }
+
+  for(unsigned i=0;i<dimension_;++i) delete vv[i];
 }
 
 double Grid::getValue(unsigned index) const {

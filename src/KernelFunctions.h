@@ -81,10 +81,18 @@ public:
   std::vector<unsigned> getSupport( const std::vector<double>& dx );
 /// Get how far out we need to go from the center
   virtual double getCutoff( double& width )=0;
-/// Evaluate the kernel function ) 
-  double evaluate( const std::vector<Value>& pos, std::vector<double>& derivatives, bool usederiv=true );
+/// Evaluate the kernel function  
+  double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true );
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
   virtual double getValue( const double& x, double& dx )=0;
+/// Print the header for the kernel function to a file
+  std::string fieldNames( const std::vector<std::string>& arg_names );
+/// Print the header for the parameters of the kernel
+  virtual std::string parameterNames(){ return ""; } 
+/// Print the kernel function to a file
+  void print( FILE* ofile );
+/// Print extra parameters of the kernel
+  virtual void printParameters( FILE* ofile ){};
 };
 
 inline
@@ -159,6 +167,7 @@ double GaussianKernel::getValue( const double& x, double& dx ){
       dx=-0.5*val;
       return val; 
   }
+  dx=0;
   return 0.0;
 }
 

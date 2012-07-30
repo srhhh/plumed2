@@ -69,24 +69,24 @@ double Kernel::getDeterminant() const {
   return vol;
 }
 
-double Kernel::evaluate( const std::vector<Value>& pos, std::vector<double>& derivatives, bool usederiv ){
+double Kernel::evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv ){
   plumed_assert( pos.size()==ndim() && derivatives.size()==ndim() );
   if( usederiv ) plumed_assert( hasderivatives ); 
 
   double r2=0;
   if(diagonal){ 
      for(unsigned i=0;i<ndim();++i){
-         derivatives[i]=pos[i].difference( center[i] ) / width[i]; 
+         derivatives[i]=pos[i]->difference( center[i] ) / width[i]; 
          r2+=derivatives[i]*derivatives[i];
      }
   } else {
      Matrix<double> mymatrix( getMatrix() ); 
      for(unsigned i=0;i<mymatrix.nrows();++i){
         double dp_i, dp_j; derivatives[i]=0;
-        dp_i=pos[i].difference( center[i] ); 
+        dp_i=pos[i]->difference( center[i] ); 
         for(unsigned j=0;j<mymatrix.ncols();++j){
           if(i==j) dp_j=dp_i;
-          else dp_j=pos[j].difference( center[j] );
+          else dp_j=pos[j]->difference( center[j] );
 
           derivatives[i]+=mymatrix(i,j)*dp_j;
           r2+=dp_i*dp_j*mymatrix(i,j);
@@ -103,6 +103,62 @@ double Kernel::evaluate( const std::vector<Value>& pos, std::vector<double>& der
   }
   for(unsigned i=0;i<ndim();++i) derivatives[i]*=kderiv;
   return kval;
+}
+
+std::string Kernel::fieldNames( const std::vector<std::string>& arg_names ){
+  plumed_assert( arg_names.size()==ndim() );
+
+  std::string header;
+  for(unsigned i=0;i<arg_names.size();++i) header+=arg_names[i] + " ";
+  if( ndim()==1 ){
+     header+="sigma "; 
+  } else if(diagonal){
+     for(unsigned i=1;i<=ndim();++i){
+         std::string num; Tools::convert(i,num);
+         header+="sigma" + num + " ";
+     }
+  } else {
+     for(unsigned i=1;i<=ndim();++i){
+        std::string inum; Tools::convert(i,inum);
+        for(unsigned j=i;j<=ndim();++j){
+            std::string jnum; Tools::convert(j,jnum);
+            header+="sigma" + inum + jnum + " ";
+        }
+     }
+  } 
+  header+="height " + parameterNames();
+  return header;
+}
+
+void Kernel::print( FILE* ofile ){
+  for(unsigned i=0;i<ndim();++i) fprintf(ofile, "%14.9f   ", center[i]);
+  if(ndim()==1){
+      fprintf(ofile, "%14.9f   ",width[0]);
+  } else if(diagonal){
+      for(unsigned i=0;i<ndim();++i){ fprintf(ofile, "%14.9f   ", width[i]); }
+  } else{
+      Matrix<double> mymatrix( getMatrix() );
+      // invert the matrix
+      Matrix<double> invmatrix( ndim(),ndim() );
+      Invert(mymatrix,invmatrix);
+      // enforce symmetry
+      for(unsigned i=0;i<ndim();i++){
+          for(unsigned j=i;j<ndim();j++){
+              invmatrix(i,j)=invmatrix(j,i);
+          }
+      }
+      Matrix<double> lower( ndim() ,ndim() );
+      cholesky(invmatrix,lower); // now this , in band form , is similar to the sigmas
+      // loop in band form 
+      unsigned k=0;
+      for(unsigned i=0;i<ndim();i++){
+          for(unsigned j=0;j<ndim()-i;j++){
+              fprintf(ofile, "%14.9f   ", lower(j+i,j));
+              k++;
+          }
+      }
+  } 
+  fprintf(ofile,"%14.9f   ",height);
 }
 
 UniformKernel::UniformKernel( const KernelOptions& ko ):
