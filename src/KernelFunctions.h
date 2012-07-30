@@ -119,5 +119,27 @@ double UniformKernel::getValue( const double& x ){
   return getHeight();
 }
 
+class GaussianKernel : public Kernel {
+private:
+  double DP2CUTOFF;
+public:
+  GaussianKernel( const KernelOptions& ko );
+  double getCutoff( double& width );
+  double getValue( const double& x );
+};
+
+inline
+double GaussianKernel::getCutoff( double& width ){
+  return sqrt(2.0*DP2CUTOFF)*width;
+}
+
+inline
+double GaussianKernel::getValue( const double& x ){
+  if( x<DP2CUTOFF ){
+      return getHeight()*exp(-x);
+  }
+  return 0.0;
+}
+
 }
 #endif
