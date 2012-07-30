@@ -102,19 +102,19 @@ PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
 class BiasMetaD : public Bias{
 
 private:
-  struct Gaussian {
-   vector<double> center;
-   vector<double> sigma;
-   double height;
-   bool   multivariate; // this is required to discriminate the one dimensional case 
-   vector<double> invsigma;
-   Gaussian(const vector<double> & center,const vector<double> & sigma,double height, bool multivariate ):
-     center(center),sigma(sigma),height(height),multivariate(multivariate),invsigma(sigma){
-       for(unsigned i=0;i<invsigma.size();++i)abs(invsigma[i])>1.e-20?invsigma[i]=1.0/invsigma[i]:0.; // to avoid troubles from zero element in flexible hills
-     }
-  };
+//  struct Gaussian {
+//   vector<double> center;
+//   vector<double> sigma;
+//   double height;
+//   bool   multivariate; // this is required to discriminate the one dimensional case 
+//   vector<double> invsigma;
+//   Gaussian(const vector<double> & center,const vector<double> & sigma,double height, bool multivariate ):
+//     center(center),sigma(sigma),height(height),multivariate(multivariate),invsigma(sigma){
+//       for(unsigned i=0;i<invsigma.size();++i)abs(invsigma[i])>1.e-20?invsigma[i]=1.0/invsigma[i]:0.; // to avoid troubles from zero element in flexible hills
+//     }
+//  };
   vector<double> sigma0_;
-  vector<Gaussian> hills_;
+  vector<GaussianKernel> hills_;
   FILE* hillsfile_;
   PlumedOFile hillsOfile_;
   Grid* BiasGrid_;
@@ -130,16 +130,18 @@ private:
   bool grid_;
   int adaptive_;
   FlexibleBin *flexbin;
-  
-  
+  std::string kerneltype;
+
+/* PUT BACK IN  
   void   readGaussians(PlumedIFile&);
-  void   writeGaussian(const Gaussian&,PlumedOFile&);
-  void   addGaussian(const Gaussian&);
+*/
+//  void   writeGaussian(const Gaussian&,PlumedOFile&);
+//  void   addGaussian(const Gaussian&);
   double getHeight(const vector<double>&);
-  double getBiasAndDerivatives(const vector<double>&,double* der=NULL);
-  double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
-  void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
-  vector<unsigned> getGaussianSupport(const Gaussian&);
+//  double getBiasAndDerivatives(const vector<double>&,double* der=NULL);
+//  double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
+//  void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
+//  vector<unsigned> getGaussianSupport(const Gaussian&);
 
 
 public:
@@ -171,6 +173,7 @@ void BiasMetaD::registerKeywords(Keywords& keys){
   keys.add("optional","GRID_WSTRIDE","write the grid to a file every N steps");
   keys.add("optional","GRID_WFILE","the file on which to write the grid");
   keys.add("optional","ADAPTIVE","use a geometric (=GEOM) or diffusion (=DIFF) based hills width scheme. Sigma is one number that has distance or time dimensions");
+  keys.add("optional","KERNEL","use a non-gaussian kernel function");
 }
 
 BiasMetaD::~BiasMetaD(){
@@ -263,6 +266,9 @@ adaptive_(FlexibleBin::none)
   if(grid_&&gridfname.length()>0){plumed_assert(wgridstride_>0);}
   if(grid_&&wgridstride_>0){plumed_assert(gridfname.length()>0);}
 
+  kerneltype="";
+  if(grid_) parse("KERNEL",kerneltype);
+  if(kerneltype.length()==0) kerneltype="gaussian";
   checkRead();
 
   log.printf("  Gaussian width ");
@@ -319,7 +325,9 @@ adaptive_(FlexibleBin::none)
    PlumedIFile ifile;
    ifile.link(*this);
    ifile.open(hillsfname,"r");
+/* PUT BACK IN
    readGaussians(ifile);
+*/
    ifile.close();
    hillsOfile_.link(*this);
    hillsOfile_.open(hillsfname,"aw");
@@ -329,6 +337,19 @@ adaptive_(FlexibleBin::none)
   } 
   hillsOfile_.addConstantField("multivariate");
 
+  // Check the kernel is OK
+  std::vector<double> pp( getNumberOfArguments() ), thissig;
+  if(adaptive_!=FlexibleBin::none) thissig.resize( getNumberOfArguments()*(getNumberOfArguments()+1) / 2 ); 
+  else thissig.resize( getNumberOfArguments() );
+  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(pp, thissig, 1.0, false), true );
+  if(!kernel) error("not a valid kernel function " + kerneltype );
+  // Write a header in the hills file
+  std::vector<std::string> argument_names( getNumberOfArguments() );
+  for(unsigned i=0;i<getNumberOfArguments();++i) argument_names[i]=getPntrToArgument(i)->getName(); 
+  std::string khead=kernel->fieldNames( argument_names );
+  fprintf( hillsfile_,"#! FIELDS time %s biasfactor \n",khead.c_str() );
+  delete kernel;
+
   log<<"  Bibliography "<<plumed.cite("Laio and Parrinello, PNAS 99, 12562 (2002)");
   if(welltemp_) log<<plumed.cite(
     "Barducci, Bussi, and Parrinello, Phys. Rev. Lett. 100, 020603 (2008)");
@@ -336,6 +357,7 @@ adaptive_(FlexibleBin::none)
 
 }
 
+/*
 void BiasMetaD::readGaussians(PlumedIFile&ifile)
 {
  unsigned ncv=getNumberOfArguments();
@@ -386,11 +408,21 @@ void BiasMetaD::readGaussians(PlumedIFile&ifile)
   ifile.scanField();
   nhills++;
   if(welltemp_){height*=(biasf_-1.0)/biasf_;}
-  addGaussian(Gaussian(center,sigma,height,multivariate));
+ 
+  if(!grid_){
+     hills_.push_back( GaussianKernel( KernelOptions(center,sigma,height,false) ) ); 
+  } else {
+     Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(center, sigma, height, false), true );
+     BiasGrid_->addKernel( kernel ); 
+     delete kernel; 
+  }
+//  addGaussian( GaussianKernel( KernelOptions(center,sigma,height,true) ) );
  }     
  log.printf("  %d Gaussians read\n",nhills);
 }
+*/
 
+<<<<<<< HEAD
 void BiasMetaD::writeGaussian(const Gaussian& hill, PlumedOFile&file){
   unsigned ncv=getNumberOfArguments();
   file.printField("time",getTimeStep()*getStep());
@@ -576,12 +608,197 @@ double BiasMetaD::evaluateGaussian
  }
  return bias;
 }
+=======
+//void BiasMetaD::writeGaussian(const GaussianKernel& hill, FILE* file)
+//{
+// unsigned ncv=getNumberOfArguments();
+// fprintf(hillsfile_, "%10.3f   ", getTimeStep()*getStep());
+// for(unsigned i=0;i<ncv;++i){fprintf(file, "%14.9f   ", hill.center[i]);}
+// if(hill.multivariate){  
+//	 fprintf(file, " MV ");
+//         // build the full matrix, invert it and do the cholesky decomp
+//	 Matrix<double> mymatrix(ncv,ncv);
+//         unsigned k=0;
+//	 for(unsigned i=0;i<ncv;i++){
+//		for(unsigned j=i;j<ncv;j++){
+//			mymatrix(i,j)=mymatrix(j,i)=hill.sigma[k]; // recompose the full inverse matrix
+//			k++;
+//		}
+//	 }
+//         // invert it 
+//         Matrix<double> invmatrix(ncv,ncv);
+//         Invert(mymatrix,invmatrix);
+//         // enforce symmetry
+//	 for(unsigned i=0;i<ncv;i++){
+//		for(unsigned j=i;j<ncv;j++){
+//			invmatrix(i,j)=invmatrix(j,i);
+//		}
+//	 }
+//        
+//         // do cholesky so to have a "sigma like" number
+//         Matrix<double> lower(ncv,ncv);	
+//    	 cholesky(invmatrix,lower); // now this , in band form , is similar to the sigmas
+//         // loop in band form 
+//         k=0;
+//         for (unsigned i=0;i<ncv;i++){
+//              for (unsigned j=0;j<ncv-i;j++){
+//	              fprintf(file, "%14.9f   ", lower(j+i,j));
+//                      k++;
+//              }
+//         }
+// }else{
+//	 for(unsigned i=0;i<ncv;++i){fprintf(file, "%14.9f   ", hill.sigma[i]);}
+// }
+// double height=hill.height;
+// if(welltemp_){height*=biasf_/(biasf_-1.0);}
+// fprintf(file, "%14.9f   %4.3f \n",height,biasf_);
+//}
+
+//void BiasMetaD::addGaussian(const Gaussian& hill)
+//{
+// if(!grid_){hills_.push_back(hill);} 
+// else{
+//  unsigned ncv=getNumberOfArguments();
+//  vector<unsigned> nneighb=getGaussianSupport(hill);
+//  vector<unsigned> neighbors=BiasGrid_->getNeighbors(hill.center,nneighb);
+//  vector<double> der(ncv);
+//  vector<double> xx(ncv);
+//  for(unsigned i=0;i<neighbors.size();++i){
+//   unsigned ineigh=neighbors[i];
+//   for(unsigned j=0;j<ncv;++j){der[j]=0.0;}
+//   BiasGrid_->getPoint(ineigh,xx);   
+//   double bias=evaluateGaussian(xx,hill,&der[0]);
+//   BiasGrid_->addValueAndDerivatives(ineigh,bias,der);
+//  }
+// }
+//}
+
+//vector<unsigned> BiasMetaD::getGaussianSupport(const Gaussian& hill)
+//{
+// vector<unsigned> nneigh;
+// // traditional or flexible hill? 
+// if(hill.multivariate){
+//	unsigned ncv=getNumberOfArguments();
+//	unsigned k=0;
+//	log<<"------- GET GAUSSIAN SUPPORT --------\n"; 
+//	Matrix<double> mymatrix(ncv,ncv);
+//	for(unsigned i=0;i<ncv;i++){
+//		for(unsigned j=i;j<ncv;j++){
+//			mymatrix(i,j)=mymatrix(j,i)=hill.sigma[k]; // recompose the full inverse matrix
+//			k++;
+//		}
+//	}
+//        //
+//        // Reinvert so to have the ellipses 
+//        //
+//	Matrix<double> myinv(ncv,ncv);
+//	Invert(mymatrix,myinv);
+//	log<<"INVERSE \n"; 
+//        matrixOut(log,myinv);	
+//        // diagonalizes it
+//	Matrix<double> myautovec(ncv,ncv);
+//	vector<double> myautoval(ncv); //should I take this or their square root? 
+//	diagMat(myinv,myautoval,myautovec);
+//	for (unsigned i=0;i<ncv;i++){
+//		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(myautoval[0])*myautovec(i,0));
+//		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
+//	  	nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
+//        }
+// }else{
+//	 for(unsigned i=0;i<getNumberOfArguments();++i){
+//	  double cutoff=sqrt(2.0*DP2CUTOFF)*hill.sigma[i];
+//	  nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
+// 	}
+// }
+//	log<<"------- END GET GAUSSIAN SUPPORT --------\n"; 
+// return nneigh;
+//}
+
+//double BiasMetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
+//{
+// double bias=0.0;
+// if(!grid_){
+//  for(unsigned i=0;i<hills_.size();++i){
+//   bias+=hills_[i].evaluate( getArguments(), der, true );      //evaluateGaussian(cv,hills_[i],der);
+//   //finite difference test 
+//   //finiteDifferenceGaussian(cv,hills_[i]);
+//  }
+// }else{
+//  if(der){
+//   vector<double> vder(getNumberOfArguments());
+//   bias=BiasGrid_->getValueAndDerivatives(cv,vder);
+//   for(unsigned i=0;i<getNumberOfArguments();++i){der[i]=vder[i];}
+//  }else{
+//   bias=BiasGrid_->getValue(cv);
+//  }
+// }
+// return bias;
+//}
+
+//double BiasMetaD::evaluateGaussian
+// (const vector<double>& cv, const Gaussian& hill, double* der)
+//{
+// double dp2=0.0;
+// double bias=0.0;
+// if(hill.multivariate){ 
+//    unsigned k=0;
+//    unsigned ncv=cv.size(); 
+//    // recompose the full sigma from the upper diag cholesky 
+//    Matrix<double> mymatrix(ncv,ncv);
+//    for(unsigned i=0;i<ncv;i++){
+//		for(unsigned j=i;j<ncv;j++){
+//			mymatrix(i,j)=mymatrix(j,i)=hill.sigma[k]; // recompose the full inverse matrix
+//			k++;
+//		}
+//    }
+//
+//    for(unsigned i=0;i<cv.size();++i){
+//	double dp_i=difference(i,hill.center[i],cv[i]);
+//        dp_[i]=dp_i;
+//    	for(unsigned j=i;j<cv.size();++j){
+//                  if(i==j){ 
+//              	  	 dp2+=dp_i*dp_i*mymatrix(i,j)*0.5; 
+//                  }else{ 
+//   		 	 double dp_j=difference(j,hill.center[j],cv[j]);
+//              	  	 dp2+=dp_i*dp_j*mymatrix(i,j) ;
+//                  }
+//        }
+//    } 
+//    if(dp2<DP2CUTOFF){
+//     bias=hill.height*exp(-dp2);
+//     if(der){
+//      for(unsigned i=0;i<cv.size();++i){
+//                double tmp=0.0;
+//                k=i;
+//                for(unsigned j=0;j<cv.size();++j){
+//                                tmp+=   dp_[j]*mymatrix(i,j)*bias;
+//                        }
+//                        der[i]-=tmp;
+//                }   
+//     }
+//    }
+// }else{
+//    for(unsigned i=0;i<cv.size();++i){
+//     double dp=difference(i,hill.center[i],cv[i])*hill.invsigma[i];
+//     dp2+=dp*dp;
+//     dp_[i]=dp;
+//    }
+//    dp2*=0.5;
+//    if(dp2<DP2CUTOFF){
+//     bias=hill.height*exp(-dp2);
+//     if(der){
+//      for(unsigned i=0;i<cv.size();++i){der[i]+=-bias*dp_[i]*hill.invsigma[i];}
+//     }
+//    }
+// }
+// return bias;
+//}
 
 double BiasMetaD::getHeight(const vector<double>& cv)
 {
  double height=height0_;
  if(welltemp_){
-    double vbias=getBiasAndDerivatives(cv);
+    double vbias=getPntrToComponent("bias")->get();      //=getBiasAndDerivatives(cv);
     height=height0_*exp(-vbias/(plumed.getAtoms().getKBoltzmann()*temp_*(biasf_-1.0)));
  } 
  return height;
@@ -589,22 +806,31 @@ double BiasMetaD::getHeight(const vector<double>& cv)
 
 void BiasMetaD::calculate()
 {
-  unsigned ncv=getNumberOfArguments();
-  vector<double> cv(ncv);
-  for(unsigned i=0;i<ncv;++i){cv[i]=getArgument(i);}
+//  unsigned ncv=getNumberOfArguments();
+// vector<double> cv(ncv);
+// for(unsigned i=0;i<ncv;++i){cv[i]=getArgument(i);}
 
-  double* der=new double[ncv];
-  for(unsigned i=0;i<ncv;++i){der[i]=0.0;}
-  double ene=getBiasAndDerivatives(cv,der);
+  double ene=0;
+  std::vector<double> der( getNumberOfArguments(),0.0 ); 
+
+  if(!grid_){
+     for(unsigned i=0;i<hills_.size();++i){
+        ene+=hills_[i].evaluate( getArguments(), der, true );
+     }
+  } else {
+     vector<double> cv(getNumberOfArguments());
+     for(unsigned i=0;i<getNumberOfArguments();++i) cv[i]=getArgument(i);
+     ene=BiasGrid_->getValueAndDerivatives( cv ,der );
+  }
+//  double ene=getBiasAndDerivatives(cv,der);
   getPntrToComponent("bias")->set(ene);
 
 // set Forces 
-  for(unsigned i=0;i<ncv;++i){
-   const double f=-der[i];
-   setOutputForce(i,f);
+  for(unsigned i=0;i<getNumberOfArguments();++i){
+    double f=-der[i]; setOutputForce(i,f);
   }
 
-  delete [] der;
+//  delete [] der;
 }
 
 void BiasMetaD::update(){
@@ -635,10 +861,23 @@ void BiasMetaD::update(){
    }else{
 	thissigma=sigma0_;    // returns normal sigma
    }
-   Gaussian newhill=Gaussian(cv,thissigma,height,multivariate);
-   addGaussian(newhill);
+//   Gaussian newhill=Gaussian(cv,thissigma,height,multivariate);
+//   addGaussian(newhill);
+   if(!grid_){
+      hills_.push_back( GaussianKernel( KernelOptions(cv,thissigma,height,false) ) );
+      fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
+      hills_[hills_.size()-1].print(hillsfile_);
+      fprintf( hillsfile_,"%4.3f \n",biasf_ );
+   } else {
+      Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(cv, thissigma, height, false), true );
+      BiasGrid_->addKernel( kernel );
+      fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
+      kernel->print(hillsfile_);
+      fprintf( hillsfile_,"%4.3f \n",biasf_ );
+      delete kernel; 
+   }
 // print on HILLS file
-   writeGaussian(newhill,hillsOfile_);
+//   writeGaussian(newhill,hillsOfile_);
   }
 // dump grid on file
   if(wgridstride_>0&&getStep()%wgridstride_==0){
@@ -646,33 +885,33 @@ void BiasMetaD::update(){
   }
 }
 
-void BiasMetaD::finiteDifferenceGaussian
- (const vector<double>& cv, const Gaussian& hill)
-{
- log<<"--------- finiteDifferenceGaussian: size "<<cv.size() <<"------------\n";
- // for each cv
- // first get the bias and the derivative
- vector<double> oldder(cv.size()); 
- vector<double> der(cv.size()); 
- vector<double> mycv(cv.size()); 
- mycv=cv; 
- double step=1.e-6;
- Random random; 
- // just displace a tiny bit
- for(unsigned i=0;i<cv.size();i++)log<<"CV "<<i<<" V "<<mycv[i]<<"\n";
- for(unsigned i=0;i<cv.size();i++)mycv[i]+=1.e-2*2*(random.RandU01()-0.5);
- for(unsigned i=0;i<cv.size();i++)log<<"NENEWWCV "<<i<<" V "<<mycv[i]<<"\n";
- double oldbias=evaluateGaussian(mycv,hill,&oldder[0]);
- for (unsigned i=0;i<mycv.size();i++){
-               double delta=step*2*(random.RandU01()-0.5);
-               mycv[i]+=delta;
-               double newbias=evaluateGaussian(mycv,hill,&der[0]);		
-               log<<"CV "<<i;
-               log<<" ANAL "<<oldder[i]<<" NUM "<<(newbias-oldbias)/delta<<" DIFF "<<(oldder[i]-(newbias-oldbias)/delta)<<"\n";
-               mycv[i]-=delta;
- }
- log<<"--------- END finiteDifferenceGaussian ------------\n";
-}
+// void BiasMetaD::finiteDifferenceGaussian
+//  (const vector<double>& cv, const Gaussian& hill)
+// {
+//  log<<"--------- finiteDifferenceGaussian: size "<<cv.size() <<"------------\n";
+//  // for each cv
+//  // first get the bias and the derivative
+//  vector<double> oldder(cv.size()); 
+//  vector<double> der(cv.size()); 
+//  vector<double> mycv(cv.size()); 
+//  mycv=cv; 
+//  double step=1.e-6;
+//  Random random; 
+//  // just displace a tiny bit
+//  for(unsigned i=0;i<cv.size();i++)log<<"CV "<<i<<" V "<<mycv[i]<<"\n";
+//  for(unsigned i=0;i<cv.size();i++)mycv[i]+=1.e-2*2*(random.RandU01()-0.5);
+//  for(unsigned i=0;i<cv.size();i++)log<<"NENEWWCV "<<i<<" V "<<mycv[i]<<"\n";
+//  double oldbias=evaluateGaussian(mycv,hill,&oldder[0]);
+//  for (unsigned i=0;i<mycv.size();i++){
+//                double delta=step*2*(random.RandU01()-0.5);
+//                mycv[i]+=delta;
+//                double newbias=evaluateGaussian(mycv,hill,&der[0]);		
+//                log<<"CV "<<i;
+//                log<<" ANAL "<<oldder[i]<<" NUM "<<(newbias-oldbias)/delta<<" DIFF "<<(oldder[i]-(newbias-oldbias)/delta)<<"\n";
+//                mycv[i]-=delta;
+//  }
+//  log<<"--------- END finiteDifferenceGaussian ------------\n";
+// }
 
 
 }
