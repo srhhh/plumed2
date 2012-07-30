@@ -29,8 +29,10 @@ center(ko.pos),
 width(ko.width),
 height(ko.height)
 {
-  if( center.size()==width.size() ) diagonal=true;
-  else diagonal=false;
+  unsigned ncv=center.size();
+  if( width.size()==ncv ) diagonal=true;
+  else if( width.size()==(ncv*(ncv+1))/2 ) diagonal=false;
+  else plumed_massert(0,"specified sigma is neither diagonal or full covariance matrix");
 }
 
 std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ){
@@ -39,7 +41,15 @@ std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ){
   if(diagonal){
      for(unsigned i=0;i<dx.size();++i) support[i]=static_cast<unsigned>(ceil( getCutoff(width[i])/dx[i] ));
   } else {
-
+     unsigned ncv=ndim(); 
+     Matrix<double> mymatrix( getMatrix() ), myinv( ncv,ncv );
+     Invert(mymatrix,myinv);
+     Matrix<double> myautovec(ncv,ncv); std::vector<double> myautoval(ncv);  
+     diagMat(myinv,myautoval,myautovec);
+     for(unsigned i=0;i<dx.size();++i){
+         double extent=fabs(sqrt(myautoval[0])*myautovec(i,0)); 
+         support[i]=static_cast<unsigned>(ceil( getCutoff( extent )/dx[i] ));
+     }
   }
   return support;
 }
@@ -49,7 +59,11 @@ double Kernel::getDeterminant() const {
   if(diagonal){
      vol=1; for(unsigned i=0;i<width.size();++i) vol*=width[i];
   } else {
-
+     unsigned ncv=ndim(); 
+     Matrix<double> mymatrix( getMatrix() ), myinv( ncv, ncv );
+     Invert(mymatrix,myinv); double logd;
+     logdet( myinv, logd );
+     vol=exp(logd);
   }
   return vol;
 }
@@ -62,7 +76,8 @@ double Kernel::evaluate( const std::vector<bool>& pbc, const std::vector<double>
      double s;
      for(unsigned i=0;i<ndim();++i){
          if( pbc[i] ){
-             s=( pos[i] - center[i] )/range[i]; s=Tools::pbc(s); 
+             s=( pos[i] - center[i] )/range[i]; 
+             s=Tools::pbc(s); 
              s=( s*range[i] ) / width[i];
              r2+=s*s;
          } else {
@@ -71,7 +86,31 @@ double Kernel::evaluate( const std::vector<bool>& pbc, const std::vector<double>
          }
      }
   } else {
-
+     Matrix<double> mymatrix( getMatrix() );
+     for(unsigned i=0;i<mymatrix.nrows();++i){
+        double dp_i, dp_j;
+        if( pbc[i] ){
+           dp_i=( pos[i] - center[i] )/range[i]; 
+           dp_i=Tools::pbc(dp_i);
+           dp_i=( dp_i*range[i] ) / width[i];
+        } else {
+           dp_i=(pos[i] - center[i] )/ width[i];
+        }                     
+        for(unsigned j=i;j<mymatrix.ncols();++j){
+          if(i==j){
+             r2+=dp_i*dp_i*mymatrix(i,j)*0.5;
+          } else{
+             if( pbc[j] ){                
+                dp_j=( pos[j] - center[j] )/range[j]; 
+                dp_j=Tools::pbc(dp_j);
+                dp_j=( dp_j*range[j] ) / width[j];
+             } else {
+                dp_j=(pos[j] - center[j] )/ width[j];
+             }                     
+             r2+=dp_i*dp_j*mymatrix(i,j) ;
+          }
+        }
+     }
   }
   return getValue( sqrt(r2) );
 }

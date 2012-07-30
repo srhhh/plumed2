@@ -24,6 +24,7 @@
 
 #include "PlumedException.h"
 #include "Tools.h"
+#include "Matrix.h"
 #include <vector>
 #include <math.h>
 
@@ -56,6 +57,8 @@ private:
   std::vector<double> width;
 /// The height at the center of the kernel
   double height;
+/// Convert the width into matrix form
+  Matrix<double> getMatrix() const;
 protected:
 /// Set the value of the height
   void setHeight( const double& h );
@@ -75,15 +78,27 @@ public:
   std::vector<unsigned> getSupport( const std::vector<double>& dx );
 /// Get how far out we need to go from the center
   virtual double getCutoff( double& width )=0;
-/// Evaluate the kernel function (this bit looks after PBCs) - it would need to be overwritten to do non-digaonal Normal distributions
+/// Evaluate the kernel function (this bit looks after PBCs) 
   virtual double evaluate( const std::vector<bool>& pbc, const std::vector<double>& range, const std::vector<double>& pos );
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
   virtual double getValue( const double& x )=0;
 };
 
 inline
+Matrix<double> Kernel::getMatrix() const {
+  unsigned k=0, ncv=ndim(); Matrix<double> mymatrix(ncv,ncv); 
+  for(unsigned i=0;i<ncv;i++){
+    for(unsigned j=i;j<ncv;j++){
+        mymatrix(i,j)=mymatrix(j,i)=width[k]; // recompose the full inverse matrix
+        k++;
+    }
+  }
+  return mymatrix;
+}
+
+inline
 unsigned Kernel::ndim() const {
-  return width.size();
+  return center.size();
 }
 
 inline
