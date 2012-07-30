@@ -31,9 +31,8 @@ namespace PLMD {
 
 class KernelOptions {
 friend class Kernel;
-private:
-  std::vector<double> pos;
 public:
+  std::vector<double> pos;
   std::vector<double> width;
   double height;
   bool normalize;
@@ -49,6 +48,8 @@ public:
 
 class Kernel {
 private:
+/// Is the metric matrix diagonal
+  bool diagonal;
 /// The center of the kernel function
   std::vector<double> center;
 /// The width of the kernel
@@ -60,6 +61,8 @@ protected:
   void setHeight( const double& h );
 /// Get the value of the height
   double getHeight() const;
+/// Get the determinant of the metric
+  double getDeterminant() const;
 public:
 /// Does the kernel have derivatives
   bool hasderivatives;
@@ -75,7 +78,7 @@ public:
 /// Evaluate the kernel function (this bit looks after PBCs) - it would need to be overwritten to do non-digaonal Normal distributions
   virtual double evaluate( const std::vector<bool>& pbc, const std::vector<double>& range, const std::vector<double>& pos );
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
-  virtual double getValue( const std::vector<double>& diff )=0;
+  virtual double getValue( const double& x )=0;
 };
 
 inline
@@ -102,7 +105,7 @@ class UniformKernel : public Kernel {
 public:
   UniformKernel( const KernelOptions& ko ); 
   double getCutoff( double& width );
-  double getValue( const std::vector<double>& diff );
+  double getValue( const double& x );
 };
 
 inline
@@ -111,10 +114,8 @@ double UniformKernel::getCutoff( double& width ){
 }
 
 inline
-double UniformKernel::getValue( const std::vector<double>& diff ){
-  for(unsigned i=0;i<diff.size();++i){
-      if( diff[i]>1.0 ) return 0.;
-  }
+double UniformKernel::getValue( const double& x ){
+  if( x>1.0 ) return 0.;
   return getHeight();
 }
 
