@@ -70,6 +70,8 @@ protected:
 public:
 /// Does the kernel have derivatives
   bool hasderivatives;
+/// You can specify kernels as a function of r2 and thus avoid square roots
+  bool is_function_of_r2;
   Kernel( const KernelOptions& ko ); 
 /// Return the dimensionality of the kernel
   unsigned ndim() const ;
@@ -80,9 +82,9 @@ public:
 /// Get how far out we need to go from the center
   virtual double getCutoff( double& width )=0;
 /// Evaluate the kernel function ) 
-  virtual double evaluate( const std::vector<Value>& pos );
+  double evaluate( const std::vector<Value>& pos, std::vector<double>& derivatives, bool usederiv=true );
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
-  virtual double getValue( const double& x )=0;
+  virtual double getValue( const double& x, double& dx )=0;
 };
 
 inline
@@ -121,7 +123,7 @@ class UniformKernel : public Kernel {
 public:
   UniformKernel( const KernelOptions& ko ); 
   double getCutoff( double& width );
-  double getValue( const double& x );
+  double getValue( const double& x, double& dx );
 };
 
 inline
@@ -130,8 +132,9 @@ double UniformKernel::getCutoff( double& width ){
 }
 
 inline
-double UniformKernel::getValue( const double& x ){
+double UniformKernel::getValue( const double& x, double& dx ){
   if( x>1.0 ) return 0.;
+  dx=0;
   return getHeight();
 }
 
@@ -141,7 +144,7 @@ private:
 public:
   GaussianKernel( const KernelOptions& ko );
   double getCutoff( double& width );
-  double getValue( const double& x );
+  double getValue( const double& x, double& dx );
 };
 
 inline
@@ -150,9 +153,11 @@ double GaussianKernel::getCutoff( double& width ){
 }
 
 inline
-double GaussianKernel::getValue( const double& x ){
+double GaussianKernel::getValue( const double& x, double& dx ){
   if( x<DP2CUTOFF ){
-      return getHeight()*exp(-x);
+      double val=getHeight()*exp(-0.5*x); // N.B. x here is x^2 so we can avoid expensive square roots.
+      dx=-0.5*val;
+      return val; 
   }
   return 0.0;
 }

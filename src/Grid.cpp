@@ -273,11 +273,14 @@ void Grid::addKernel( Kernel* kernel ){
       else vv[i].setNotPeriodic();
   }
 
+  double newval; std::vector<double> der( dimension_ ); 
   for(unsigned i=0;i<neighbors.size();++i){
       unsigned ineigh=neighbors[i];
       getPoint( ineigh, xx );
       for(unsigned j=0;j<dimension_;++j) vv[j].set(xx[j]);
-      addValue( ineigh, kernel->evaluate( vv ) );
+      newval = kernel->evaluate( vv, der, usederiv_ );
+      if( usederiv_ ) addValueAndDerivatives( ineigh, newval, der );
+      else addValue( ineigh, newval );
   }
 }
 

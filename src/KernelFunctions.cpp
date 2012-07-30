@@ -27,7 +27,8 @@ normalize(norm)
 Kernel::Kernel( const KernelOptions& ko ):
 center(ko.pos),
 width(ko.width),
-height(ko.height)
+height(ko.height),
+is_function_of_r2(false)
 {
   unsigned ncv=center.size();
   if( width.size()==ncv ) diagonal=true;
@@ -68,38 +69,46 @@ double Kernel::getDeterminant() const {
   return vol;
 }
 
-double Kernel::evaluate( const std::vector<Value>& pos ){
-  plumed_assert( pos.size()==ndim() );
+double Kernel::evaluate( const std::vector<Value>& pos, std::vector<double>& derivatives, bool usederiv ){
+  plumed_assert( pos.size()==ndim() && derivatives.size()==ndim() );
+  if( usederiv ) plumed_assert( hasderivatives ); 
 
   double r2=0;
   if(diagonal){ 
-     double s;
      for(unsigned i=0;i<ndim();++i){
-         s=pos[i].difference( center[i] ) / width[i]; 
-         r2+=s*s;
+         derivatives[i]=pos[i].difference( center[i] ) / width[i]; 
+         r2+=derivatives[i]*derivatives[i];
      }
   } else {
-     Matrix<double> mymatrix( getMatrix() );
+     Matrix<double> mymatrix( getMatrix() ); 
      for(unsigned i=0;i<mymatrix.nrows();++i){
-        double dp_i, dp_j;
-        dp_i=pos[i].difference( center[i] );
-        for(unsigned j=i;j<mymatrix.ncols();++j){
-          if(i==j){
-             r2+=dp_i*dp_i*mymatrix(i,j)*0.5;
-          } else{
-             dp_j=pos[j].difference( center[j] );
-             r2+=dp_i*dp_j*mymatrix(i,j) ;
-          }
+        double dp_i, dp_j; derivatives[i]=0;
+        dp_i=pos[i].difference( center[i] ); 
+        for(unsigned j=0;j<mymatrix.ncols();++j){
+          if(i==j) dp_j=dp_i;
+          else dp_j=pos[j].difference( center[j] );
+
+          derivatives[i]+=mymatrix(i,j)*dp_j;
+          r2+=dp_i*dp_j*mymatrix(i,j);
         }
      }
   }
-  return getValue( sqrt(r2) );
+  double kderiv, kval;
+  
+  if( !is_function_of_r2 ){
+     double r=sqrt(r2);
+     kval=getValue( r, kderiv ); kderiv/=r;
+  } else {
+     kval=getValue( r2, kderiv );
+  }
+  for(unsigned i=0;i<ndim();++i) derivatives[i]*=kderiv;
+  return kval;
 }
 
 UniformKernel::UniformKernel( const KernelOptions& ko ):
 Kernel(ko)
 {
-  hasderivatives=false;
+  hasderivatives=false; is_function_of_r2=false;
   if(ko.normalize){
     double vol;
     if( ko.pos.size()%2==1 ){
@@ -120,7 +129,7 @@ GaussianKernel::GaussianKernel( const KernelOptions& ko ):
 Kernel(ko),
 DP2CUTOFF(6.25)
 {
-  hasderivatives=true;
+  hasderivatives=true; is_function_of_r2=true;
   if(ko.normalize){
      double vol;
      vol=( pow( 2*pi, 0.5*ko.pos.size() ) * pow( getDeterminant(), 0.5 ) );
