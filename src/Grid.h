@@ -25,6 +25,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include "Value.h"
 #include "KernelFunctions.h"
 
 namespace PLMD{ 
@@ -36,7 +37,7 @@ class Grid
  std::vector< std::vector<double> > der_;
 
 protected:
- std::vector<double> min_,max_,dx_,maxminusmin;  
+ std::vector<double> min_,max_,dx_;  
  std::vector<unsigned> nbin_;
  std::vector<bool> pbc_;
  unsigned maxsize_, dimension_;

@@ -66,8 +66,7 @@ Grid::Grid(const vector<double> & gmin, const vector<double> & gmax, const vecto
  maxsize_=1;
  for(unsigned int i=0;i<dimension_;++i){
   dx_.push_back( (max_[i]-min_[i])/static_cast<double>( nbin_[i] ) );
-  if( !pbc_[i] ){ max_[i] += dx_[i]; nbin_[i] += 1; maxminusmin.push_back(0); }
-  else { maxminusmin.push_back( max_[i]-min_[i] ); }
+  if( !pbc_[i] ){ max_[i] += dx_[i]; nbin_[i] += 1;  }
   maxsize_*=nbin_[i];
  }
  if(doclear) clear();
@@ -268,11 +267,17 @@ void Grid::addKernel( Kernel* kernel ){
   plumed_assert( kernel->ndim()==dimension_ );
   std::vector<unsigned> nneighb=kernel->getSupport( dx_ );
   std::vector<unsigned> neighbors=getNeighbors( kernel->getCenter(), nneighb );
-  std::vector<double> xx( max_.size() );
+  std::vector<double> xx( dimension_ ); std::vector<Value> vv( dimension_ );
+  for(unsigned i=0;i<dimension_;++i){
+      if( pbc_[i] ) vv[i].setDomain( min_[i], max_[i] );
+      else vv[i].setNotPeriodic();
+  }
+
   for(unsigned i=0;i<neighbors.size();++i){
       unsigned ineigh=neighbors[i];
       getPoint( ineigh, xx );
-      addValue( ineigh, kernel->evaluate( pbc_, maxminusmin, xx ) );
+      for(unsigned j=0;j<dimension_;++j) vv[j].set(xx[j]);
+      addValue( ineigh, kernel->evaluate( vv ) );
   }
 }
 

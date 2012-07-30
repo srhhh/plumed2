@@ -68,45 +68,26 @@ double Kernel::getDeterminant() const {
   return vol;
 }
 
-double Kernel::evaluate( const std::vector<bool>& pbc, const std::vector<double>& range, const std::vector<double>& pos ){
-  plumed_assert( pbc.size()==ndim() && range.size()==ndim() && pos.size()==ndim() );
+double Kernel::evaluate( const std::vector<Value>& pos ){
+  plumed_assert( pos.size()==ndim() );
 
   double r2=0;
   if(diagonal){ 
      double s;
      for(unsigned i=0;i<ndim();++i){
-         if( pbc[i] ){
-             s=( pos[i] - center[i] )/range[i]; 
-             s=Tools::pbc(s); 
-             s=( s*range[i] ) / width[i];
-             r2+=s*s;
-         } else {
-             s=(pos[i] - center[i] )/ width[i];
-             r2+=s*s;
-         }
+         s=pos[i].difference( center[i] ) / width[i]; 
+         r2+=s*s;
      }
   } else {
      Matrix<double> mymatrix( getMatrix() );
      for(unsigned i=0;i<mymatrix.nrows();++i){
         double dp_i, dp_j;
-        if( pbc[i] ){
-           dp_i=( pos[i] - center[i] )/range[i]; 
-           dp_i=Tools::pbc(dp_i);
-           dp_i=( dp_i*range[i] ) / width[i];
-        } else {
-           dp_i=(pos[i] - center[i] )/ width[i];
-        }                     
+        dp_i=pos[i].difference( center[i] );
         for(unsigned j=i;j<mymatrix.ncols();++j){
           if(i==j){
              r2+=dp_i*dp_i*mymatrix(i,j)*0.5;
           } else{
-             if( pbc[j] ){                
-                dp_j=( pos[j] - center[j] )/range[j]; 
-                dp_j=Tools::pbc(dp_j);
-                dp_j=( dp_j*range[j] ) / width[j];
-             } else {
-                dp_j=(pos[j] - center[j] )/ width[j];
-             }                     
+             dp_j=pos[j].difference( center[j] );
              r2+=dp_i*dp_j*mymatrix(i,j) ;
           }
         }
