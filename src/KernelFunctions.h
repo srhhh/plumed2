@@ -171,5 +171,30 @@ double GaussianKernel::getValue( const double& x, double& dx ){
   return 0.0;
 }
 
+class TriangularKernel : public Kernel {
+public:
+  TriangularKernel( const KernelOptions& ko );
+  double getCutoff( double& width );
+  double getValue( const double& x, double& dx );
+};
+
+inline
+double TriangularKernel::getCutoff( double& width ){
+  return width;
+}
+
+
+inline
+double TriangularKernel::getValue( const double& x, double& dx ){
+  if( x<1.0 ){
+     if(x==0) dx=0;
+     else if(x>0) dx=-getHeight(); 
+     else dx=getHeight();
+     return getHeight()*( 1. - fabs(x) ); 
+  }
+  dx=0.0;
+  return 0;
+}
+
 }
 #endif

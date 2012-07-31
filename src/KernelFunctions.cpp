@@ -8,6 +8,8 @@ Kernel* KernelRegister::create( const std::string& type, const KernelOptions& ko
       kernel=dynamic_cast<Kernel*>( new UniformKernel(ko) ); 
   } else if( type=="gaussian"){
       kernel=dynamic_cast<Kernel*>( new GaussianKernel(ko) );
+  } else if( type=="triangular"){
+      kernel=dynamic_cast<Kernel*>( new TriangularKernel(ko) );
   } else {
       return NULL;
   }
@@ -190,6 +192,26 @@ DP2CUTOFF(6.25)
      double vol;
      vol=( pow( 2*pi, 0.5*ko.pos.size() ) * pow( getDeterminant(), 0.5 ) );
      setHeight( ko.height/vol);
+  }
+}
+
+TriangularKernel::TriangularKernel( const KernelOptions& ko ):
+Kernel(ko)
+{
+  hasderivatives=true; is_function_of_r2=false;
+  if(ko.normalize){
+    double vol; 
+    if( ko.pos.size()%2==1 ){
+        double dfact=1;
+        for(unsigned i=1;i<ko.pos.size();i+=2) dfact*=static_cast<double>(i);
+        vol=( pow( pi, (ko.pos.size()-1)/2 ) ) * ( pow( 2., (ko.pos.size()+1)/2 ) ) / dfact;
+    } else {
+        double fact=1.;
+        for(unsigned i=1;i<ko.pos.size()/2;++i) fact*=static_cast<double>(i);
+        vol=pow( pi,ko.pos.size()/2 ) / fact;
+    }
+    vol*=getDeterminant() / 3.;
+    setHeight( ko.height/vol );
   }
 }
 
