@@ -56,15 +56,9 @@ private:
   std::vector<double> center;
 /// The width of the kernel
   std::vector<double> width;
-/// The height at the center of the kernel
-  double height;
 /// Convert the width into matrix form
   Matrix<double> getMatrix() const;
 protected:
-/// Set the value of the height
-  void setHeight( const double& h );
-/// Get the value of the height
-  double getHeight() const;
 /// Get the determinant of the metric
   double getDeterminant() const;
 public:
@@ -88,11 +82,11 @@ public:
 /// Print the header for the kernel function to a file
   std::string fieldNames( const std::vector<std::string>& arg_names );
 /// Print the header for the parameters of the kernel
-  virtual std::string parameterNames(){ return ""; } 
+  virtual std::string parameterNames()=0; 
 /// Print the kernel function to a file
   void print( FILE* ofile );
 /// Print extra parameters of the kernel
-  virtual void printParameters( FILE* ofile ){};
+  virtual void printParameters( FILE* ofile )=0;
 };
 
 inline
@@ -113,25 +107,19 @@ unsigned Kernel::ndim() const {
 }
 
 inline
-void Kernel::setHeight(const double& h){
-  height=h;
-}
-
-inline
-double Kernel::getHeight() const {
-  return height;
-}
-
-inline
 std::vector<double> Kernel::getCenter() const {
   return center;
 }
 
 class UniformKernel : public Kernel {
+private:
+  double height;
 public:
   UniformKernel( const KernelOptions& ko ); 
   double getCutoff( double& width );
   double getValue( const double& x, double& dx );
+  std::string parameterNames();
+  void printParameters( FILE* ofile );
 };
 
 inline
@@ -143,16 +131,19 @@ inline
 double UniformKernel::getValue( const double& x, double& dx ){
   if( x>1.0 ) return 0.;
   dx=0;
-  return getHeight();
+  return height;
 }
 
 class GaussianKernel : public Kernel {
 private:
+  double height;
   double DP2CUTOFF;
 public:
   GaussianKernel( const KernelOptions& ko );
   double getCutoff( double& width );
   double getValue( const double& x, double& dx );
+  std::string parameterNames();
+  void printParameters( FILE* ofile );
 };
 
 inline
@@ -163,7 +154,7 @@ double GaussianKernel::getCutoff( double& width ){
 inline
 double GaussianKernel::getValue( const double& x, double& dx ){
   if( x<DP2CUTOFF ){
-      double val=getHeight()*exp(-0.5*x); // N.B. x here is x^2 so we can avoid expensive square roots.
+      double val=height*exp(-0.5*x); // N.B. x here is x^2 so we can avoid expensive square roots.
       dx=-0.5*val;
       return val; 
   }
@@ -172,10 +163,14 @@ double GaussianKernel::getValue( const double& x, double& dx ){
 }
 
 class TriangularKernel : public Kernel {
+private:
+  double height;
 public:
   TriangularKernel( const KernelOptions& ko );
   double getCutoff( double& width );
   double getValue( const double& x, double& dx );
+  std::string parameterNames();
+  void printParameters( FILE* ofile );
 };
 
 inline
@@ -183,14 +178,13 @@ double TriangularKernel::getCutoff( double& width ){
   return width;
 }
 
-
 inline
 double TriangularKernel::getValue( const double& x, double& dx ){
   if( x<1.0 ){
      if(x==0) dx=0;
-     else if(x>0) dx=-getHeight(); 
-     else dx=getHeight();
-     return getHeight()*( 1. - fabs(x) ); 
+     else if(x>0) dx=-height; 
+     else dx=height;
+     return height*( 1. - fabs(x) ); 
   }
   dx=0.0;
   return 0;
