@@ -29,7 +29,6 @@ normalize(norm)
 Kernel::Kernel( const KernelOptions& ko ):
 center(ko.pos),
 width(ko.width),
-height(ko.height),
 is_function_of_r2(false)
 {
   unsigned ncv=center.size();
@@ -159,8 +158,8 @@ void Kernel::print( FILE* ofile ){
               k++;
           }
       }
-  } 
-  fprintf(ofile,"%14.9f   ",height);
+  }
+  printParameters( ofile ); 
 }
 
 UniformKernel::UniformKernel( const KernelOptions& ko ):
@@ -179,8 +178,18 @@ Kernel(ko)
         vol=pow( pi,ko.pos.size()/2 ) / fact;
     }
     vol*=getDeterminant();
-    setHeight( ko.height/vol );
+    height=ko.height/vol;
+  } else {
+    height=ko.height;
   }
+}
+
+std::string UniformKernel::parameterNames(){
+  return "height ";
+}
+
+void UniformKernel::printParameters( FILE* ofile ){
+  fprintf( ofile,"%14.9f   ", height );
 }
 
 GaussianKernel::GaussianKernel( const KernelOptions& ko ):
@@ -191,8 +200,18 @@ DP2CUTOFF(6.25)
   if(ko.normalize){
      double vol;
      vol=( pow( 2*pi, 0.5*ko.pos.size() ) * pow( getDeterminant(), 0.5 ) );
-     setHeight( ko.height/vol);
+     height=ko.height/vol;
+  } else {
+     height=ko.height;
   }
+}
+
+std::string GaussianKernel::parameterNames(){
+  return "height ";
+}
+
+void GaussianKernel::printParameters( FILE* ofile ){
+  fprintf( ofile,"%14.9f   ", height );
 }
 
 TriangularKernel::TriangularKernel( const KernelOptions& ko ):
@@ -211,8 +230,18 @@ Kernel(ko)
         vol=pow( pi,ko.pos.size()/2 ) / fact;
     }
     vol*=getDeterminant() / 3.;
-    setHeight( ko.height/vol );
+    height=ko.height/vol;
+  } else {
+    height=ko.height;
   }
+}
+
+std::string TriangularKernel::parameterNames(){
+  return "height ";
+}
+
+void TriangularKernel::printParameters( FILE* ofile ){
+  fprintf( ofile,"%14.9f   ", height );
 }
 
 }
