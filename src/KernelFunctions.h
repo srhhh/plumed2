@@ -67,16 +67,16 @@ public:
 /// You can specify kernels as a function of r2 and thus avoid square roots
   bool is_function_of_r2;
   Kernel( const KernelOptions& ko ); 
-/// Return the dimensionality of the kernel
-  unsigned ndim() const ;
-/// Get the position of the center of the kernel function
+/// Get the dimensionality of the kernel
+  unsigned ndim() const;
+/// Get the position of the center 
   std::vector<double> getCenter() const;
-/// Get the numbers of neighbors of the center required in each direction
-  std::vector<unsigned> getSupport( const std::vector<double>& dx );
-/// Get how far out we need to go from the center
-  virtual double getCutoff( double& width )=0;
+/// Get the support
+  std::vector<unsigned> getSupport( const std::vector<double>& dx ); 
 /// Evaluate the kernel function  
   double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true );
+/// Get the cutoff for the kernel
+  virtual double getCutoff( double& width )=0;
 /// Get the value of the kernel at this point (note we pass here (p-c)/b)
   virtual double getValue( const double& x, double& dx )=0;
 /// Print the header for the kernel function to a file
