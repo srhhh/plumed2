@@ -91,6 +91,7 @@ bw(getNumberOfArguments())
   delete kernel; 
   checkRead();
 
+  log.printf("  Using %s kernel functions\n",kerneltype.c_str() );
   log.printf("  Grid min");
   for(unsigned i=0;i<gmin.size();++i) log.printf(" %f",gmin[i]);
   log.printf("\n");
