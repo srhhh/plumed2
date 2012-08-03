@@ -22,7 +22,7 @@
 #ifndef __PLUMED_KernelFunctions_h
 #define __PLUMED_KernelFunctions_h
 
-#include "PlumedException.h"
+#include "NonLinearFunctions.h"
 #include "Tools.h"
 #include "Matrix.h"
 #include "Value.h"
@@ -31,22 +31,16 @@
 
 namespace PLMD {
 
-class KernelOptions {
-friend class Kernel;
-public:
-  std::vector<double> pos;
-  std::vector<double> width;
-  double height;
-  bool normalize;
-  KernelOptions( const std::vector<double>& , const std::vector<double>& , const double& , const bool& );
-};
-
-class Kernel;
-
-class KernelRegister {
-public:
-  static Kernel* create( const std::string& type, const KernelOptions& ko, const bool& );
-};
+/// \ingroup TOOLBOX
+/// Small class to compute kernel functions.  Within plumed a 
+/// kernel function has the following form:
+/// \f[
+///    f( \mathbf{x-x_0}^T \mathbf{\Sigma}^-1 \mathbf{x-x_0} )
+/// \f]
+/// Within this equation \f$\mathbf{\Sigma}\f$ is a square matrix that
+/// describes the covariance in the region of space around \f$\mathbf{x_0}\f$.
+/// This matrix can be diagonal. Within plumed you can use various different 
+/// function for \f$f()\f$ for more details see \ref PLUMED::NonLinearFunction. 
 
 class Kernel {
 private:
@@ -56,6 +50,10 @@ private:
   std::vector<double> center;
 /// The width of the kernel
   std::vector<double> width;
+/// The height of the kernel
+  double height;
+/// The non-linear function we are using
+  NonLinearFunction nlfunc;
 /// Convert the width into matrix form
   Matrix<double> getMatrix() const;
 protected:
@@ -64,29 +62,19 @@ protected:
 public:
 /// Does the kernel have derivatives
   bool hasderivatives;
-/// You can specify kernels as a function of r2 and thus avoid square roots
-  bool is_function_of_r2;
-  Kernel( const KernelOptions& ko ); 
+  Kernel( const std::vector<double>& at, const std::vector<double>& sig, const std::string& type, const double& w, const bool& norm );
 /// Get the dimensionality of the kernel
   unsigned ndim() const;
 /// Get the position of the center 
   std::vector<double> getCenter() const;
 /// Get the support
-  std::vector<unsigned> getSupport( const std::vector<double>& dx ); 
+  std::vector<unsigned> getSupport( const std::vector<double>& dx ) const; 
 /// Evaluate the kernel function  
-  double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true );
-/// Get the cutoff for the kernel
-  virtual double getCutoff( double& width )=0;
-/// Get the value of the kernel at this point (note we pass here (p-c)/b)
-  virtual double getValue( const double& x, double& dx )=0;
+  double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true ) const;
 /// Print the header for the kernel function to a file
-  std::string fieldNames( const std::vector<std::string>& arg_names );
-/// Print the header for the parameters of the kernel
-  virtual std::string parameterNames()=0; 
+  std::string fieldNames( const std::vector<std::string>& arg_names ) const ;
 /// Print the kernel function to a file
-  void print( FILE* ofile );
-/// Print extra parameters of the kernel
-  virtual void printParameters( FILE* ofile )=0;
+  void print( FILE* ofile ) const ;
 };
 
 inline
@@ -109,85 +97,6 @@ unsigned Kernel::ndim() const {
 inline
 std::vector<double> Kernel::getCenter() const {
   return center;
-}
-
-class UniformKernel : public Kernel {
-private:
-  double height;
-public:
-  UniformKernel( const KernelOptions& ko ); 
-  double getCutoff( double& width );
-  double getValue( const double& x, double& dx );
-  std::string parameterNames();
-  void printParameters( FILE* ofile );
-};
-
-inline
-double UniformKernel::getCutoff( double& width ){
-  return width;
-}
-
-inline
-double UniformKernel::getValue( const double& x, double& dx ){
-  if( x>1.0 ) return 0.;
-  dx=0;
-  return height;
-}
-
-class GaussianKernel : public Kernel {
-private:
-  double height;
-  double DP2CUTOFF;
-public:
-  GaussianKernel( const KernelOptions& ko );
-  double getCutoff( double& width );
-  double getValue( const double& x, double& dx );
-  std::string parameterNames();
-  void printParameters( FILE* ofile );
-};
-
-inline
-double GaussianKernel::getCutoff( double& width ){
-  return sqrt(2.0*DP2CUTOFF)*width;
-}
-
-inline
-double GaussianKernel::getValue( const double& x, double& dx ){
-  if( x<DP2CUTOFF ){
-      double val=height*exp(-0.5*x); // N.B. x here is x^2 so we can avoid expensive square roots.
-      dx=-0.5*val;
-      return val; 
-  }
-  dx=0;
-  return 0.0;
-}
-
-class TriangularKernel : public Kernel {
-private:
-  double height;
-public:
-  TriangularKernel( const KernelOptions& ko );
-  double getCutoff( double& width );
-  double getValue( const double& x, double& dx );
-  std::string parameterNames();
-  void printParameters( FILE* ofile );
-};
-
-inline
-double TriangularKernel::getCutoff( double& width ){
-  return width;
-}
-
-inline
-double TriangularKernel::getValue( const double& x, double& dx ){
-  if( x<1.0 ){
-     if(x==0) dx=0;
-     else if(x>0) dx=-height; 
-     else dx=height;
-     return height*( 1. - fabs(x) ); 
-  }
-  dx=0.0;
-  return 0;
 }
 
 }

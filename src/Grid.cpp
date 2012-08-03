@@ -263,10 +263,10 @@ vector<unsigned> Grid::getSplineNeighbors(const vector<unsigned> & indices)const
  return neighbors;
 }
 
-void Grid::addKernel( Kernel* kernel ){
-  plumed_assert( kernel->ndim()==dimension_ );
-  std::vector<unsigned> nneighb=kernel->getSupport( dx_ );
-  std::vector<unsigned> neighbors=getNeighbors( kernel->getCenter(), nneighb );
+void Grid::addKernel( const Kernel& kernel ){
+  plumed_assert( kernel.ndim()==dimension_ );
+  std::vector<unsigned> nneighb=kernel.getSupport( dx_ );
+  std::vector<unsigned> neighbors=getNeighbors( kernel.getCenter(), nneighb );
   std::vector<double> xx( dimension_ ); std::vector<Value*> vv( dimension_ );
   for(unsigned i=0;i<dimension_;++i){
       vv[i]=new Value();
@@ -279,7 +279,7 @@ void Grid::addKernel( Kernel* kernel ){
       unsigned ineigh=neighbors[i];
       getPoint( ineigh, xx );
       for(unsigned j=0;j<dimension_;++j) vv[j]->set(xx[j]);
-      newval = kernel->evaluate( vv, der, usederiv_ );
+      newval = kernel.evaluate( vv, der, usederiv_ );
       if( usederiv_ ) addValueAndDerivatives( ineigh, newval, der );
       else addValue( ineigh, newval );
   }

@@ -85,10 +85,9 @@ bw(getNumberOfArguments())
   // Read the type of kernel we are using
   parse("KERNEL",kerneltype);
 
+  // Check the kernel
   std::vector<double> point, bw; 
-  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(point, bw, 1.0, true), false );
-  if(!kernel) error("not a valid kernel function " + kerneltype );
-  delete kernel; 
+  Kernel kernel( point, bw, kerneltype, 1.0, true );
   checkRead();
 
   log.printf("  Using %s kernel functions\n",kerneltype.c_str() );
@@ -127,9 +126,8 @@ CVHistogram::~CVHistogram(){
 void CVHistogram::performAnalysis(){
   double weight; getDataPoint( 0, point, weight );
   normalization+=weight;
-  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(point, bw, weight, true), false );
+  Kernel kernel( point, bw, kerneltype, weight, true);
   gg->addKernel( kernel );
-  delete kernel;
 
 // dump grid on file
   if(wgridstride>0 && getStep()%wgridstride==0){

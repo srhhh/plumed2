@@ -33,7 +33,7 @@ public:
   static void reserveKeyword( Keywords& keys ); 
   less_than( const VesselOptions& da );
   double compute( const unsigned& i, const double& val, double& df ); 
-  void printKeywords( Log& log );
+  void printKeywords( Log& log ){};
 };
 
 PLUMED_REGISTER_VESSEL(less_than,"LESS_THAN")
@@ -48,15 +48,10 @@ SumVessel(da)
 {
   if( getAction()->isPeriodic() ) error("less than is not a meaningful option for periodic variables");
  
-  std::string errormsg; sf.set( da.parameters, errormsg ); 
-  if( errormsg.size()!=0 ) error( errormsg ); 
+  sf.set( da.parameters ); 
   std::string vv; Tools::convert( sf.get_r0(), vv );
   addOutput("lt" + vv);
   log.printf("  value %s.lt%s contains number of values less than %s\n",(getAction()->getLabel()).c_str(),vv.c_str(),(sf.description()).c_str() );
-}
-
-void less_than::printKeywords( Log& log ){
-  sf.printKeywords( log );
 }
 
 double less_than::compute( const unsigned& i, const double& val, double& df ){

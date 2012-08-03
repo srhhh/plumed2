@@ -115,16 +115,12 @@ reduceListAtNextStep(false)
   for(unsigned i=0;i<ga_lista.size();++i){
       std::string num, sw1; Tools::convert(i+1, num);
       if( !parseNumbered( "SWITCH", i+1, sw1 ) ) break;
-      nswitch++; sfs[i].set(sw1,errors);
-      if( errors.length()!=0 ) error("problem reading SWITCH" + num + " keyword : " + errors );
+      nswitch++; sfs[i].set(sw1);
   }
   if( nswitch==0 ){
      std::string sw; parse("SWITCH",sw);
      if(sw.length()==0) error("no switching function specified use SWITCH keyword");
-     for(unsigned i=0;i<ga_lista.size();++i){
-        sfs[i].set(sw,errors);
-        if( errors.length()!=0 ) error("problem reading SWITCH keyword : " + errors );
-     }
+     for(unsigned i=0;i<ga_lista.size();++i) sfs[i].set(sw);
   } else if( nswitch!=sfs.size()  ){
      std::string num; Tools::convert(nswitch+1, num);
      error("missing SWITCH" + num + " keyword");

@@ -118,7 +118,7 @@ public:
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 
 /// add a kernel function to the grid
- void addKernel( Kernel* kernel );
+ void addKernel( const Kernel& kernel );
 
 /// Write a description of the format the the grid file
  static std::string formatDocs();

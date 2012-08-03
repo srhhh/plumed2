@@ -33,7 +33,7 @@ public:
   static void reserveKeyword( Keywords& keys );
   more_than( const VesselOptions& da );
   double compute( const unsigned& i, const double& val, double& df ); 
-  void printKeywords( Log& log );
+  void printKeywords( Log& log ){};
 };
 
 PLUMED_REGISTER_VESSEL(more_than,"MORE_THAN")
@@ -49,16 +49,10 @@ SumVessel(da)
 {
   if( getAction()->isPeriodic() ) error("more than is not a meaningful option for periodic variables");
 
-  std::string errormsg;
-  sf.set( da.parameters, errormsg );
-  if( errormsg.size()!=0 ) error( errormsg );
+  sf.set( da.parameters );
   std::string vv; Tools::convert( sf.get_r0(), vv );
   addOutput("gt" + vv);
   log.printf("  value %s.gt%s contains the number of values more than %s\n",(getAction()->getLabel()).c_str(),vv.c_str(),(sf.description()).c_str());
-}
-
-void more_than::printKeywords( Log& log ){
-  sf.printKeywords( log );
 }
 
 double more_than::compute( const unsigned& i, const double& val, double& df ){
