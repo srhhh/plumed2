@@ -94,10 +94,9 @@ MultiColvarCoordination::MultiColvarCoordination(const ActionOptions&ao):
 PLUMED_MULTICOLVAR_INIT(ao)
 {
   // Read in the switching function
-  std::string sw, errors; parse("SWITCH",sw);
+  std::string sw; parse("SWITCH",sw);
   if(sw.length()>0){
-     switchingFunction.set(sw,errors);
-     if(errors.length()>0) error("problem reading SWITCH keyword : " + errors);
+     switchingFunction.set(sw);
   } else { 
      double r_0=-1.0, d_0; int nn, mm;
      parse("NN",nn); parse("MM",mm);

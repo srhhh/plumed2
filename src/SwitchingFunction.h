@@ -23,32 +23,35 @@
 #define __PLUMED_SwitchingFunction_h
 
 #include <string>
+#include "NonLinearFunctions.h"
 
 namespace PLMD {
 
 class Log;
 
 /// \ingroup TOOLBOX
-/// Small class to compure switching functions in the form 
-/// In the future we might extend it so as to be set using
-/// a string:
-/// void set(std::string);
-/// which can then be parsed for more complex stuff, e.g. exponentials
-/// tabulated functions from file, matheval, etc...
+/// Small class to compure switching functions. Within plumed a
+/// switching function has the following form:
+/// \f{eqnarray*}{
+///   x' &=& \frac{ x - d_0 }{ r_0 } \\
+///  \sigma(x') &=& 1 \\qquad x'<0 \\
+///  \sigma(x') &=& s(x') \qquad x'>0 \land \qquad x< d_{\textrm{max}} \\
+///  \sigma(x') &=& 0 \\qquad x> d_{\textrm{max}}
+/// \f} 
+/// Within plumed you can use various different functions for \f$s(x')\f$
+/// for more details as to your options see \ref PLUMED::NonLinearFunction.
 class SwitchingFunction{
   bool init;
-  enum {spline,exponential,gaussian} type;
-  int nn,mm;
   double invr0,d0,dmax;
+  NonLinearFunction nlfunc;
 public:
   static std::string documentation();
   SwitchingFunction();
-  void set(int nn,int mm,double r_0,double d_0);
-  void set(const std::string& definition, std::string& errormsg);
+  void set(const std::string& definition);
+  void set(int nn,int mm,double r0,double d0); 
   std::string description() const ;
   double calculate(double x,double&df)const;
   double get_r0() const;
-  void printKeywords( Log& log ) const ;
 };
 
 }

@@ -103,11 +103,10 @@ reduceListAtNextStep(false)
   parseAtomList("GROUPA",ga_lista);
   parseAtomList("GROUPB",gb_lista);
 
-  string sw,errors;
+  string sw;
   parse("SWITCH",sw);
   if(sw.length()>0){
-      switchingFunction.set(sw,errors);
-      if(errors.length()!=0) error("problem reading SWITCH keyword : " + errors);
+      switchingFunction.set(sw);
   } else {
     int nn=6;
     int mm=12;
@@ -159,6 +158,7 @@ reduceListAtNextStep(false)
    log.printf("  %d", gb_lista[i].serial());
   }
   log.printf("  \n");
+  log.printf("  Counting number of distances less than %s\n",(switchingFunction.description()).c_str() );
   if(pbc) log.printf("  using periodic boundary conditions\n");
   else    log.printf("  without periodic boundary conditions\n");
   if(dopair) log.printf("  with PAIR option\n");

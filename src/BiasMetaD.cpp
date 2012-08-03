@@ -114,7 +114,7 @@ private:
 //     }
 //  };
   vector<double> sigma0_;
-  vector<GaussianKernel> hills_;
+  vector<Kernel> hills_;
   FILE* hillsfile_;
   PlumedOFile hillsOfile_;
   Grid* BiasGrid_;
@@ -341,14 +341,13 @@ adaptive_(FlexibleBin::none)
   std::vector<double> pp( getNumberOfArguments() ), thissig;
   if(adaptive_!=FlexibleBin::none) thissig.resize( getNumberOfArguments()*(getNumberOfArguments()+1) / 2 ); 
   else thissig.resize( getNumberOfArguments() );
-  Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(pp, thissig, 1.0, false), true );
-  if(!kernel) error("not a valid kernel function " + kerneltype );
+  
+  Kernel kernel( pp, thissig, kerneltype, 1.0, false );
   // Write a header in the hills file
   std::vector<std::string> argument_names( getNumberOfArguments() );
   for(unsigned i=0;i<getNumberOfArguments();++i) argument_names[i]=getPntrToArgument(i)->getName(); 
-  std::string khead=kernel->fieldNames( argument_names );
+  std::string khead=kernel.fieldNames( argument_names );
   fprintf( hillsfile_,"#! FIELDS time %s biasfactor \n",khead.c_str() );
-  delete kernel;
 
   log<<"  Bibliography "<<plumed.cite("Laio and Parrinello, PNAS 99, 12562 (2002)");
   if(welltemp_) log<<plumed.cite(
@@ -864,17 +863,16 @@ void BiasMetaD::update(){
 //   Gaussian newhill=Gaussian(cv,thissigma,height,multivariate);
 //   addGaussian(newhill);
    if(!grid_){
-      hills_.push_back( GaussianKernel( KernelOptions(cv,thissigma,height,false) ) );
+      hills_.push_back( Kernel( cv,thissigma,kerneltype,height,false ) );
       fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
       hills_[hills_.size()-1].print(hillsfile_);
       fprintf( hillsfile_,"%4.3f \n",biasf_ );
    } else {
-      Kernel* kernel=KernelRegister::create( kerneltype, KernelOptions(cv, thissigma, height, false), true );
+      Kernel kernel( cv, thissigma, kerneltype, height, false);
       BiasGrid_->addKernel( kernel );
       fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
-      kernel->print(hillsfile_);
+      kernel.print(hillsfile_);
       fprintf( hillsfile_,"%4.3f \n",biasf_ );
-      delete kernel; 
    }
 // print on HILLS file
 //   writeGaussian(newhill,hillsOfile_);
