@@ -111,37 +111,13 @@ double Kernel::evaluate( const std::vector<Value*>& pos, std::vector<double>& de
   return kval;
 }
 
-std::string Kernel::fieldNames( const std::vector<std::string>& arg_names ) const {
-  plumed_assert( arg_names.size()==ndim() );
-
-  std::string header;
-  for(unsigned i=0;i<arg_names.size();++i) header+=arg_names[i] + " ";
-  if( ndim()==1 ){
-     header+="sigma "; 
-  } else if(diagonal){
-     for(unsigned i=1;i<=ndim();++i){
-         std::string num; Tools::convert(i,num);
-         header+="sigma" + num + " ";
-     }
-  } else {
-     for(unsigned i=1;i<=ndim();++i){
-        std::string inum; Tools::convert(i,inum);
-        for(unsigned j=i;j<=ndim();++j){
-            std::string jnum; Tools::convert(j,jnum);
-            header+="sigma" + inum + jnum + " ";
-        }
-     }
-  } 
-  header+="height ";     // + parameterNames();
-  return header;
-}
-
-void Kernel::print( FILE* ofile ) const {
-  for(unsigned i=0;i<ndim();++i) fprintf(ofile, "%14.9f   ", center[i]);
+void Kernel::print( const std::vector<std::string>& cv_names, PlumedOFile& ofile ) const {
+  plumed_assert( cv_names.size()==ndim() );
+  for(unsigned i=0;i<ndim();++i){ ofile.printField( cv_names[i],center[i] ); }   //fprintf(ofile, "%14.9f   ", center[i]);
   if(ndim()==1){
-      fprintf(ofile, "%14.9f   ",width[0]);
+      ofile.printField( "sigma_" + cv_names[0], width[0]);
   } else if(diagonal){
-      for(unsigned i=0;i<ndim();++i){ fprintf(ofile, "%14.9f   ", width[i]); }
+      for(unsigned i=0;i<ndim();++i) ofile.printField( "sigma_" + cv_names[i], width[i] );     // { fprintf(ofile, "%14.9f   ", width[i]); }
   } else{
       Matrix<double> mymatrix( getMatrix() );
       // invert the matrix
@@ -159,12 +135,14 @@ void Kernel::print( FILE* ofile ) const {
       unsigned k=0;
       for(unsigned i=0;i<ndim();i++){
           for(unsigned j=0;j<ndim()-i;j++){
-              fprintf(ofile, "%14.9f   ", lower(j+i,j));
+              ofile.printField("sigma_" + cv_names[j+i] + "_" + cv_names[j], lower(j+i,j));
               k++;
           }
       }
   }
-  fprintf( ofile,"%14.9f   ", height );
+  ofile.printField("height",height);
+  nlfunc.printParameters(ofile);
+//  fprintf( ofile,"%14.9f   ", height );
 }
 
 //UniformKernel::UniformKernel( const KernelOptions& ko ):

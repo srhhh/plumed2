@@ -115,7 +115,6 @@ private:
 //  };
   vector<double> sigma0_;
   vector<Kernel> hills_;
-  FILE* hillsfile_;
   PlumedOFile hillsOfile_;
   Grid* BiasGrid_;
   FILE* gridfile_;
@@ -131,6 +130,7 @@ private:
   int adaptive_;
   FlexibleBin *flexbin;
   std::string kerneltype;
+  std::vector<std::string> argument_names;
 
 /* PUT BACK IN  
   void   readGaussians(PlumedIFile&);
@@ -178,7 +178,6 @@ void BiasMetaD::registerKeywords(Keywords& keys){
 
 BiasMetaD::~BiasMetaD(){
   if(BiasGrid_) delete BiasGrid_;
-  if(hillsfile_) fclose(hillsfile_);
   hillsOfile_.close();
   if(gridfile_) fclose(gridfile_);
   delete [] dp_;
@@ -186,7 +185,6 @@ BiasMetaD::~BiasMetaD(){
 
 BiasMetaD::BiasMetaD(const ActionOptions& ao):
 PLUMED_BIAS_INIT(ao),
-hillsfile_(NULL),
 BiasGrid_(NULL),
 gridfile_(NULL),
 height0_(0.0),
@@ -320,7 +318,6 @@ adaptive_(FlexibleBin::none)
 
 // restarting from HILLS file
   if(restart_){
-   hillsfile_=fopen(hillsfname.c_str(),"a+");
    log.printf("  Restarting from %s:",hillsfname.c_str());
    PlumedIFile ifile;
    ifile.link(*this);
@@ -343,11 +340,8 @@ adaptive_(FlexibleBin::none)
   else thissig.resize( getNumberOfArguments() );
   
   Kernel kernel( pp, thissig, kerneltype, 1.0, false );
-  // Write a header in the hills file
-  std::vector<std::string> argument_names( getNumberOfArguments() );
+  argument_names.resize( getNumberOfArguments() );
   for(unsigned i=0;i<getNumberOfArguments();++i) argument_names[i]=getPntrToArgument(i)->getName(); 
-  std::string khead=kernel.fieldNames( argument_names );
-  fprintf( hillsfile_,"#! FIELDS time %s biasfactor \n",khead.c_str() );
 
   log<<"  Bibliography "<<plumed.cite("Laio and Parrinello, PNAS 99, 12562 (2002)");
   if(welltemp_) log<<plumed.cite(
@@ -421,7 +415,7 @@ void BiasMetaD::readGaussians(PlumedIFile&ifile)
 }
 */
 
-<<<<<<< HEAD
+/*
 void BiasMetaD::writeGaussian(const Gaussian& hill, PlumedOFile&file){
   unsigned ncv=getNumberOfArguments();
   file.printField("time",getTimeStep()*getStep());
@@ -467,7 +461,9 @@ void BiasMetaD::writeGaussian(const Gaussian& hill, PlumedOFile&file){
   file.printField("height",height).printField("biasf",biasf_);
   file.printField();
 }
+*/
 
+/*
 void BiasMetaD::addGaussian(const Gaussian& hill)
 {
  if(!grid_){hills_.push_back(hill);} 
@@ -792,7 +788,7 @@ double BiasMetaD::evaluateGaussian
 // }
 // return bias;
 //}
-
+*/
 double BiasMetaD::getHeight(const vector<double>& cv)
 {
  double height=height0_;
@@ -802,6 +798,7 @@ double BiasMetaD::getHeight(const vector<double>& cv)
  } 
  return height;
 }
+
 
 void BiasMetaD::calculate()
 {
@@ -864,15 +861,15 @@ void BiasMetaD::update(){
 //   addGaussian(newhill);
    if(!grid_){
       hills_.push_back( Kernel( cv,thissigma,kerneltype,height,false ) );
-      fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
-      hills_[hills_.size()-1].print(hillsfile_);
-      fprintf( hillsfile_,"%4.3f \n",biasf_ );
+      hillsOfile_.printField("time", getTimeStep()*getStep());
+      hills_[hills_.size()-1].print(argument_names, hillsOfile_);
+      hillsOfile_.printField("biasf",biasf_ );
    } else {
       Kernel kernel( cv, thissigma, kerneltype, height, false);
       BiasGrid_->addKernel( kernel );
-      fprintf(hillsfile_,"%10.3f   ", getTimeStep()*getStep());
-      kernel.print(hillsfile_);
-      fprintf( hillsfile_,"%4.3f \n",biasf_ );
+      hillsOfile_.printField("time", getTimeStep()*getStep());
+      kernel.print(argument_names, hillsOfile_);
+      hillsOfile_.printField("biasf",biasf_ );
    }
 // print on HILLS file
 //   writeGaussian(newhill,hillsOfile_);
@@ -910,6 +907,5 @@ void BiasMetaD::update(){
 //  }
 //  log<<"--------- END finiteDifferenceGaussian ------------\n";
 // }
-
 
 }

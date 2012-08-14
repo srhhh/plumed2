@@ -24,6 +24,7 @@
 
 #include <string>
 #include "Tools.h"
+#include "PlumedFile.h"
 
 namespace PLMD {
 
@@ -49,7 +50,7 @@ private:
 /// Has setup been called
   bool setup;
 /// The parameters for rational functions
-  unsigned nn, mm;
+  int nn, mm;
 /// The type of non linear function we are using
   enum {rational,triangular,step,exponential,gaussian} type;
 public:
@@ -73,6 +74,8 @@ public:
   std::string writeParameters() const;
 /// Get the value of the cutoff
   double getCutoff( const double& width ) const ;
+/// Print the parameters of the function to a file
+  void printParameters( PlumedOFile& ofile ) const ;
 };
 
 inline

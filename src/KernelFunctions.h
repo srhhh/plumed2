@@ -71,10 +71,8 @@ public:
   std::vector<unsigned> getSupport( const std::vector<double>& dx ) const; 
 /// Evaluate the kernel function  
   double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true ) const;
-/// Print the header for the kernel function to a file
-  std::string fieldNames( const std::vector<std::string>& arg_names ) const ;
 /// Print the kernel function to a file
-  void print( FILE* ofile ) const ;
+  void print( const std::vector<std::string>& cv_names, PlumedOFile& ofile ) const ;
 };
 
 inline

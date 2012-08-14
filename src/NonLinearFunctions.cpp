@@ -121,6 +121,14 @@ std::string NonLinearFunction::writeParameters() const {
   return "";
 }
 
+void NonLinearFunction::printParameters( PlumedOFile& ofile ) const {
+  plumed_massert(setup,"non linear function has not been set");
+
+  if(type==rational){
+     ofile.printField("NN",nn); ofile.printField("MM",mm); 
+  }
+}
+
 double NonLinearFunction::getCutoff( const double& width ) const {
   plumed_massert(setup,"non linear function has not been set");
 
