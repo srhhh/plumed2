@@ -77,7 +77,7 @@ std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ) const 
 
 double Kernel::evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv ) const {
   plumed_assert( pos.size()==ndim() && derivatives.size()==ndim() );
-  if( usederiv ) plumed_assert( hasderivatives ); 
+  if( usederiv ) plumed_assert( nlfunc.hasDerivatives() ); 
 
   double r2=0;
   if(diagonal){ 

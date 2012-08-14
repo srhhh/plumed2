@@ -61,6 +61,8 @@ public:
   void set( const std::string& type, std::vector<std::string>& data, bool needderiv=true );
 /// Does this function take the value of x squared as input
   bool inputXSquared() const ;
+/// Check that the function has derivatives
+  bool hasDerivatives() const ;
 /// Get the name of the particular function we are using
   std::string getName() const ;
 /// Calculate the value of the function
@@ -76,6 +78,11 @@ public:
 inline
 bool NonLinearFunction::inputXSquared() const {
   return (type==gaussian);
+}
+
+inline
+bool NonLinearFunction::hasDerivatives() const {
+  return (type!=step);
 }
 
 }
