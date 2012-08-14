@@ -60,6 +60,8 @@ public:
   NonLinearFunction();
 /// This is the function we call to setup the non linear function
   void set( const std::string& type, std::vector<std::string>& data, bool needderiv=true );
+/// This sets the non linear function from a file
+  void set( const std::string& type, PlumedIFile& ifile, bool needderiv=true );
 /// Does this function take the value of x squared as input
   bool inputXSquared() const ;
 /// Check that the function has derivatives

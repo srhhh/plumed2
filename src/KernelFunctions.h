@@ -62,7 +62,10 @@ protected:
 public:
 /// Does the kernel have derivatives
   bool hasderivatives;
+/// Construct the kernel from data obtained during simulation
   Kernel( const std::vector<double>& at, const std::vector<double>& sig, const std::string& type, const double& w, const bool& norm );
+/// Construct the kernel from an input file
+  Kernel( const std::vector<std::string>& cv_names, PlumedIFile& ifile );
 /// Get the dimensionality of the kernel
   unsigned ndim() const;
 /// Get the position of the center 

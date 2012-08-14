@@ -53,6 +53,27 @@ void NonLinearFunction::set( const std::string& name, std::vector<std::string>& 
   } 
 }
 
+void NonLinearFunction::set( const std::string& name, PlumedIFile& ifile , bool needderiv ){
+  setup=true;
+  
+  if(name=="RATIONAL" || name=="rational"){
+      type=rational;
+      ifile.scanField("NN",nn);  // nn=6; Tools::parse(data,"NN",nn);
+      ifile.scanField("MM",mm);  // mm=12; Tools::parse(data,"MM",mm);
+  } else if(name=="EXP" || name=="exp"){
+      type=exponential;
+  } else if(name=="GAUSSIAN" || name=="gaussian"){
+      type=gaussian;
+  } else if(name=="STEP" || name=="step"){
+      plumed_massert(!needderiv,"cannot use non continuous functions");
+      type=step;
+  } else if(name=="TRIANGULAR" || name=="triangular"){
+      type=triangular;
+  } else {
+      plumed_merror( "Not a valid function type " + name );
+  }
+}
+
 double NonLinearFunction::calculate( const double& x, double& dx ) const {
   plumed_massert(setup,"non linear function has not been set");
 

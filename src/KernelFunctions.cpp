@@ -2,30 +2,6 @@
 
 namespace PLMD {
 
-//Kernel* KernelRegister::create( const std::string& type, const KernelOptions& ko, const bool& needderivs ){
-//  Kernel* kernel;
-//  if( type=="uniform" ){
-//      kernel=dynamic_cast<Kernel*>( new UniformKernel(ko) ); 
-//  } else if( type=="gaussian"){
-//      kernel=dynamic_cast<Kernel*>( new GaussianKernel(ko) );
-//  } else if( type=="triangular"){
-//      kernel=dynamic_cast<Kernel*>( new TriangularKernel(ko) );
-//  } else {
-//      return NULL;
-//  }
-//  if( needderivs && !kernel->hasderivatives ) return NULL;
-//  return kernel;
-//}
-//
-//
-//KernelOptions::KernelOptions( const std::vector<double>& at, const std::vector<double>& sig, const double& w, const bool& norm ):
-//pos(at), 
-//width(sig), 
-//height(w),
-//normalize(norm)
-//{
-//}
-
 Kernel::Kernel( const std::vector<double>& at, const std::vector<double>& sig, const std::string& type, const double& w, const bool& norm ):
 center(at),
 width(sig)
@@ -54,6 +30,47 @@ width(sig)
   } else {
     height=w;
   }
+}
+
+Kernel::Kernel( const std::vector<std::string>& cv_names, PlumedIFile& ifile ){
+  center.resize( cv_names.size() );
+  // Read the position of the center
+  for(unsigned i=0;i<cv_names.size();++i) ifile.scanField( cv_names[i], center[i] );
+  // Read the covariance
+  std::string sss; ifile.scanField("multivariate",sss);
+  if(sss=="true") diagonal=false;
+  else if(sss=="false") diagonal=true;
+  else plumed_merror("cannot parse multivariate = " +sss );
+  if( diagonal || cv_names.size()==1 ){
+      width.resize( cv_names.size() );
+      for(unsigned i=0;i<cv_names.size();++i) ifile.scanField("sigma_"+cv_names[i],width[i]);
+  } else {
+      unsigned ncv=cv_names.size();
+      width.resize( (ncv*(ncv+1))/2 );
+      Matrix<double> upper(ncv,ncv), lower(ncv,ncv);
+      for (unsigned i=0;i<ncv;i++){
+          for (unsigned j=0;j<ncv-i;j++){
+              ifile.scanField("sigma_"+cv_names[j+i]+"_"+cv_names[j],lower(j+i,j));
+              upper(j,j+i)=lower(j+i,j);
+          }
+      }
+      Matrix<double> mymult(ncv,ncv), invmatrix(ncv,ncv);
+      mult(lower,upper,mymult);
+      // now invert and get the sigmas
+      Invert(mymult,invmatrix);
+      unsigned k=0;
+      for (unsigned i=0;i<ncv;i++){
+           for (unsigned j=i;j<ncv;j++){
+                width[k]=invmatrix(i,j);
+                k++;
+           }
+      }
+  }
+  // Read the height
+  ifile.scanField("height",height);
+  // Read the kernel type
+  std::string ktype; ifile.scanField( "kerneltype", ktype );
+  nlfunc.set( ktype, ifile, false );
 }
 
 std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ) const {
@@ -115,10 +132,13 @@ void Kernel::print( const std::vector<std::string>& cv_names, PlumedOFile& ofile
   plumed_assert( cv_names.size()==ndim() );
   for(unsigned i=0;i<ndim();++i){ ofile.printField( cv_names[i],center[i] ); }   //fprintf(ofile, "%14.9f   ", center[i]);
   if(ndim()==1){
+      ofile.printField( "multivariate","false" );
       ofile.printField( "sigma_" + cv_names[0], width[0]);
   } else if(diagonal){
+      ofile.printField( "multivariate","false" );
       for(unsigned i=0;i<ndim();++i) ofile.printField( "sigma_" + cv_names[i], width[i] );     // { fprintf(ofile, "%14.9f   ", width[i]); }
   } else{
+      ofile.printField( "multivariate","true");
       Matrix<double> mymatrix( getMatrix() );
       // invert the matrix
       Matrix<double> invmatrix( ndim(),ndim() );
@@ -142,89 +162,6 @@ void Kernel::print( const std::vector<std::string>& cv_names, PlumedOFile& ofile
   }
   ofile.printField("height",height);
   nlfunc.printParameters(ofile);
-//  fprintf( ofile,"%14.9f   ", height );
 }
-
-//UniformKernel::UniformKernel( const KernelOptions& ko ):
-//Kernel(ko)
-//{
-//  hasderivatives=false; is_function_of_r2=false;
-//  if(ko.normalize){
-//    double vol;
-//    if( ko.pos.size()%2==1 ){
-//        double dfact=1;
-//        for(unsigned i=1;i<ko.pos.size();i+=2) dfact*=static_cast<double>(i);
-//        vol=( pow( pi, (ko.pos.size()-1)/2 ) ) * ( pow( 2., (ko.pos.size()+1)/2 ) ) / dfact;
-//    } else {
-//        double fact=1.;
-//        for(unsigned i=1;i<ko.pos.size()/2;++i) fact*=static_cast<double>(i);
-//        vol=pow( pi,ko.pos.size()/2 ) / fact;
-//    }
-//    vol*=getDeterminant();
-//    height=ko.height/vol;
-//  } else {
-//    height=ko.height;
-//  }
-//}
-//
-//std::string UniformKernel::parameterNames(){
-//  return "height ";
-//}
-//
-//void UniformKernel::printParameters( FILE* ofile ){
-//  fprintf( ofile,"%14.9f   ", height );
-//}
-//
-//GaussianKernel::GaussianKernel( const KernelOptions& ko ):
-//Kernel(ko),
-//DP2CUTOFF(6.25)
-//{
-//  hasderivatives=true; is_function_of_r2=true;
-//  if(ko.normalize){
-//     double vol;
-//     vol=( pow( 2*pi, 0.5*ko.pos.size() ) * pow( getDeterminant(), 0.5 ) );
-//     height=ko.height/vol;
-//  } else {
-//     height=ko.height;
-//  }
-//}
-//
-//std::string GaussianKernel::parameterNames(){
-//  return "height ";
-//}
-//
-//void GaussianKernel::printParameters( FILE* ofile ){
-//  fprintf( ofile,"%14.9f   ", height );
-//}
-//
-//TriangularKernel::TriangularKernel( const KernelOptions& ko ):
-//Kernel(ko)
-//{
-//  hasderivatives=true; is_function_of_r2=false;
-//  if(ko.normalize){
-//    double vol; 
-//    if( ko.pos.size()%2==1 ){
-//        double dfact=1;
-//        for(unsigned i=1;i<ko.pos.size();i+=2) dfact*=static_cast<double>(i);
-//        vol=( pow( pi, (ko.pos.size()-1)/2 ) ) * ( pow( 2., (ko.pos.size()+1)/2 ) ) / dfact;
-//    } else {
-//        double fact=1.;
-//        for(unsigned i=1;i<ko.pos.size()/2;++i) fact*=static_cast<double>(i);
-//        vol=pow( pi,ko.pos.size()/2 ) / fact;
-//    }
-//    vol*=getDeterminant() / 3.;
-//    height=ko.height/vol;
-//  } else {
-//    height=ko.height;
-//  }
-//}
-//
-//std::string TriangularKernel::parameterNames(){
-//  return "height ";
-//}
-//
-//void TriangularKernel::printParameters( FILE* ofile ){
-//  fprintf( ofile,"%14.9f   ", height );
-//}
 
 }
