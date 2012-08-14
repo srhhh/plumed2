@@ -32,7 +32,7 @@ std::string NonLinearFunction::printInput( const std::string& aparams, const boo
   return ostr.str();
 }
 
-void NonLinearFunction::set( const std::string& name, std::vector<std::string>& data, bool needderiv ){
+void NonLinearFunction::set( const std::string& name, std::vector<std::string>& data ){
   setup=true;
 
   if(name=="RATIONAL" || name=="rational"){
@@ -44,7 +44,6 @@ void NonLinearFunction::set( const std::string& name, std::vector<std::string>& 
   } else if(name=="GAUSSIAN" || name=="gaussian"){
       type=gaussian;
   } else if(name=="STEP" || name=="step"){
-      plumed_massert(!needderiv,"cannot use non continuous functions");
       type=step;
   } else if(name=="TRIANGULAR" || name=="triangular"){
       type=triangular;
@@ -53,7 +52,7 @@ void NonLinearFunction::set( const std::string& name, std::vector<std::string>& 
   } 
 }
 
-void NonLinearFunction::set( const std::string& name, PlumedIFile& ifile , bool needderiv ){
+void NonLinearFunction::set( const std::string& name, PlumedIFile& ifile ){
   setup=true;
   
   if(name=="RATIONAL" || name=="rational"){
@@ -65,13 +64,48 @@ void NonLinearFunction::set( const std::string& name, PlumedIFile& ifile , bool 
   } else if(name=="GAUSSIAN" || name=="gaussian"){
       type=gaussian;
   } else if(name=="STEP" || name=="step"){
-      plumed_massert(!needderiv,"cannot use non continuous functions");
       type=step;
   } else if(name=="TRIANGULAR" || name=="triangular"){
       type=triangular;
   } else {
       plumed_merror( "Not a valid function type " + name );
   }
+}
+
+double NonLinearFunction::calculate( const double& x ) const {
+  plumed_massert(setup,"non linear function has not been set"); 
+  if(type==rational){
+      if(x>(1.-100.0*epsilon) && x<(1+100.0*epsilon)){
+         return nn/mm;
+      }else{
+         double rNdist=x;
+         double rMdist=x;
+    // this is a naive optimization
+    // we probably have to implement some generic, fast pow(double,int)
+         if(nn>2) for(int i=0;i<nn-2;i++) rNdist*=x;
+         else rNdist = pow(x, nn-1);
+         if(mm>2) for(int i=0;i<mm-2;i++) rMdist*=x;
+         else rMdist = pow(x, mm-1);
+         double num = 1.-rNdist*x;
+         double iden = 1./(1.-rMdist*x);
+         return num*iden;
+      }
+  } else if(type==exponential){
+      return exp(-x);
+  } else if(type==gaussian){
+      return exp(-0.5*x);
+  } else if(type==triangular){
+      if( x<1.0 ){
+         return  1. - fabs(x);
+      }
+      return 0;
+  } else if(type==step){
+      if(x<1.0) return 1;
+      return 0;
+  } else {
+     plumed_merror("not a valid function type");
+  }
+  return 0;
 }
 
 double NonLinearFunction::calculate( const double& x, double& dx ) const {
@@ -113,9 +147,8 @@ double NonLinearFunction::calculate( const double& x, double& dx ) const {
       }
       dx=0.0;
       return 0;
-  } else if(type==step){
-      if(x<1.0) return 1;
-      return 0;
+  } else {
+      plumed_merror("derivatives unavailable for function type");
   } 
   dx=0;
   return 0;    

@@ -13,7 +13,7 @@ width(sig)
 
   // Setup the non linear function
   std::vector<std::string> params;
-  nlfunc.set(type, params, false );
+  nlfunc.set(type, params );
 
   if( norm ){
     double det;
@@ -70,7 +70,7 @@ Kernel::Kernel( const std::vector<std::string>& cv_names, PlumedIFile& ifile ){
   ifile.scanField("height",height);
   // Read the kernel type
   std::string ktype; ifile.scanField( "kerneltype", ktype );
-  nlfunc.set( ktype, ifile, false );
+  nlfunc.set( ktype, ifile );
 }
 
 std::vector<unsigned> Kernel::getSupport( const std::vector<double>& dx ) const {
@@ -120,11 +120,21 @@ double Kernel::evaluate( const std::vector<Value*>& pos, std::vector<double>& de
   
   if( !nlfunc.inputXSquared() ){
      double r=sqrt(r2);
-     kval=height*nlfunc.calculate( r, kderiv ); kderiv*=height / r;
+     if(!usederiv){
+         kval=height*nlfunc.calculate(r); 
+     } else {
+         kval=height*nlfunc.calculate( r, kderiv ); kderiv*=height / r;
+     }
   } else {
-     kval=height*nlfunc.calculate( r2, kderiv ); kderiv*=height;
+     if(!usederiv){
+         kval=height*nlfunc.calculate(r2);
+     } else {
+         kval=height*nlfunc.calculate( r2, kderiv ); kderiv*=height;
+     }
   }
-  for(unsigned i=0;i<ndim();++i) derivatives[i]*=kderiv;
+  if(usederiv){
+     for(unsigned i=0;i<ndim();++i) derivatives[i]*=kderiv;
+  }
   return kval;
 }
 

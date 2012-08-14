@@ -56,7 +56,7 @@ void SwitchingFunction::set(const std::string & definition){
   string name=data[0];
   data.erase(data.begin());
   // Setup the non linear function
-  nlfunc.set(name,data,true);
+  nlfunc.set(name,data);
 
   init=true;
   dmax=std::numeric_limits<double>::max();
@@ -117,7 +117,7 @@ void SwitchingFunction::set(int nn,int mm,double r0,double d0){
   std::vector<std::string> data;
   std::string nn_str; Tools::convert(nn,nn_str); data.push_back( "NN="+nn_str );
   std::string mm_str; Tools::convert(mm,mm_str); data.push_back( "MM="+mm_str );
-  nlfunc.set("RATIONAL",data,true);
+  nlfunc.set("RATIONAL",data);
   this->invr0=1.0/r0;
   this->d0=d0;
   this->dmax=pow(0.00001,1./(nn-mm));

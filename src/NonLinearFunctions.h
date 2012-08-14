@@ -59,16 +59,18 @@ public:
 /// The constructor
   NonLinearFunction();
 /// This is the function we call to setup the non linear function
-  void set( const std::string& type, std::vector<std::string>& data, bool needderiv=true );
+  void set( const std::string& type, std::vector<std::string>& data );
 /// This sets the non linear function from a file
-  void set( const std::string& type, PlumedIFile& ifile, bool needderiv=true );
+  void set( const std::string& type, PlumedIFile& ifile );
 /// Does this function take the value of x squared as input
   bool inputXSquared() const ;
 /// Check that the function has derivatives
   bool hasDerivatives() const ;
 /// Get the name of the particular function we are using
   std::string getName() const ;
-/// Calculate the value of the function
+/// Calculate just the value of the function (no derivative)
+  double calculate( const double& x ) const ;
+/// Calculate the value of the function with a derivative
   double calculate( const double& x, double& dx ) const ;
 /// Get the volume of the function
   double getVolume( const unsigned& dim, const double& determinant ) const ;
