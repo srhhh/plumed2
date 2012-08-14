@@ -864,12 +864,14 @@ void BiasMetaD::update(){
       hillsOfile_.printField("time", getTimeStep()*getStep());
       hills_[hills_.size()-1].print(argument_names, hillsOfile_);
       hillsOfile_.printField("biasf",biasf_ );
+      hillsOfile_.printField();
    } else {
       Kernel kernel( cv, thissigma, kerneltype, height, false);
       BiasGrid_->addKernel( kernel );
       hillsOfile_.printField("time", getTimeStep()*getStep());
       kernel.print(argument_names, hillsOfile_);
       hillsOfile_.printField("biasf",biasf_ );
+      hillsOfile_.printField();
    }
 // print on HILLS file
 //   writeGaussian(newhill,hillsOfile_);
