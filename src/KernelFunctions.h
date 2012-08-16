@@ -76,7 +76,21 @@ public:
   double evaluate( const std::vector<Value*>& pos, std::vector<double>& derivatives, bool usederiv=true ) const;
 /// Print the kernel function to a file
   void print( const std::vector<std::string>& cv_names, PlumedOFile& ofile ) const ;
+/// Get the height
+  double getHeight() const ;
+/// Set the height
+  void setHeight( const double& h );
 };
+
+inline
+double Kernel::getHeight() const {
+  return height;
+}
+
+inline
+void Kernel::setHeight( const double& h ){
+  height=h;
+}
 
 inline
 Matrix<double> Kernel::getMatrix() const {

@@ -328,7 +328,6 @@ void BiasMetaD::readGaussians(PlumedIFile&ifile)
  bool multivariate=false;
  vector<double> center(ncv);
  vector<double> sigma(ncv);
- double height;
  int nhills=0;
  while(ifile.scanField("time",dummy)){
   Kernel kernel( argument_names, ifile ); 
@@ -336,7 +335,7 @@ void BiasMetaD::readGaussians(PlumedIFile&ifile)
   ifile.scanField();
   nhills++;
   // Well tempered bit
-  if(welltemp_){ height*=(biasf_-1.0)/biasf_; }   // Not sure how to do this
+  if(welltemp_){ double height=kernel.getHeight(); kernel.setHeight( height*(biasf_-1.0)/biasf_ ); }   
   // Add Gaussian to bias
   if(!grid_) hills_.push_back( kernel );
   else BiasGrid_->addKernel( kernel ); 
