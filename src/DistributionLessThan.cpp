@@ -26,6 +26,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 class less_than : public SumVessel {
 private:
   SwitchingFunction sf;
@@ -65,6 +67,8 @@ double less_than::compute( const unsigned& i, const double& val, double& df ){
   plumed_assert( i==0 );
   double f; f = sf.calculate(val, df); df*=val;
   return f;
+}
+
 }
 
 }

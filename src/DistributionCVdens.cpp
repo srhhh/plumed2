@@ -29,6 +29,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 //+PLUMEDOC INTERNAL region 
 /*
 
@@ -170,6 +172,8 @@ void cvdens::compute( const unsigned& i, const unsigned& j, Value& theval ){
      tmpval=mycolv->retreiveLastCalculatedValue();
      product( tmpval, tmpweight, theval ); 
   }
+}
+
 }
 
 }

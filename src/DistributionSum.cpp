@@ -25,6 +25,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 class sum : public SumVessel {
 public:
   static void reserveKeyword( Keywords& keys );
@@ -48,6 +50,8 @@ SumVessel(da)
 double sum::compute( const unsigned& i, const double& val, double& df ){
   plumed_assert( i==0 );
   df=1.0; return val;
+}
+
 }
 
 }

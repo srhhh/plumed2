@@ -26,6 +26,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 class more_than : public SumVessel {
 private:
   SwitchingFunction sf;
@@ -69,3 +71,6 @@ double more_than::compute( const unsigned& i, const double& val, double& df ){
 }
 
 }
+
+}
+

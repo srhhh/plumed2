@@ -25,6 +25,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 class min : public SumVessel {
 private:
   double beta;
@@ -73,6 +75,8 @@ double min::compute( const unsigned& i, const double& val, double& df ){
 double min::final_computations( const unsigned& i, const double& valin, double& df ){
   double dist; dist=beta/std::log( valin ); df=dist*dist/valin;
   return dist;
+}
+
 }
 
 }

@@ -29,6 +29,10 @@
 
 namespace PLMD{
 
+namespace Vessels{
+  class moment;
+}
+
 /**
 \ingroup MULTIINHERIT
 Used to create a PLMD::Action that has some scalar or vectorial output that may or may not have some derivatives.  
@@ -66,7 +70,7 @@ class ActionWithValue :
   public virtual Action
 {
 friend class VesselAccumulator;
-friend class moment;
+friend class Vessels::moment;
 private:
 /// An array containing the values for this action
   std::vector<Value*> values;

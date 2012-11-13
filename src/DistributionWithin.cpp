@@ -25,6 +25,8 @@
 
 namespace PLMD {
 
+namespace Vessels{
+
 class within : public NormedSumVessel {
 private:
   MultiColvar* mycolv;
@@ -106,6 +108,8 @@ void within::compute( const unsigned& icv, const unsigned& jfunc, Value& theval 
 
 void within::getWeight( const unsigned& i, Value& weight ){
   mycolv->retrieveColvarWeight( i, weight );
+}
+
 }
 
 }

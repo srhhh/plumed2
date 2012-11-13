@@ -27,6 +27,10 @@
 
 namespace PLMD {
 
+namespace Vessels{
+  class cvdens;
+}
+
 /**
 \ingroup INHERIT
 This is the abstract base class to use for implementing a new way of definining a particular region of the simulation
@@ -37,7 +41,7 @@ coordination number inside that part of the cell.
 class Volume :
   public ActionAtomistic
   {
-friend class cvdens;
+friend class Vessels::cvdens;
 private:
   double sigma;
 protected:

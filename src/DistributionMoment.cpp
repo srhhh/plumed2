@@ -25,6 +25,8 @@
 
 namespace PLMD {
 
+namespace Vessels {
+
 class moment : public VesselStoreAllValues {
 private:
   Value myvalue, myvalue2;
@@ -126,6 +128,8 @@ bool moment::applyForce( std::vector<double>& forces ){
      }
   }
   return wasforced;
+}
+
 }
 
 }
