@@ -27,6 +27,8 @@
 #include "PlumedException.h"
 #include "Atoms.h"
 #include "PlumedMain.h"
+#include "Colvar.h"
+#include "PlumedException.h"
 
 using namespace PLMD;
 
@@ -100,9 +102,13 @@ void Value::getDomain(std::string&minout,std::string&maxout) const {
 
 void Value::setGradients(){
   gradients.clear();
+  gradientPotentialEnergy=0.0;
   ActionAtomistic*aa=dynamic_cast<ActionAtomistic*>(action);
   ActionWithArguments*aw=dynamic_cast<ActionWithArguments*>(action);
-  if(aa){
+  Colvar*ene=dynamic_cast<Colvar*>(action);
+  if(ene && ene->checkIsEnergy()){
+    gradientPotentialEnergy=sqrt((ene->plumed).getAtoms().getForcesTotalNorm2());
+  } else if(aa){
     Atoms&atoms((aa->plumed).getAtoms());
     for(unsigned j=0;j<aa->getNumberOfAtoms();++j){
       AtomNumber an=aa->getAbsoluteIndex(j);
@@ -123,6 +129,7 @@ void Value::setGradients(){
         AtomNumber iatom=(*p).first;
         gradients[iatom]+=(*p).second*derivatives[j];
       }
+      gradientPotentialEnergy+=derivatives[j]*values[j]->gradientPotentialEnergy;
     }
   } else plumed_error();
 }
@@ -138,6 +145,9 @@ double Value::projection(const Value& v1,const Value&v2){
       proj+=dotProduct((*p1).second,(*p2).second);
     }
   }
+  proj+=v1.gradientPotentialEnergy*v2.gradientPotentialEnergy;
+  plumed_massert(!(v1.gradientPotentialEnergy!=0.0 && v2.gradients.size()!=0) && !(v2.gradientPotentialEnergy!=0.0 && v1.gradients.size()!=0),
+    "It is not possible to calculate geometric projections between potential energy and atomistic functions");
   return proj;
 }
 

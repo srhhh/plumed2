@@ -36,7 +36,8 @@ class PlumedMain;
 Atoms::Atoms(PlumedMain&plumed):
   natoms(0),
   energy(0.0),
-  collectEnergy(0.0),
+  forcesTotalNorm2(0.0),
+  collectEnergy(false),
   plumed(plumed),
   naturalUnits(false),
   timestep(0.0),
@@ -169,6 +170,10 @@ void Atoms::wait(){
     dd.Bcast(&box[0][0],9,0);
   }
 
+  if(collectEnergy){
+    mdatoms->getForcesTotalNorm2(gatindex,forcesTotalNorm2);
+  }
+
   if(dd && int(gatindex.size())<natoms){
 // receive toBeReceived
     int count=0;
@@ -188,7 +193,10 @@ void Atoms::wait(){
         charges[dd.indexToBeReceived[i]]     =dd.positionsToBeReceived[5*i+4];
       }
     }
-    if(collectEnergy) dd.Sum(&energy,1);
+    if(collectEnergy){
+      dd.Sum(&energy,1);
+      dd.Sum(&forcesTotalNorm2,1);
+    }
   }
 }
 

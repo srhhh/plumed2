@@ -69,6 +69,10 @@ private:
 /// The derivatives of the quantity stored in value
   std::vector<double> derivatives;
   std::map<AtomNumber,Vector> gradients;
+/// gradients coming from total potential energy.
+/// this is computed as sqrt(sum(f**2)) if Value is potential energy
+/// then it is propagated with chain rule
+  double gradientPotentialEnergy;
 /// The name of this quantiy
   std::string name;
 /// Does this quanity have derivatives

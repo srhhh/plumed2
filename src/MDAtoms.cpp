@@ -70,6 +70,7 @@ public:
   void updateVirial(const Tensor&)const;
   void updateForces(const vector<int>&index,const vector<Vector>&);
   void rescaleForces(const vector<int>&index,double factor);
+  void getForcesTotalNorm2(const std::vector<int>&index,double&norm);
   unsigned  getRealPrecision()const;
 };
 
@@ -133,6 +134,17 @@ void MDAtomsTyped<T>::rescaleForces(const vector<int>&index,double factor){
     fy[stride*i]*=T(factor);
     fz[stride*i]*=T(factor);
   }
+}
+
+template <class T>
+void MDAtomsTyped<T>::getForcesTotalNorm2(const std::vector<int>&index,double&norm){
+  T t=0.0;
+  for(unsigned i=0;i<index.size();++i){
+    t+=fx[stride*i]*fx[stride*i]+
+       fy[stride*i]*fy[stride*i]+
+       fz[stride*i]*fz[stride*i];
+  }
+  norm=double(t)/(scalef*scalef);
 }
 
 template <class T>

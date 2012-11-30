@@ -55,6 +55,7 @@ class Atoms
   Tensor box;
   Tensor virial;
   double energy;
+  double forcesTotalNorm2;
   bool   collectEnergy;
 
   std::map<std::string,std::vector<AtomNumber> > groups;
@@ -154,6 +155,7 @@ public:
   void remove(const ActionAtomistic*);
 
   double getEnergy()const{plumed_assert(collectEnergy);return energy;};
+  double getForcesTotalNorm2()const{plumed_assert(collectEnergy);return forcesTotalNorm2;};
 
   void setMDEnergyUnits(double d){MDUnits.setEnergy(d);};
   void setMDLengthUnits(double d){MDUnits.setLength(d);};
