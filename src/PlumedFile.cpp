@@ -438,6 +438,16 @@ PlumedIFile& PlumedIFile::open(const std::string&name){
   return *this;
 }
 
+PlumedIFile& PlumedIFile::scanFieldListConstant ( std::vector<bool> &s){
+  if(!inMiddleOfField) advanceField();
+  if(!*this) return *this;
+  s.clear();
+  for(unsigned i=0;i<fields.size();i++){
+    if(fields[i].constant){s.push_back(true);}else{s.push_back(false);};
+  }
+  return *this;
+}
+
 PlumedIFile& PlumedIFile::scanFieldList(std::vector<std::string>&s){
   if(!inMiddleOfField) advanceField();
   if(!*this) return *this;

@@ -106,17 +106,6 @@ PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
 class BiasMetaD : public Bias{
 
 private:
-  struct Gaussian {
-   vector<double> center;
-   vector<double> sigma;
-   double height;
-   bool   multivariate; // this is required to discriminate the one dimensional case 
-   vector<double> invsigma;
-   Gaussian(const vector<double> & center,const vector<double> & sigma,double height, bool multivariate ):
-     center(center),sigma(sigma),height(height),multivariate(multivariate),invsigma(sigma){
-       for(unsigned i=0;i<invsigma.size();++i)abs(invsigma[i])>1.e-20?invsigma[i]=1.0/invsigma[i]:0.; // to avoid troubles from zero element in flexible hills
-     }
-  };
   vector<double> sigma0_;
   vector<Gaussian> hills_;
   PlumedOFile hillsOfile_;

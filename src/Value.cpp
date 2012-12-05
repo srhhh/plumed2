@@ -141,6 +141,10 @@ double Value::projection(const Value& v1,const Value&v2){
   return proj;
 }
 
+void Value::setName(const std::string &s){
+  name=s;
+} 
+
 ActionWithValue* Value::getPntrToAction(){
   plumed_assert( action!=NULL );
   return action;

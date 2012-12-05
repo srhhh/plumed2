@@ -293,6 +293,8 @@ public:
   PlumedIFile& open(const std::string&name);
 /// Gets the list of all fields
   PlumedIFile& scanFieldList(std::vector<std::string>&);
+/// which field is constant 
+  PlumedIFile& scanFieldListConstant(std::vector<bool>&);
 /// Read a double field
   PlumedIFile& scanField(const std::string&,double&);
 /// Read a int field
