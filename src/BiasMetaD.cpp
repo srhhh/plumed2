@@ -33,6 +33,7 @@
 #include "PlumedFile.h"
 #include "time.h"
 #include <iostream>
+#include "Gaussian.h"
 
 #define DP2CUTOFF 6.25
 

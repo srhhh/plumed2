@@ -22,7 +22,10 @@
 #include "CLTool.h"
 #include "CLToolRegister.h"
 #include "Tools.h"
-#include "Plumed.h"
+#include "Action.h"
+#include "ActionRegister.h"
+#include "PlumedMain.h"
+//#include "Plumed.h"
 #include "PlumedCommunicator.h"
 #include "Random.h"
 #include <cstdio>
@@ -76,100 +79,94 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
 // Read the hills input file name  
   string hillsFile; parse("--hills",hillsFile);
   cerr<<"FILENAME "<<hillsFile<<endl;  
-// create the plumed object first
-   Plumed p;
 // parse it as it was a restart
    PlumedIFile *ifile=new PlumedIFile();
    vector<string> myfields;
-   vector<Gaussian> hills;
+   vector<string> mycvs;
+   vector<string> myperiod_min;
+   vector<string> myperiod_max;
+
    if(ifile->FileExist(hillsFile)){
       ifile->open(hillsFile);
-      double dummy;
       ifile->scanFieldList(myfields);
       //for(int i=0;i<myfields.size();i++)cerr<<myfields[i]<<endl; 
       // now find first sigma 
       size_t found;
-      vector<bool> issigma;issigma.resize(myfields.size());
+      bool before_sigma=true;
       for(int i=0;i<myfields.size();i++){
-         size_t pos = 0;
+        size_t pos = 0;
 	found=myfields[i].find("sigma_", pos);
-        if (found!=string::npos){
-            issigma[i]=true;
-        }else{
-            issigma[i]=false;
+        if (found!=string::npos)before_sigma=false;
+        // cvs are after time and before sigmas 
+        found=myfields[i].find("time", pos); 
+        if( found==string::npos && before_sigma){
+             mycvs.push_back(myfields[i]);
+	     cerr<<"found variable "<<mycvs.back()<<endl;
+             // get periodicity
+             myperiod_min.push_back("none");
+             myperiod_max.push_back("none");
+             if(ifile->FieldExist("min_"+mycvs.back())){
+			string val;
+			ifile->scanField("min_"+mycvs.back(),val);
+                        myperiod_min[myperiod_min.size()-1]=val; 
+             }
+ 	     if(ifile->FieldExist("max_"+mycvs.back())){
+			string val;
+			ifile->scanField("max_"+mycvs.back(),val);
+                        myperiod_max[myperiod_max.size()-1]=val; 
+             }
+             if(  myperiod_min.back()!=string("none") &&  myperiod_max.back()!=string("none")  ){
+                   cerr<<"variable "<<mycvs.back()<<" is periodic in range "<<myperiod_min.back()<<" and "<<myperiod_max.back()<<endl;
+             } 
+
         }
       }
-      int ncv=0;
-      std::vector<Value> tmpvalues; tmpvalues.resize(ncv);
-      for(int i=1;i<myfields.size();i++){
-        if (issigma[i])break;
-        cerr<<"found variables "<<myfields[i]<<endl; 
-        tmpvalues.push_back( Value() ); 
-        tmpvalues.back().setName(myfields[i]);
-        ncv++;
-      }
-      vector<bool> isconstant;
+      // is multivariate ???
+      std::string sss;
       bool multivariate=false;
-      vector<double> center(ncv);
-      vector<double> sigma(ncv);
-      double height;
-      int nhills=0; 
-      vector<Gaussian> hills_;
-      while(ifile->scanField("time",dummy)){
-	for(unsigned i=0;i<ncv;++i){
-   	 ifile->scanField( &tmpvalues[i] );
-         center[i]=tmpvalues[i].get();
-      	}
-        // sigmas 
-        std::string sss;
-        ifile->scanField("multivariate",sss);
-        if(sss=="true") multivariate=true;
-        else if(sss=="false") multivariate=false;
-        else plumed_merror("cannot parse multivariate = "+ sss);
-	 if(multivariate){
-	        sigma.resize(ncv*(ncv+1)/2);
-	        Matrix<double> upper(ncv,ncv);
-	        Matrix<double> lower(ncv,ncv);
-		for (unsigned i=0;i<ncv;i++){
-	              for (unsigned j=0;j<ncv-i;j++){
-	                      ifile->scanField("sigma_"+tmpvalues[j+i].getName()+"_"+tmpvalues[j].getName(),lower(j+i,j));
-	                      upper(j,j+i)=lower(j+i,j);
-	              }
-	         }
-	        Matrix<double> mymult(ncv,ncv);       
-	        Matrix<double> invmatrix(ncv,ncv);       
-	        mult(lower,upper,mymult);          
-	        // now invert and get the sigmas
-	        Invert(mymult,invmatrix);
-	        // put the sigmas in the usual order 
-	        unsigned k=0;
-		for (unsigned i=0;i<ncv;i++){
-			for (unsigned j=i;j<ncv;j++){
-				sigma[k]=invmatrix(i,j);
-				k++;
-			}
-		}
-	  }else{
-	  	for(unsigned i=0;i<ncv;++i)ifile->scanField("sigma_"+tmpvalues[i].getName(),sigma[i]);
-	  }
-          // height and biasfactor  
-          double height;
-          ifile->scanField("height",height);
-	  ifile->scanField("biasf",dummy);
-	  if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
-          // check that all the fields are read
-          ifile->scanField();
-          // now put all in a structure or vector  
-          // make the simple case, not with grids now 
-          hills.push_back(Gaussian(center,sigma,height,multivariate));
-          nhills++;
-      }
+      ifile->scanField("multivariate",sss);
+      if(sss=="true"){ cerr<<"IS A MULTIVARIATE CALC "<<endl; multivariate=true;}
+      else if(sss=="false"){cerr<<"DIAGONAL HILLS"<<endl; multivariate=false;}
+      else plumed_merror("cannot parse multivariate = "+ sss);
+      ifile->close();
    }
    else { 
      cerr<<"FILE NOT EXISTING"<<endl;
    }
-   cerr<<"FOUND "<<hills.size()<<" HILLS "<<endl;
-   // find min and max
+
+   PlumedMain plumed;
+   std::string ss;
+   unsigned nn=1;
+   ss="setNatoms";
+   plumed.cmd(ss,&nn);  
+   ss="init";
+   plumed.cmd("init",&nn);  
+   for(int i=0;i<mycvs.size();i++){
+        std::string actioninput; 
+        //actioninput=std::string("DISTANCE ATOMS=1,2 LABEL=")+myfields[i];           //the CV 
+        actioninput=std::string("FAKE  ATOMS=1 LABEL=")+mycvs[i];           //the CV 
+        // periodicity
+        if (myperiod_max[i]==string("none")){
+		actioninput+=string(" PERIODIC=NO "); 
+        }else{
+		actioninput+=string(" PERIODIC=")+myperiod_min[i]+string(",")+myperiod_max[i]; 
+        } 
+   //     cerr<<"FAKELINE: "<<actioninput<<endl;
+        plumed.readInputString(actioninput);
+   }
+   // define the metadynamics
+   int ncv=mycvs.size();
+   std::string actioninput=std::string("METAD ARG=");
+   for(unsigned i=0;i<ncv-1;i++)actioninput+=std::string(mycvs[i])+",";
+   actioninput+=myfields[ncv-1];
+   actioninput+=std::string(" SIGMA=");
+   for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
+    actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1 FILE=");
+    actioninput+=hillsFile;
+    // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    
+    cerr<<"METASTRING:  "<<actioninput<<endl;
+    plumed.readInputString(actioninput);
+//      //plumed.cmd("calc");
   cerr<<"end of sum_hills"<<endl;
   return 0;
 }
