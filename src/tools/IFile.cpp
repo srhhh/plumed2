@@ -149,7 +149,7 @@ IFile& IFile::scanField(Value* val){
 IFile& IFile::scanField(){
   if(!ignoreFields){
      for(unsigned i=0;i<fields.size();i++){
-       plumed_assert(fields[i].read);
+       plumed_massert(fields[i].read,"field "+fields[i].name+" was not read: all the fields need to be read otherwise you could miss important infos" );
      }
   }
   inMiddleOfField=false;
@@ -198,6 +198,59 @@ void IFile::reset(bool reset){
 
 void IFile::allowIgnoredFields(){
   ignoreFields=true;
+}
+
+bool IFile::findCvsAndPeriodic(std::string filename, std::vector<std::string> &cvs,std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate){
+       std::vector<std::string> fields;
+       if(FileExist(filename)){
+          cvs.clear(); pmin.clear(); pmax.clear(); 
+          open(filename);
+          scanFieldList(fields);
+          size_t founds,foundm,foundp;
+          bool before_sigma=true;
+          for(int i=0;i<fields.size();i++){
+              size_t pos = 0;
+              //found=(fields[i].find("sigma_", pos) || fields[i].find("min_", pos) || fields[i].find("max_", pos) ) ;
+              founds=fields[i].find("sigma_", pos)  ;
+              foundm=fields[i].find("min_", pos)  ;
+              foundp=fields[i].find("max_", pos)  ;
+              if (founds!=std::string::npos || foundm!=std::string::npos ||  foundp!=std::string::npos )before_sigma=false;
+              // cvs are after time and before sigmas 
+              size_t  found; 
+              found=fields[i].find("time", pos); 
+              if( found==std::string::npos && before_sigma){
+                   cvs.push_back(fields[i]);
+                   //std::cerr<<"found variable number  "<<cvs.size()<<" :  "<<cvs.back()<<std::endl;
+                   // get periodicity
+                   pmin.push_back("none");
+                   pmax.push_back("none");
+                   if(FieldExist("min_"+cvs.back())){
+              		std::string val;
+              		scanField("min_"+cvs.back(),val);
+                        pmin[pmin.size()-1]=val; 
+                       // std::cerr<<"found min   :  "<<pmin.back()<<std::endl;
+                   }
+     	           if(FieldExist("max_"+cvs.back())){
+              		std::string val;
+              		scanField("max_"+cvs.back(),val);
+                        pmax[pmax.size()-1]=val; 
+                       // std::cerr<<"found max   :  "<<pmax.back()<<std::endl;
+                   }
+              }
+          }
+          // is multivariate ???
+          std::string sss;
+          multivariate=false;
+          if(FieldExist("multivariate")){;
+         	 scanField("multivariate",sss);
+         	 if(sss=="true"){ multivariate=true;}
+         	 else if(sss=="false"){ multivariate=false;}
+          }
+          close();
+	  return true;
+       }else { 
+	return false;
+       }
 }
 
 }
