@@ -42,6 +42,7 @@ Grid::Grid(const std::string& funcl, std::vector<Value*> args, const vector<std:
  plumed_massert(args.size()==nbin.size(),"grid dimensions in input do not match number of arguments");
  plumed_massert(args.size()==gmax.size(),"grid dimensions in input do not match number of arguments");
  dimension_=gmax.size(); 
+ args_=args;
  str_min_=gmin; str_max_=gmax; 
  argnames.resize( dimension_ );
  min_.resize( dimension_ ); 
@@ -111,6 +112,18 @@ vector<bool> Grid::getIsPeriodic() const {
 vector<unsigned> Grid::getNbin() const {
  return nbin_;
 }
+
+vector<string> Grid::getArgNames() const {
+ return argnames;
+}
+
+vector<Value*> Grid::getPntrToArgs() const {
+ return args_ ;
+}
+
+
+
+
 
 unsigned Grid::getSize() const {
  return maxsize_;
@@ -430,6 +443,17 @@ void Grid::scaleAllValuesAndDerivatives( const double& scalef ){
   }
 }
 
+void Grid::applyFunctionAllValuesAndDerivatives( double (*func)(double val), double (*funcder)(double valder) ){
+  if(usederiv_){
+     for(unsigned i=0;i<grid_.size();++i){
+         grid_[i]=func(grid_[i]);
+         for(unsigned j=0;j<dimension_;++j) der_[i][j]=funcder(der_[i][j]);
+     }
+  } else {
+     for(unsigned i=0;i<grid_.size();++i) grid_[i]=func(grid_[i]);
+  }
+}
+
 void Grid::writeHeader(OFile& ofile){
  for(unsigned i=0;i<dimension_;++i){
      ofile.addConstantField("min_" + argnames[i]);
@@ -444,6 +468,7 @@ void Grid::writeToFile(OFile& ofile){
  vector<double> der(dimension_);
  double f;
  writeHeader(ofile); 
+ unsigned wstep=getSize()/10; 
  for(unsigned i=0;i<getSize();++i){
    xx=getPoint(i);
    if(usederiv_){f=getValueAndDerivatives(i,der);} 
@@ -622,4 +647,103 @@ void SparseGrid::writeToFile(OFile& ofile){
    ofile.printField();
  }
 }
+
+
+void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh, WeightBase * ptr2obj ){
+    unsigned i=0;
+    for(i=0;i<vHigh.size();i++){
+       if(vHigh[i]<0){
+    	  for(unsigned j=0;j<(getNbin())[i];j++){
+            vHigh[i]=int(j);  
+            projectOnLowDimension(val,vHigh,ptr2obj); // recursive function: this is the core of the mechanism
+            vHigh[i]=-1;
+          } 
+          return; // 
+       }
+    }
+    if(i==vHigh.size()){
+        //std::cerr<<"POINT: "; 
+        //for(unsigned j=0;j<vHigh.size();j++){
+        //   std::cerr<<vHigh[j]<<" ";
+        //} 
+        std::vector<unsigned> vv(vHigh.size()); 
+        for(unsigned j=0;j<vHigh.size();j++)vv[j]=unsigned(vHigh[j]);
+        //
+        // this is the real assignment !!!!! (hack this to have bias or other stuff)
+        //
+
+        // this case: produce fes
+        //val+=exp(beta*getValue(vv)) ;
+        double myv=getValue(vv);
+        val=ptr2obj->projectInnerLoop(val,myv) ;
+        // to be added: bias (same as before without negative sign) 
+        
+        //std::cerr<<" VAL: "<<val <<endl;
+    }
+};
+
+Grid Grid::project(const std::vector<std::string> proj , WeightBase *ptr2obj ){
+         // find extrema only for the projection
+         vector<string>   smallMin,smallMax;
+         vector<unsigned> smallBin;
+         vector<Value*>   smallVal;
+         vector<unsigned> dimMapping;
+
+         // check if the two key methods are there
+         WeightBase* pp = dynamic_cast<WeightBase*>(ptr2obj);
+         if (!pp)plumed_merror("This WeightBase is not complete: you need a projectInnerLoop and projectOuterLoop ");
+ 
+         for(unsigned j=0;j<proj.size();j++){
+              for(unsigned i=0;i<getArgNames().size();i++){
+                    if(proj[j]==getArgNames()[i]){ 
+	    	         unsigned offset;		 
+ 	    	         // note that at sizetime the non periodic dimension get a bin more  	
+                         if(getIsPeriodic()[i]){offset=0;}else{offset=1;}
+                         smallMax.push_back(getMax()[i]);
+                         smallMin.push_back(getMin()[i]);
+                         smallBin.push_back(getNbin()[i]-offset);
+                         smallVal.push_back(getPntrToArgs()[i]);
+                         dimMapping.push_back(i);
+                         break;
+                    }
+              }
+         }
+         Grid smallgrid("projection",smallVal,smallMin,smallMax,smallBin,false,false,true);  
+         // check that the two grids are commensurate 
+         for(unsigned i=0;i<dimMapping.size();i++){
+              plumed_massert(  (smallgrid.getMax())[i] == (getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  
+              plumed_massert(  (smallgrid.getMin())[i] == (getMin())[dimMapping[i]],  "the two input grids are not compatible in min"   );  
+              plumed_massert(  (smallgrid.getNbin())[i]== (getNbin())[dimMapping[i]], "the two input grids are not compatible in bin"   );  
+         }
+         vector<unsigned> toBeIntegrated;
+         for(unsigned i=0;i<getArgNames().size();i++){
+              bool doappend=true;
+         	for(unsigned j=0;j<dimMapping.size();j++){
+                 if(dimMapping[j]==i){doappend=false; break;}  
+              }
+              if(doappend)toBeIntegrated.push_back(i);
+         }
+         //for(unsigned i=0;i<dimMapping.size();i++ ){
+         //     cerr<<"Dimension to preserve "<<dimMapping[i]<<endl;
+         //}
+         //for(unsigned i=0;i<toBeIntegrated.size();i++ ){
+         //     cerr<<"Dimension to integrate "<<toBeIntegrated[i]<<endl;
+         //}
+
+         // loop over all the points in the Grid, find the corresponding fixed index, rotate over all the other ones  
+         for(unsigned i=0;i<smallgrid.getSize();i++){
+                 std::vector<unsigned> v;
+                 v=smallgrid.getIndices(i);
+                 std::vector<int> vHigh((getArgNames()).size(),-1);   
+                 for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
+                 // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
+                 double initval=0.;  
+                 projectOnLowDimension(initval,vHigh, ptr2obj); 
+                 // to integrate metadynamics
+                 smallgrid.setValue(i,ptr2obj->projectOuterLoop(initval));  
+         }
+
+     return smallgrid; 
+}
+
 }

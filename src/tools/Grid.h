@@ -28,6 +28,36 @@
 
 namespace PLMD{ 
 
+
+// simple function to enable various weighting
+
+class WeightBase{
+    public:
+        virtual double projectInnerLoop(double &input, double &v)=0;
+        virtual double projectOuterLoop(double &v)=0;
+};
+
+class BiasWeight:public WeightBase{
+    public:
+      double beta,invbeta;
+      BiasWeight(double v){beta=v;invbeta=1./beta;};
+      double projectInnerLoop(double &input, double &v){return  input+exp(beta*v);};
+      double projectOuterLoop(double &v){return -invbeta*log(v);};
+};
+
+class ProbWeight:public WeightBase{
+    public:
+      double beta,invbeta;
+      ProbWeight(double v){beta=v;invbeta=1./beta;};
+      double projectInnerLoop(double &input, double &v){return  input+v;};
+      double projectOuterLoop(double &v){return -invbeta*log(v);};
+};
+
+
+
+
+
+
 class Value;
 class IFile;
 class OFile;
@@ -40,6 +70,7 @@ class Grid
  std::vector< std::vector<double> > der_;
 protected:
  std::string funcname;
+ std::vector<Value*> args_;
  std::vector<std::string> argnames;
  std::vector<std::string> str_min_, str_max_;
  std::vector<double> min_,max_,dx_;  
@@ -58,8 +89,6 @@ public:
  Grid(const std::string& funcl, std::vector<Value*> args, const std::vector<std::string> & gmin, 
       const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, 
       bool usederiv, bool doclear=true);
-
-
 /// get lower boundary
  std::vector<std::string> getMin() const;
 /// get upper boundary
@@ -74,6 +103,10 @@ public:
  std::vector<bool> getIsPeriodic() const;
 /// get grid dimension
  unsigned getDimension() const;
+/// get argument names  of this grid 
+ std::vector<std::string> getArgNames() const;
+/// get the pointer to the arguments
+ std::vector<Value*> getPntrToArgs() const;
  
 /// methods to handle grid indices 
  std::vector<unsigned> getIndices(unsigned index) const;
@@ -127,7 +160,8 @@ public:
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 /// Scale all grid values and derivatives by a constant factor
  virtual void scaleAllValuesAndDerivatives( const double& scalef );
-
+/// apply function: takes  pointer to  function that accepts a double and apply 
+ virtual void applyFunctionAllValuesAndDerivatives( double (*func)(double val), double (*funcder)(double valder) );
 /// add a kernel function to the grid
  void addKernel( const KernelFunctions& kernel );
 
@@ -135,6 +169,11 @@ public:
  virtual void writeToFile(OFile&);
 
  virtual ~Grid(){};
+
+/// project a high dimensional grid onto a low dimensional one: this should be changed at some time 
+/// to enable many types of weighting
+ Grid project( const std::vector<std::string> proj , WeightBase *ptr2obj  ); 
+ void projectOnLowDimension(double &val , std::vector<int> &varHigh, WeightBase* ptr2obj ); 
 };
 
   
@@ -185,7 +224,6 @@ class SparseGrid : public Grid
 
  virtual ~SparseGrid(){};
 };
-
 }
 
 #endif

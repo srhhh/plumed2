@@ -142,14 +142,25 @@ private:
   vector<string> ifilesnames;
   
   void   readGaussians(IFile*);
+  /// read gaussians from a file that might be a simple colvar and impose the sigma
+  void   readGaussiansFromPoints(IFile*,const vector<double> &hsigma, const double hheight);
+  void   chooseGridSizes(IFile *ifile,vector<string> &gmin,vector<string> &gmax, vector<unsigned> &gbin, unsigned const default_size);
+  bool   readChunkOfGaussians(IFile *ifile, unsigned n);
+  bool   readChunkOfGaussiansFromPoints(IFile *ifile, unsigned n,const vector<double> &hsigma, const double &hheight);
   void   writeGaussian(const Gaussian&,OFile&);
   void   addGaussian(const Gaussian&);
+  /// this method finds the min value, max value and optimal bin size for this particular gaussian
+  /// note that the parameters for optimal choice are embedded into it and should probably 
+  /// resemble  to those of getGaussianSupport 
+  void   getMinMaxBin(const Gaussian&,vector<double> &min,vector<double> &max, vector<double> &bin);
   double getHeight(const vector<double>&);
   double getBiasAndDerivatives(const vector<double>&,double* der=NULL);
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-
+  bool   scanOneHill(IFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
+  /// this scan one point from a simple colvar file and gives back the centers 
+  bool   scanOnePoint(IFile *ifile,  vector<Value> &v, vector<double> &center );
 
 public:
   MetaD(const ActionOptions&);
@@ -274,7 +285,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
   parse("GRID_WFILE",gridfilename_); 
   parseFlag("STORE_GRIDS",storeOldGrids_);
   if(grid_ && gridfilename_.length()>0){
-    if(wgridstride_==0) error("frequency with which to output grid not specified use GRID_WSTRIDE");
+    if(wgridstride_==0 ) error("frequency with which to output grid not specified use GRID_WSTRIDE");
   }
   if(grid_ && wgridstride_>0){
     if(gridfilename_.length()==0) error("grid filename not specified use GRID_WFILE"); 
@@ -288,6 +299,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
   parse("WALKERS_RSTRIDE",mw_rstride_);
 
   checkRead();
+
 
   log.printf("  Gaussian width ");
   if (adaptive_==FlexibleBin::diffusion)log.printf(" (Note: The units of sigma are in time) ");
@@ -356,6 +368,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
    }
   }
 
+
 // open hills file for writing
   hillsOfile_.link(*this);
   if(plumed.getRestart()) hillsOfile_.open(ifilesnames[mw_id_],"aw");
@@ -375,74 +388,134 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
 void MetaD::readGaussians(IFile *ifile)
 {
  unsigned ncv=getNumberOfArguments();
- double dummy;
- bool multivariate=false;
  vector<double> center(ncv);
  vector<double> sigma(ncv);
  double height;
  int nhills=0; 
+ bool multivariate=false;
 
  std::vector<Value> tmpvalues;
  for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
 
- while(ifile->scanField("time",dummy)){
-  for(unsigned i=0;i<ncv;++i){
-//    ifile->scanField(getPntrToArgument(i)->getName(),center[i]);
-    ifile->scanField( &tmpvalues[i] );
-    if( tmpvalues[i].isPeriodic() && !getPntrToArgument(i)->isPeriodic() ){
-       error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
-    } else if( tmpvalues[i].isPeriodic() ){
-       std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
-       std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
-       if( imin!=rmin || imax!=rmax ){
-         error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
-       }
-    }
-    center[i]=tmpvalues[i].get();
-  }
-  // scan for multivariate label: record the actual file position so to eventually rewind 
-    std::string sss;
-    ifile->scanField("multivariate",sss);
-    if(sss=="true") multivariate=true;
-    else if(sss=="false") multivariate=false;
-    else plumed_merror("cannot parse multivariate = "+ sss);
-  if(multivariate){
-        sigma.resize(ncv*(ncv+1)/2);
-        Matrix<double> upper(ncv,ncv);
-        Matrix<double> lower(ncv,ncv);
-	for (unsigned i=0;i<ncv;i++){
-              for (unsigned j=0;j<ncv-i;j++){
-                      ifile->scanField("sigma_"+getPntrToArgument(j+i)->getName()+"_"+getPntrToArgument(j)->getName(),lower(j+i,j));
-                      upper(j,j+i)=lower(j+i,j);
-              }
-         }
-        Matrix<double> mymult(ncv,ncv);       
-        Matrix<double> invmatrix(ncv,ncv);       
-        mult(lower,upper,mymult);          
-        // now invert and get the sigmas
-        Invert(mymult,invmatrix);
-        // put the sigmas in the usual order 
-        unsigned k=0;
-	for (unsigned i=0;i<ncv;i++){
-		for (unsigned j=i;j<ncv;j++){
-			sigma[k]=invmatrix(i,j);
-			k++;
-		}
-	}
-  }else{
-  	for(unsigned i=0;i<ncv;++i)ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
-  }
-  
-  ifile->scanField("height",height);
-  ifile->scanField("biasf",dummy);
-  if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
-  ifile->scanField();
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
   nhills++;
-  
   if(welltemp_){height*=(biasf_-1.0)/biasf_;}
   addGaussian(Gaussian(center,sigma,height,multivariate));
  }     
- log.printf("  %d Gaussians read\n",nhills);
+ log.printf("      %d Gaussians read\n",nhills);
+}
+void MetaD::readGaussiansFromPoints(IFile *ifile,const vector<double> &hsigma, const double hheight)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ int nhills=0; 
+ bool multivariate=false;
+
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ while(scanOnePoint(ifile,tmpvalues,center)){;
+   nhills++;
+   addGaussian(Gaussian(center,hsigma,hheight,multivariate));
+ }     
+ log.printf("      %d Gaussians read\n",nhills);
+
+}
+/// this function allows to prescreen a files of gaussians and find boundary and size according some 
+/// criteria
+void MetaD::chooseGridSizes(IFile *ifile,vector<string> &gmin_s,vector<string> &gmax_s, vector<unsigned> &gbin,unsigned const default_size)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ vector<double> sigma(ncv);
+ double height;
+ bool multivariate=false;
+ log.printf("  Doing prescreening of Gaussians\n");
+
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<ncv;++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ std::vector<double> rmin,rmax,rbin;// min val, max val , minimum size of one bin 
+ std::vector<double> tbin; 
+ vector<double> gmin,gmax;
+ gmin.resize(ncv, 1.e10); 
+ gmax.resize(ncv,-1.e10); 
+ gbin.resize(ncv,default_size); 
+ tbin.resize(ncv, 1.e10); 
+ rmin.resize(ncv); 
+ rmax.resize(ncv); 
+ rbin.resize(ncv); 
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
+    getMinMaxBin(Gaussian(center,sigma,height,multivariate),rmin,rmax,rbin);
+    for(unsigned j=0;j<getNumberOfArguments();++j){
+       if(rmin[j]<gmin[j])gmin[j]=rmin[j];   
+       if(rmax[j]>gmax[j])gmax[j]=rmax[j];   
+       if(rbin[j]<tbin[j])tbin[j]=rbin[j];   
+    } 
+ }     
+ for(unsigned j=0;j<ncv;++j){
+    // now take care of periodicity
+    if( tmpvalues[j].isPeriodic() ){
+          double lower,upper;   getPntrToArgument(j)->getDomain( lower, upper ); 
+          if(gmax[j]>upper || gmin[j]<lower){ gmin[j]=lower; gmax[j]=upper;};//easy way for the moment
+    }  
+ 
+ }
+ gmin_s.resize(ncv);
+ gmax_s.resize(ncv);
+ for(unsigned j=0;j<ncv;++j){
+      gbin[j]=int((gmax[j]-gmin[j])/tbin[j]);
+      Tools::convert(gmin[j],gmin_s[j]); 
+      Tools::convert(gmax[j],gmax_s[j]); 
+      log.printf("    Automatically found limits for cv %s : min %12.6f max %12.6f binsize %12.6f nbins %6d\n",(getPntrToArgument(j)->getName()).c_str(),gmin[j],gmax[j],tbin[j],gbin[j]); 
+ }
+ log.printf("  Prescreen of Gaussians done\n");
+}
+
+bool MetaD::readChunkOfGaussians(IFile *ifile, unsigned n)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ vector<double> sigma(ncv);
+ double height;
+ int nhills=0; 
+ bool multivariate=false;
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
+  if(welltemp_){height*=(biasf_-1.0)/biasf_;}
+  addGaussian(Gaussian(center,sigma,height,multivariate));
+  if(nhills==n){
+      log.printf("      %d Gaussians read\n",nhills);
+      return true;
+  }
+  nhills++;
+ }     
+ log.printf("      %d Gaussians read\n",nhills);
+ return false;
+}
+
+bool MetaD::readChunkOfGaussiansFromPoints(IFile *ifile, unsigned n, const vector<double> &hsigma, const double &hheight)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ plumed_massert(hsigma.size()==ncv,"the sigma and the input point size should be the same");
+ unsigned nhills=0; 
+ bool multivariate=false;
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ while(scanOnePoint(ifile,tmpvalues,center)){;
+  addGaussian(Gaussian(center,hsigma,hheight,multivariate));
+  if(nhills==n){
+      log.printf("      %d Gaussians read\n",nhills);
+      return true;
+  }
+  nhills++;
+ }     
+ log.printf("      %d Gaussians read\n",nhills);
+ return false;
 }
 
 void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
@@ -551,13 +624,18 @@ vector<unsigned> MetaD::getGaussianSupport(const Gaussian& hill)
 	Matrix<double> myinv(ncv,ncv);
 	Invert(mymatrix,myinv);
 	//log<<"INVERSE \n"; 
-        matrixOut(log,myinv);	
+        //matrixOut(log,myinv);	
         // diagonalizes it
 	Matrix<double> myautovec(ncv,ncv);
 	vector<double> myautoval(ncv); //should I take this or their square root? 
 	diagMat(myinv,myautoval,myautovec);
+	double maxautoval;maxautoval=0.;
+        unsigned ind_maxautoval; 
 	for (unsigned i=0;i<ncv;i++){
-		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(myautoval[0])*myautovec(i,0));
+		if(myautoval[i]>maxautoval){maxautoval=myautoval[i];ind_maxautoval=i;}
+        }  
+	for (unsigned i=0;i<ncv;i++){
+		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(maxautoval)*myautovec(i,ind_maxautoval));
 		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
 	  	nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
         }
@@ -777,6 +855,152 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
+double  mylog( double v1 ){
+      return log(v1);
+};
+
+double  mylogder( double v1 ){
+      return 1./v1;
+};
+
+/// takes a pointer to the file and a template string with values v and gives back the next center, sigma and height 
+bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> &center, vector<double>  &sigma, double &height , bool &multivariate  ){
+  double dummy;
+  multivariate=false;
+  if(ifile->scanField("time",dummy)){
+     unsigned ncv; ncv=tmpvalues.size();
+     for(unsigned i=0;i<ncv;++i){
+       ifile->scanField( &tmpvalues[i] );
+       if( tmpvalues[i].isPeriodic() && ! getPntrToArgument(i)->isPeriodic() ){
+          error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+       } else if( tmpvalues[i].isPeriodic() ){
+          std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
+          std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
+          if( imin!=rmin || imax!=rmax ){
+            error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+          }
+       }
+       center[i]=tmpvalues[i].get();
+     }
+     // scan for multivariate label: record the actual file position so to eventually rewind 
+     std::string sss;
+     ifile->scanField("multivariate",sss);
+     if(sss=="true") multivariate=true;
+     else if(sss=="false") multivariate=false;
+     else plumed_merror("cannot parse multivariate = "+ sss);
+     if(multivariate){
+        sigma.resize(ncv*(ncv+1)/2);
+        Matrix<double> upper(ncv,ncv);
+        Matrix<double> lower(ncv,ncv);
+   	for (unsigned i=0;i<ncv;i++){
+                 for (unsigned j=0;j<ncv-i;j++){
+                         ifile->scanField("sigma_"+getPntrToArgument(j+i)->getName()+"_"+getPntrToArgument(j)->getName(),lower(j+i,j));
+                         upper(j,j+i)=lower(j+i,j);
+                 }
+        }
+        Matrix<double> mymult(ncv,ncv);       
+        Matrix<double> invmatrix(ncv,ncv);       
+	//log<<"Lower \n";
+        //matrixOut(log,lower); 
+	//log<<"Upper \n";
+        //matrixOut(log,upper); 
+        mult(lower,upper,mymult);          
+	//log<<"Mult \n";
+        //matrixOut(log,mymult); 
+        // now invert and get the sigmas
+        Invert(mymult,invmatrix);
+	//log<<"Invert \n";
+        //matrixOut(log,invmatrix); 
+        // put the sigmas in the usual order: upper diagonal (this time in normal form and not in band form) 
+        unsigned k=0;
+   	for (unsigned i=0;i<ncv;i++){
+   	       for (unsigned j=i;j<ncv;j++){
+   	       	sigma[k]=invmatrix(i,j);
+   	       	k++;
+   	       }
+   	}
+     }else{
+     	for(unsigned i=0;i<ncv;++i){
+            ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
+        }
+     }
+     
+     ifile->scanField("height",height);
+     ifile->scanField("biasf",dummy);
+     if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
+     ifile->scanField();
+     return true;
+  }else{ 
+    return false; 
+  }; 
+};
+/// takes a pointer to the file and a template string with values v and gives back the next center
+bool MetaD::scanOnePoint(IFile *ifile,  vector<Value> &tmpvalues, vector<double> &center ){
+  double dummy;
+  if(ifile->scanField("time",dummy)){
+     unsigned ncv; ncv=tmpvalues.size();
+     for(unsigned i=0;i<ncv;++i){
+       ifile->scanField( &tmpvalues[i] );
+       if( tmpvalues[i].isPeriodic() && ! getPntrToArgument(i)->isPeriodic() ){
+          error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+       } else if( tmpvalues[i].isPeriodic() ){
+          std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
+          std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
+          if( imin!=rmin || imax!=rmax ){
+            error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+          }
+       }
+       center[i]=tmpvalues[i].get();
+     }
+     // this passes to a new line
+     ifile->scanField();
+     return true;
+  }else{ 
+    return false; 
+  }; 
+};
+
+void   MetaD::getMinMaxBin(const Gaussian& hill,vector<double> &min,vector<double> &max, vector<double> &bin){
+ unsigned ncut; ncut=2; // number of stdeviation to consider that a gaussian is completely in 
+ unsigned ndiv; ndiv=50; // number of needed point each gaussian 
+ if(hill.multivariate){
+	unsigned ncv=getNumberOfArguments();
+	unsigned k=0;
+	//log<<"------- GET GAUSSIAN SUPPORT --------\n"; 
+	Matrix<double> mymatrix(ncv,ncv);
+	for(unsigned i=0;i<ncv;i++){
+		for(unsigned j=i;j<ncv;j++){
+			mymatrix(i,j)=mymatrix(j,i)=hill.sigma[k]; // recompose the full inverse matrix
+			k++;
+		}
+	}
+        //
+        // Reinvert so to have the ellipses 
+        //
+	Matrix<double> myinv(ncv,ncv);
+	Invert(mymatrix,myinv);
+	//log<<"INVERSE \n"; 
+        matrixOut(log,myinv);	
+        // diagonalizes it
+	Matrix<double> myautovec(ncv,ncv);
+	vector<double> myautoval(ncv); //should I take this or their square root? 
+	diagMat(myinv,myautoval,myautovec);
+	for (unsigned i=0;i<ncv;i++){
+		double cutoff=sqrt(ncut*DP2CUTOFF)*abs(sqrt(myautoval[0])*myautovec(i,0));
+		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
+                min[i]=(hill.center[i]-cutoff);
+                max[i]=(hill.center[i]+cutoff);
+                bin[i]=(ncut*cutoff/double(ndiv) ); // assume that  
+        }
+ }else{
+	for(unsigned i=0;i<getNumberOfArguments();++i){
+	  double cutoff=sqrt(ndiv*DP2CUTOFF)*hill.sigma[i];
+          min[i]=(hill.center[i]-cutoff);
+          max[i]=(hill.center[i]+cutoff);
+          bin[i]=(ncut*cutoff/double(ndiv) ); // assume that  
+ 	}
+ }
+};
 
 }
 }
