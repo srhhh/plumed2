@@ -234,9 +234,9 @@ void Keywords::print_template(const std::string& actionname, bool include_option
     for(unsigned i=0;i<keys.size();++i){
         if( (types.find(keys[i])->second).isAtomList() ){
              if( prevtag!="start" && prevtag!=atomtags.find(keys[i])->second ) break;
-             if( (atomtags.find(keys[i])->second).find("residues")!=std::string::npos) printf(" %s=<residue selection>", keys[i].c_str() );
+             if( atomtags.count(keys[i]) && (atomtags.find(keys[i])->second).find("residues")!=std::string::npos) printf(" %s=<residue selection>", keys[i].c_str() );
              else printf(" %s=<atom selection>", keys[i].c_str() ); 
-             prevtag=atomtags.find(keys[i])->second;
+             if(atomtags.count(keys[i])) prevtag=atomtags.find(keys[i])->second;
         }
     }
   }
@@ -281,7 +281,7 @@ void Keywords::print_html( const bool isaction ) const {
                std::cout<<" <table align=center frame=void width=95%% cellpadding=5%%> \n";
            }
            print_html_item( keys[i] );
-           prevtag=atomtags.find(keys[i])->second;
+           if(atomtags.count(keys[i])) prevtag=atomtags.find(keys[i])->second;
         }
     }
     std::cout<<"</table>\n\n";
