@@ -61,6 +61,9 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   keys.addFlag("--help-debug",false,"print special options that can be used to create regtests");
   //keys.add("compulsory","--plumed","plumed.dat","specify the name of the plumed input file");
   keys.add("compulsory","--hills","HILLS","specify the name of the hills file");
+  keys.add("compulsory","GRID_MIN","the lower bounds for the grid");
+  keys.add("compulsory","GRID_MAX","the upper bounds for the grid");
+  keys.add("compulsory","GRID_BIN","the number of bins for the grid");
 }
 
 CLToolSumHills::CLToolSumHills(const CLToolOptions& co ):
@@ -133,6 +136,19 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
      cerr<<"FILE NOT EXISTING"<<endl;
    }
 
+   // setup grids
+  vector<std::string> gmin(mycvs.size());
+  Tools::parseVector("GRID_MIN",gmin);
+  if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for GRID_MIN");
+  vector<std::string> gmax(mycvs.size() );
+  parseVector("GRID_MAX",gmax);
+  if(gmax.size()!=mycvs.size() && gmax.size()!=0) error("not enough values for GRID_MAX");
+  vector<unsigned> gbin(mycvs.size());
+  parseVector("GRID_BIN",gbin);
+  if(gbin.size()!=mycvs.size() && gbin.size()!=0) error("not enough values for GRID_BIN");
+  plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
+ 
+
    PlumedMain plumed;
    std::string ss;
    unsigned nn=1;
@@ -140,6 +156,8 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
    plumed.cmd(ss,&nn);  
    ss="init";
    plumed.cmd("init",&nn);  
+   // it is a restart with HILLS  
+   plumed.readInputString(string("RESTART"));
    for(int i=0;i<mycvs.size();i++){
         std::string actioninput; 
         //actioninput=std::string("DISTANCE ATOMS=1,2 LABEL=")+myfields[i];           //the CV 
@@ -156,16 +174,20 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
    // define the metadynamics
    int ncv=mycvs.size();
    std::string actioninput=std::string("METAD ARG=");
-   for(unsigned i=0;i<ncv-1;i++)actioninput+=std::string(mycvs[i])+",";
-   actioninput+=myfields[ncv-1];
+   for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(mycvs[i])+",";
+   actioninput+=myfields[ncv];
    actioninput+=std::string(" SIGMA=");
    for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
     actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1 FILE=");
+    // this sets the restart 
     actioninput+=hillsFile;
     // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    
     cerr<<"METASTRING:  "<<actioninput<<endl;
     plumed.readInputString(actioninput);
-//      //plumed.cmd("calc");
+
+    // if not a grid, then set it up automatically
+    // now calculate 
+    plumed.cmd("calc");
   cerr<<"end of sum_hills"<<endl;
   return 0;
 }
