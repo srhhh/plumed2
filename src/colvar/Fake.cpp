@@ -75,8 +75,10 @@ PLUMED_COLVAR_INIT(ao)
      parseVector("PERIODIC",period);
      if(period.size()==1 && period[0]=="NO"){
         setNotPeriodic();
+        log.printf("  this variable is not periodic \n");
      } else if(period.size()==2){
         setPeriodic(period[0],period[1]);
+        log.printf("  this variable is periodic with period %s : %s \n",period[0].c_str(),period[1].c_str());
      } else error("missing PERIODIC keyword");
   }
   checkRead();

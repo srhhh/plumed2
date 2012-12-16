@@ -140,6 +140,7 @@ private:
   int mw_rstride_;
   vector<IFile*> ifiles;
   vector<string> ifilesnames;
+  bool sumhills_;
   
   void   readGaussians(IFile*);
   void   writeGaussian(const Gaussian&,OFile&);
@@ -149,7 +150,7 @@ private:
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-
+  void   sumHills();
 
 public:
   MetaD(const ActionOptions&);
@@ -184,6 +185,7 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","WALKERS_N", "number of walkers");
   keys.add("optional","WALKERS_DIR", "shared directory with the hills files from all the walkers");
   keys.add("optional","WALKERS_RSTRIDE","stride for reading hills files");
+  keys.addFlag("SUMHILLS",false," this keyword is reserved to be used via commandline");
 }
 
 MetaD::~MetaD(){
@@ -209,7 +211,7 @@ stride_(0), welltemp_(false),
 dp_(NULL), adaptive_(FlexibleBin::none),
 flexbin(NULL),
 // Multiple walkers initialization
-mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
+mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false) 
 {
   // parse the flexible hills
   string adaptiveoption;
@@ -286,8 +288,6 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
   if(mw_n_>1){plumed_assert(mw_n_>mw_id_);}
   parse("WALKERS_DIR",mw_dir_);
   parse("WALKERS_RSTRIDE",mw_rstride_);
-
-  checkRead();
 
   log.printf("  Gaussian width ");
   if (adaptive_==FlexibleBin::diffusion)log.printf(" (Note: The units of sigma are in time) ");
@@ -370,6 +370,11 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1)
     "Barducci, Bussi, and Parrinello, Phys. Rev. Lett. 100, 020603 (2008)");
   log<<"\n";
 
+  parseFlag("SUMHILLS",sumhills_);
+  if(sumhills_){
+    sumHills();
+  };
+  checkRead();
 }
 
 void MetaD::readGaussians(IFile *ifile)
@@ -777,6 +782,11 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
+void MetaD::sumHills(){
+     log<<"  >>  Entering sumhills utility  <<\n"; 
+    
+     log<<"  >>  Exiting sumhills utility   <<\n"; 
+}
 
 }
 }
