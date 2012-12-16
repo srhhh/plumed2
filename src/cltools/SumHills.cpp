@@ -21,20 +21,19 @@
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "CLTool.h"
 #include "CLToolRegister.h"
-#include "Tools.h"
-#include "Action.h"
-#include "ActionRegister.h"
-#include "PlumedMain.h"
-//#include "Plumed.h"
-#include "PlumedCommunicator.h"
-#include "Random.h"
+#include "tools/Tools.h"
+#include "core/Action.h"
+#include "core/ActionRegister.h"
+#include "core/PlumedMain.h"
+#include "tools/PlumedCommunicator.h"
+#include "tools/Random.h"
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <iostream>
-#include "PlumedFile.h"
-#include "Value.h"
-#include "Matrix.h"
+#include "tools/PlumedFile.h"
+#include "core/Value.h"
+#include "tools/Matrix.h"
 
 using namespace std;
 
@@ -137,16 +136,16 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
    }
 
    // setup grids
-  vector<std::string> gmin(mycvs.size());
-  Tools::parseVector("GRID_MIN",gmin);
-  if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for GRID_MIN");
-  vector<std::string> gmax(mycvs.size() );
-  parseVector("GRID_MAX",gmax);
-  if(gmax.size()!=mycvs.size() && gmax.size()!=0) error("not enough values for GRID_MAX");
-  vector<unsigned> gbin(mycvs.size());
-  parseVector("GRID_BIN",gbin);
-  if(gbin.size()!=mycvs.size() && gbin.size()!=0) error("not enough values for GRID_BIN");
-  plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
+//  vector<std::string> gmin(mycvs.size());
+//  Tools::parseVector("GRID_MIN",gmin);
+//  if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for GRID_MIN");
+//  vector<std::string> gmax(mycvs.size() );
+//  parseVector("GRID_MAX",gmax);
+//  if(gmax.size()!=mycvs.size() && gmax.size()!=0) error("not enough values for GRID_MAX");
+//  vector<unsigned> gbin(mycvs.size());
+//  parseVector("GRID_BIN",gbin);
+//  if(gbin.size()!=mycvs.size() && gbin.size()!=0) error("not enough values for GRID_BIN");
+//  plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
  
 
    PlumedMain plumed;
