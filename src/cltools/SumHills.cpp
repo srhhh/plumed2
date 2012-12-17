@@ -60,6 +60,7 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   keys.addFlag("--help-debug",false,"print special options that can be used to create regtests");
   //keys.add("compulsory","--plumed","plumed.dat","specify the name of the plumed input file");
   keys.add("compulsory","--hills","HILLS","specify the name of the hills file");
+  keys.add("optional","--stride","specify the stride for integrating hills file (default 0=never)");
   keys.add("compulsory","--GRID_MIN","the lower bounds for the grid");
   keys.add("compulsory","--GRID_MAX","the upper bounds for the grid");
   keys.add("compulsory","--GRID_BIN","the number of bins for the grid");
@@ -203,7 +204,12 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
     actioninput+=std::string(" GRID_BIN=");
     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
     actioninput+=gbin[ncv-1];
-    actioninput+=std::string(" GRID_WFILE=fes.dat GRID_WSTRIDE=1 ");
+    actioninput+=std::string(" GRID_WFILE=fes.dat  ");
+    // take the stride 
+    std::string  stride; 
+    if(parse("--stride",stride)){
+   	 actioninput+=std::string("  GRID_WSTRIDE=")+stride;
+    }
     // the input keyword
     actioninput+=std::string(" SUMHILLS ");
     // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    

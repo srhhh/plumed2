@@ -143,6 +143,7 @@ private:
   bool sumhills_;
   
   void   readGaussians(IFile*);
+  bool   readChunkOfGaussians(IFile *ifile, unsigned n);
   void   writeGaussian(const Gaussian&,OFile&);
   void   addGaussian(const Gaussian&);
   double getHeight(const vector<double>&);
@@ -150,7 +151,8 @@ private:
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-  void   sumHills();
+  void   sumHills(string &fname);
+  bool   scanOneHill(PlumedIFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
 
 public:
   MetaD(const ActionOptions&);
@@ -255,6 +257,9 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
    welltemp_=true;
   }
 
+  // check the sumhills option: do it now so to accept wgridstride=0
+  parseFlag("SUMHILLS",sumhills_);
+
   // Grid Stuff
   vector<std::string> gmin(getNumberOfArguments());
   parseVector("GRID_MIN",gmin);
@@ -276,7 +281,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   parse("GRID_WFILE",gridfilename_); 
   parseFlag("STORE_GRIDS",storeOldGrids_);
   if(grid_ && gridfilename_.length()>0){
-    if(wgridstride_==0) error("frequency with which to output grid not specified use GRID_WSTRIDE");
+    if(wgridstride_==0 && sumhills_==false ) error("frequency with which to output grid not specified use GRID_WSTRIDE");
   }
   if(grid_ && wgridstride_>0){
     if(gridfilename_.length()==0) error("grid filename not specified use GRID_WFILE"); 
@@ -288,6 +293,9 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   if(mw_n_>1){plumed_assert(mw_n_>mw_id_);}
   parse("WALKERS_DIR",mw_dir_);
   parse("WALKERS_RSTRIDE",mw_rstride_);
+
+  checkRead();
+
 
   log.printf("  Gaussian width ");
   if (adaptive_==FlexibleBin::diffusion)log.printf(" (Note: The units of sigma are in time) ");
@@ -330,6 +338,12 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
    else{BiasGrid_=new SparseGrid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
   }
 
+// now input is acquired: if sumhills then do it now 
+  if(sumhills_){
+    sumHills(hillsfname);
+    return;
+  };
+
 // creating vector of ifile* for hills reading 
 // open all files at the beginning and read Gaussians if restarting
   for(int i=0;i<mw_n_;++i){
@@ -356,6 +370,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
    }
   }
 
+
 // open hills file for writing
   hillsOfile_.link(*this);
   if(plumed.getRestart()) hillsOfile_.open(ifilesnames[mw_id_],"aw");
@@ -370,87 +385,59 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
     "Barducci, Bussi, and Parrinello, Phys. Rev. Lett. 100, 020603 (2008)");
   log<<"\n";
 
-  parseFlag("SUMHILLS",sumhills_);
-  if(sumhills_){
-    sumHills();
-  };
-  checkRead();
 }
 
 void MetaD::readGaussians(IFile *ifile)
 {
  unsigned ncv=getNumberOfArguments();
- double dummy;
- bool multivariate=false;
  vector<double> center(ncv);
  vector<double> sigma(ncv);
  double height;
  int nhills=0; 
+ bool multivariate=false;
 
  std::vector<Value> tmpvalues;
  for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
 
- while(ifile->scanField("time",dummy)){
-  for(unsigned i=0;i<ncv;++i){
-//    ifile->scanField(getPntrToArgument(i)->getName(),center[i]);
-    ifile->scanField( &tmpvalues[i] );
-    if( tmpvalues[i].isPeriodic() && !getPntrToArgument(i)->isPeriodic() ){
-       error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
-    } else if( tmpvalues[i].isPeriodic() ){
-       std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
-       std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
-       if( imin!=rmin || imax!=rmax ){
-         error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
-       }
-    }
-    center[i]=tmpvalues[i].get();
-  }
-  // scan for multivariate label: record the actual file position so to eventually rewind 
-    std::string sss;
-    ifile->scanField("multivariate",sss);
-    if(sss=="true") multivariate=true;
-    else if(sss=="false") multivariate=false;
-    else plumed_merror("cannot parse multivariate = "+ sss);
-  if(multivariate){
-        sigma.resize(ncv*(ncv+1)/2);
-        Matrix<double> upper(ncv,ncv);
-        Matrix<double> lower(ncv,ncv);
-	for (unsigned i=0;i<ncv;i++){
-              for (unsigned j=0;j<ncv-i;j++){
-                      ifile->scanField("sigma_"+getPntrToArgument(j+i)->getName()+"_"+getPntrToArgument(j)->getName(),lower(j+i,j));
-                      upper(j,j+i)=lower(j+i,j);
-              }
-         }
-        Matrix<double> mymult(ncv,ncv);       
-        Matrix<double> invmatrix(ncv,ncv);       
-        mult(lower,upper,mymult);          
-        // now invert and get the sigmas
-        Invert(mymult,invmatrix);
-        // put the sigmas in the usual order 
-        unsigned k=0;
-	for (unsigned i=0;i<ncv;i++){
-		for (unsigned j=i;j<ncv;j++){
-			sigma[k]=invmatrix(i,j);
-			k++;
-		}
-	}
-  }else{
-  	for(unsigned i=0;i<ncv;++i)ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
-  }
-  
-  ifile->scanField("height",height);
-  ifile->scanField("biasf",dummy);
-  if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
-  ifile->scanField();
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
   nhills++;
-  
   if(welltemp_){height*=(biasf_-1.0)/biasf_;}
   addGaussian(Gaussian(center,sigma,height,multivariate));
  }     
  log.printf("  %d Gaussians read\n",nhills);
 }
 
+<<<<<<< HEAD
 void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
+=======
+bool MetaD::readChunkOfGaussians(PlumedIFile *ifile, unsigned n)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ vector<double> sigma(ncv);
+ double height;
+ int nhills=0; 
+ bool multivariate=false;
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
+  if(welltemp_){height*=(biasf_-1.0)/biasf_;}
+  addGaussian(Gaussian(center,sigma,height,multivariate));
+  if(nhills==n){
+      log.printf("  %d Gaussians read\n",nhills);
+      return true;
+  }
+  nhills++;
+ }     
+ log.printf("  %d Gaussians read\n",nhills);
+ return false;
+}
+
+
+
+void MetaD::writeGaussian(const Gaussian& hill, PlumedOFile&file){
+>>>>>>> sum hills accept now stride
   unsigned ncv=getNumberOfArguments();
   file.printField("time",getTimeStep()*getStep());
   for(unsigned i=0;i<ncv;++i){
@@ -782,11 +769,106 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
-void MetaD::sumHills(){
+void MetaD::sumHills(string &fname){
      log<<"  >>  Entering sumhills utility  <<\n"; 
-    
+     PlumedIFile *ifile = new PlumedIFile();
+     ifile->link(*this);
+     ifiles.push_back(ifile); /// this is needed since this is the file that will be checked to be closed 
+     if(ifile->FileExist(fname)){
+             ifile->open(fname);
+             if(wgridstride_==0){
+                  readGaussians(ifile);		
+                  PlumedOFile gridfile; gridfile.link(*this);
+                  gridfile.open(gridfilename_);
+                  BiasGrid_->writeToFile(gridfile);
+                  gridfile.close();    
+             }else{
+                  // divide in chunks
+                  unsigned i=0; 
+                  while(readChunkOfGaussians(ifile, wgridstride_ )){
+                     std::ostringstream ostr;ostr<<i;
+                     string newgrid;newgrid=gridfilename_+"."+ostr.str();
+                     log<<"  new output gridfile "<<newgrid<<"\n";
+                     PlumedOFile gridfile; gridfile.link(*this);
+                     gridfile.open(newgrid);
+                     BiasGrid_->writeToFile(gridfile);
+                     gridfile.close();    
+                     i++;
+                  }; 
+                  std::ostringstream ostr;ostr<<i;
+                  string newgrid;newgrid=gridfilename_+"."+ostr.str();
+                  log<<"  new output gridfile "<<newgrid<<"\n";
+                  PlumedOFile gridfile; gridfile.link(*this);
+                  gridfile.open(newgrid);
+                  BiasGrid_->writeToFile(gridfile);
+                  gridfile.close();    
+             }
+     }  
+     ifile->close();
      log<<"  >>  Exiting sumhills utility   <<\n"; 
 }
+
+/// takes a pointer to the file and a template string with values v and gives back the next center, sigma and height 
+bool MetaD::scanOneHill(PlumedIFile *ifile,  vector<Value> &tmpvalues, vector<double> &center, vector<double>  &sigma, double &height , bool &multivariate  ){
+  double dummy;
+  multivariate=false;
+  if(ifile->scanField("time",dummy)){
+     unsigned ncv; ncv=tmpvalues.size();
+     for(unsigned i=0;i<ncv;++i){
+       ifile->scanField( &tmpvalues[i] );
+       if( tmpvalues[i].isPeriodic() && ! getPntrToArgument(i)->isPeriodic() ){
+          error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+       } else if( tmpvalues[i].isPeriodic() ){
+          std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
+          std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
+          if( imin!=rmin || imax!=rmax ){
+            error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+          }
+       }
+       center[i]=tmpvalues[i].get();
+     }
+     // scan for multivariate label: record the actual file position so to eventually rewind 
+     std::string sss;
+     ifile->scanField("multivariate",sss);
+     if(sss=="true") multivariate=true;
+     else if(sss=="false") multivariate=false;
+     else plumed_merror("cannot parse multivariate = "+ sss);
+     if(multivariate){
+           sigma.resize(ncv*(ncv+1)/2);
+           Matrix<double> upper(ncv,ncv);
+           Matrix<double> lower(ncv,ncv);
+   	for (unsigned i=0;i<ncv;i++){
+                 for (unsigned j=0;j<ncv-i;j++){
+                         ifile->scanField("sigma_"+getPntrToArgument(j+i)->getName()+"_"+getPntrToArgument(j)->getName(),lower(j+i,j));
+                         upper(j,j+i)=lower(j+i,j);
+                 }
+         }
+         Matrix<double> mymult(ncv,ncv);       
+         Matrix<double> invmatrix(ncv,ncv);       
+         mult(lower,upper,mymult);          
+         // now invert and get the sigmas
+         Invert(mymult,invmatrix);
+         // put the sigmas in the usual order 
+         unsigned k=0;
+   	 for (unsigned i=0;i<ncv;i++){
+   		for (unsigned j=i;j<ncv;j++){
+   			sigma[k]=invmatrix(i,j);
+   			k++;
+   		}
+   	 }
+     }else{
+     	for(unsigned i=0;i<ncv;++i)ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
+     }
+     
+     ifile->scanField("height",height);
+     ifile->scanField("biasf",dummy);
+     if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
+     ifile->scanField();
+     return true;
+  }else{ 
+    return false; 
+  }; 
+};
 
 }
 }
