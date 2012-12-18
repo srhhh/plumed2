@@ -25,13 +25,13 @@
 #include "core/Action.h"
 #include "core/ActionRegister.h"
 #include "core/PlumedMain.h"
-#include "tools/PlumedCommunicator.h"
+#include "tools/Communicator.h"
 #include "tools/Random.h"
 #include <cstdio>
 #include <string>
 #include <vector>
 #include <iostream>
-#include "tools/PlumedFile.h"
+#include "tools/File.h"
 #include "core/Value.h"
 #include "tools/Matrix.h"
 
@@ -51,7 +51,7 @@ class CLToolSumHills : public CLTool {
 public:
   static void registerKeywords( Keywords& keys );
   CLToolSumHills(const CLToolOptions& co );
-  int main(FILE* in,FILE*out,PlumedCommunicator& pc);
+  int main(FILE* in,FILE*out,Communicator& pc);
   string description()const;
 };
 
@@ -76,14 +76,14 @@ CLTool(co)
 string CLToolSumHills::description()const{ return "sum the hills with  plumed"; }
 
 
-int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
+int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   cerr<<"sum_hills utility  "<<endl;
   
 // Read the hills input file name  
   string hillsFile; parse("--hills",hillsFile);
   cerr<<"FILENAME "<<hillsFile<<endl;  
 // parse it as it was a restart
-   PlumedIFile *ifile=new PlumedIFile();
+   IFile *ifile=new IFile();
    vector<string> myfields;
    vector<string> mycvs;
    vector<string> myperiod_min;

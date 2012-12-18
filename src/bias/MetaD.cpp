@@ -152,7 +152,7 @@ private:
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
   void   sumHills(string &fname,vector<string> proj);
-  bool   scanOneHill(PlumedIFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
+  bool   scanOneHill(IFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
 
 public:
   MetaD(const ActionOptions&);
@@ -410,10 +410,7 @@ void MetaD::readGaussians(IFile *ifile)
  log.printf("  %d Gaussians read\n",nhills);
 }
 
-<<<<<<< HEAD
-void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
-=======
-bool MetaD::readChunkOfGaussians(PlumedIFile *ifile, unsigned n)
+bool MetaD::readChunkOfGaussians(IFile *ifile, unsigned n)
 {
  unsigned ncv=getNumberOfArguments();
  vector<double> center(ncv);
@@ -439,8 +436,7 @@ bool MetaD::readChunkOfGaussians(PlumedIFile *ifile, unsigned n)
 
 
 
-void MetaD::writeGaussian(const Gaussian& hill, PlumedOFile&file){
->>>>>>> sum hills accept now stride
+void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
   unsigned ncv=getNumberOfArguments();
   file.printField("time",getTimeStep()*getStep());
   for(unsigned i=0;i<ncv;++i){
@@ -774,7 +770,7 @@ void MetaD::finiteDifferenceGaussian
 
 void MetaD::sumHills(string &fname, vector<string> proj){
      log<<"  >>  Entering sumhills utility  <<\n"; 
-     PlumedIFile *ifile = new PlumedIFile();
+     IFile *ifile = new IFile();
      ifile->link(*this);
      ifiles.push_back(ifile); /// this is needed since this is the file that will be checked to be closed 
      if(ifile->FileExist(fname)){
@@ -782,7 +778,7 @@ void MetaD::sumHills(string &fname, vector<string> proj){
              if(wgridstride_==0){
                   readGaussians(ifile);		
                   if(proj.size()==0){ // normal projection
-                     PlumedOFile gridfile; gridfile.link(*this);
+                     OFile gridfile; gridfile.link(*this);
                      gridfile.open(gridfilename_);
                      BiasGrid_->writeToFile(gridfile);
                      gridfile.close();    
@@ -813,7 +809,7 @@ void MetaD::sumHills(string &fname, vector<string> proj){
                      // loop over the points of the small grid and calculate the projection on the full grid 
                      // TODO: parallelize over the gridpoints
                      Grid::project(smallGrid,(*BiasGrid_),dimMapping);
-                     PlumedOFile gridfile; gridfile.link(*this);
+                     OFile gridfile; gridfile.link(*this);
                      gridfile.open(gridfilename_);
                      smallGrid.writeToFile(gridfile);
                      gridfile.close();     
@@ -825,7 +821,7 @@ void MetaD::sumHills(string &fname, vector<string> proj){
                      std::ostringstream ostr;ostr<<i;
                      string newgrid;newgrid=gridfilename_+"."+ostr.str();
                      log<<"  new output gridfile "<<newgrid<<"\n";
-                     PlumedOFile gridfile; gridfile.link(*this);
+                     OFile gridfile; gridfile.link(*this);
                      gridfile.open(newgrid);
                      BiasGrid_->writeToFile(gridfile);
                      gridfile.close();    
@@ -834,7 +830,7 @@ void MetaD::sumHills(string &fname, vector<string> proj){
                   std::ostringstream ostr;ostr<<i;
                   string newgrid;newgrid=gridfilename_+"."+ostr.str();
                   log<<"  new output gridfile "<<newgrid<<"\n";
-                  PlumedOFile gridfile; gridfile.link(*this);
+                  OFile gridfile; gridfile.link(*this);
                   gridfile.open(newgrid);
                   BiasGrid_->writeToFile(gridfile);
                   gridfile.close();    
@@ -845,7 +841,7 @@ void MetaD::sumHills(string &fname, vector<string> proj){
 }
 
 /// takes a pointer to the file and a template string with values v and gives back the next center, sigma and height 
-bool MetaD::scanOneHill(PlumedIFile *ifile,  vector<Value> &tmpvalues, vector<double> &center, vector<double>  &sigma, double &height , bool &multivariate  ){
+bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> &center, vector<double>  &sigma, double &height , bool &multivariate  ){
   double dummy;
   multivariate=false;
   if(ifile->scanField("time",dummy)){
