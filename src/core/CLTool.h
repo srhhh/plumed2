@@ -82,7 +82,7 @@ protected:
   void parseFlag(const std::string&key,bool&t);  
 ///
   template<class T>
-  void parseVector(const std::string&key,std::vector<T>&t);  
+  bool parseVector(const std::string&key,std::vector<T>&t);  
 public:
 /// How is the input specified on the command line or in an input file
   enum {unset,commandline,ifile} inputdata;
@@ -114,7 +114,7 @@ bool CLTool::parse(const std::string&key,T&t){
 }
 // very limited support and check: take more from core/Action.h parseVector  
 template<class T>
-void CLTool::parseVector(const std::string&key,std::vector<T>&t){
+bool CLTool::parseVector(const std::string&key,std::vector<T>&t){
 
   // Check keyword has been registered
   plumed_massert(keywords.exists(key), "keyword " + key + " has not been registered");
@@ -128,6 +128,8 @@ void CLTool::parseVector(const std::string&key,std::vector<T>&t){
   plumed_massert(inputData[key]!="false","compulsory keyword "+std::string(key)+"has no data");
   std::vector<std::string> words=Tools::getWords(inputData[key],"\t\n ,");
   t.resize(0); 
+  if(words.size()==0)return false;
+
   for(unsigned i=0;i<words.size();++i){
     T v;
     Tools::convert(words[i],v);
@@ -154,6 +156,7 @@ void CLTool::parseVector(const std::string&key,std::vector<T>&t){
           plumed_merror("keyword " + key + " is compulsory for this action");
        }
   } 
+  return true; 
 }
 
 

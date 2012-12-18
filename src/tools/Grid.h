@@ -74,6 +74,8 @@ public:
  std::vector<bool> getIsPeriodic() const;
 /// get grid dimension
  unsigned getDimension() const;
+/// get argument names  of this grid 
+ std::vector<std::string> getArgNames() const;
  
 /// methods to handle grid indices 
  std::vector<unsigned> getIndices(unsigned index) const;
@@ -135,6 +137,10 @@ public:
  virtual void writeToFile(OFile&);
 
  virtual ~Grid(){};
+
+/// project a high dimensional grid onto a low dimensional one 
+ static void project( Grid &out , const Grid &in , const std::vector<unsigned> dimMapping ); 
+ static void projectOnLowDimension(double &val ,const Grid &in, std::vector<int> &varHigh); 
 };
 
   

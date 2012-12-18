@@ -64,6 +64,7 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   keys.add("compulsory","--GRID_MIN","the lower bounds for the grid");
   keys.add("compulsory","--GRID_MAX","the upper bounds for the grid");
   keys.add("compulsory","--GRID_BIN","the number of bins for the grid");
+  keys.add("optional","--idw","specify the variables to be integrated (default is all)");
 }
 
 CLToolSumHills::CLToolSumHills(const CLToolOptions& co ):
@@ -212,6 +213,23 @@ int CLToolSumHills::main(FILE* in,FILE*out,PlumedCommunicator& pc){
     }
     // the input keyword
     actioninput+=std::string(" SUMHILLS ");
+    // 
+    vector<std::string> idw;
+    parseVector("--idw",idw);
+    // check if the variables to be used are correct 
+    if(parseVector("--idw",idw)){
+        for(unsigned i=0;i<idw.size();i++){
+            bool found=false;
+            for(unsigned j=0;j<mycvs.size();j++){
+                  if(idw[i]==mycvs[j])found=true;
+            }
+            if(!found)plumed_merror("variable "+idw[i]+" is not found in the bunch of cvs: revise your --idw option" ); 
+        } 
+        actioninput+=std::string(" PROJ=");
+        for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
+        actioninput+=idw.back();  
+    } 
+ 
     // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    
     cerr<<"METASTRING:  "<<actioninput<<endl;
     plumed.readInputString(actioninput);

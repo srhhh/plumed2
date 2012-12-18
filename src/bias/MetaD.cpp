@@ -151,7 +151,7 @@ private:
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-  void   sumHills(string &fname);
+  void   sumHills(string &fname,vector<string> proj);
   bool   scanOneHill(PlumedIFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
 
 public:
@@ -188,6 +188,7 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","WALKERS_DIR", "shared directory with the hills files from all the walkers");
   keys.add("optional","WALKERS_RSTRIDE","stride for reading hills files");
   keys.addFlag("SUMHILLS",false," this keyword is reserved to be used via commandline");
+  keys.add("optional","PROJ"," only with sumhills: the projection to the cvs");
 }
 
 MetaD::~MetaD(){
@@ -258,6 +259,8 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   }
 
   // check the sumhills option: do it now so to accept wgridstride=0
+  vector<string> proj_;
+  parseVector("PROJ",proj_);
   parseFlag("SUMHILLS",sumhills_);
 
   // Grid Stuff
@@ -340,7 +343,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
 
 // now input is acquired: if sumhills then do it now 
   if(sumhills_){
-    sumHills(hillsfname);
+    sumHills(hillsfname,proj_);
     return;
   };
 
@@ -769,7 +772,7 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
-void MetaD::sumHills(string &fname){
+void MetaD::sumHills(string &fname, vector<string> proj){
      log<<"  >>  Entering sumhills utility  <<\n"; 
      PlumedIFile *ifile = new PlumedIFile();
      ifile->link(*this);
@@ -778,10 +781,43 @@ void MetaD::sumHills(string &fname){
              ifile->open(fname);
              if(wgridstride_==0){
                   readGaussians(ifile);		
-                  PlumedOFile gridfile; gridfile.link(*this);
-                  gridfile.open(gridfilename_);
-                  BiasGrid_->writeToFile(gridfile);
-                  gridfile.close();    
+                  if(proj.size()==0){ // normal projection
+                     PlumedOFile gridfile; gridfile.link(*this);
+                     gridfile.open(gridfilename_);
+                     BiasGrid_->writeToFile(gridfile);
+                     gridfile.close();    
+                  }else{
+                     // special projection
+                     // find extrema only for the projection
+                     vector<string> smallMin,smallMax;
+                     vector<unsigned> smallBin;
+                     vector<Value*>  smallVal;
+                     vector<unsigned>     dimMapping;
+                     for(unsigned j=0;j<proj.size();j++){
+                          for(unsigned i=0;i<getNumberOfArguments();i++){
+                                if(proj[j]==getPntrToArgument(i)->getName()){ 
+				     unsigned offset;		 
+ 				     // note that at sizetime the non periodic dimension get a bin more  	
+                                     if(getPntrToArgument(i)->isPeriodic()){offset=0;}else{offset=1;}
+                                     smallMax.push_back((BiasGrid_->getMax())[i]);
+                                     smallMin.push_back((BiasGrid_->getMin())[i]);
+                                     smallBin.push_back((BiasGrid_->getNbin())[i]+offset);
+                                     smallVal.push_back(getPntrToArgument(i));
+                                     dimMapping.push_back(i);
+                                     break;
+                                }
+                          }
+                     }
+                     // create an additional grid with the limits of the current grid but do it in a lower dimensionality
+                     Grid smallGrid("small",smallVal,smallMin,smallMax,smallBin,false,false,true);  
+                     // loop over the points of the small grid and calculate the projection on the full grid 
+                     // TODO: parallelize over the gridpoints
+                     Grid::project(smallGrid,(*BiasGrid_),dimMapping);
+                     PlumedOFile gridfile; gridfile.link(*this);
+                     gridfile.open(gridfilename_);
+                     smallGrid.writeToFile(gridfile);
+                     gridfile.close();     
+                  } 
              }else{
                   // divide in chunks
                   unsigned i=0; 
