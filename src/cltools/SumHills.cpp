@@ -61,10 +61,11 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   //keys.add("compulsory","--plumed","plumed.dat","specify the name of the plumed input file");
   keys.add("compulsory","--hills","HILLS","specify the name of the hills file");
   keys.add("optional","--stride","specify the stride for integrating hills file (default 0=never)");
-  keys.add("compulsory","--GRID_MIN","the lower bounds for the grid");
-  keys.add("compulsory","--GRID_MAX","the upper bounds for the grid");
-  keys.add("compulsory","--GRID_BIN","the number of bins for the grid");
+  keys.add("optional","--GRID_MIN","the lower bounds for the grid");
+  keys.add("optional","--GRID_MAX","the upper bounds for the grid");
+  keys.add("optional","--GRID_BIN","the number of bins for the grid");
   keys.add("optional","--idw","specify the variables to be integrated (default is all)");
+  keys.add("optional","--outfile","specify the outputfile for sumhills");
 }
 
 CLToolSumHills::CLToolSumHills(const CLToolOptions& co ):
@@ -138,18 +139,24 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
    }
 
    // setup grids
+   unsigned grid_check=0; 
    vector<std::string> gmin(mycvs.size());
-   parseVector("--GRID_MIN",gmin);
-   //std::string myerr;myerr="not enough values for GRID_MIN: needed "+std::string(mycvs.size())
-   if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for --GRID_MIN");
+   if(parseVector("--GRID_MIN",gmin)){
+   	if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for --GRID_MIN");
+	grid_check++;
+   }
    vector<std::string> gmax(mycvs.size() );
-   parseVector("--GRID_MAX",gmax);
-   if(gmax.size()!=mycvs.size() && gmax.size()!=0) plumed_merror("not enough values for --GRID_MAX");
+   if(parseVector("--GRID_MAX",gmax)){
+   	if(gmax.size()!=mycvs.size() && gmax.size()!=0) plumed_merror("not enough values for --GRID_MAX");
+	grid_check++;
+   }
    vector<std::string> gbin(mycvs.size());
-   parseVector("--GRID_BIN",gbin);
-   if(gbin.size()!=mycvs.size() && gbin.size()!=0) plumed_merror("not enough values for --GRID_BIN");
+   if(parseVector("--GRID_BIN",gbin)){
+	if(gbin.size()!=mycvs.size() && gbin.size()!=0) plumed_merror("not enough values for --GRID_BIN");
+	grid_check++;
+   }
    plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
-   // TODO set automatic grid
+   plumed_massert((grid_check==0 || grid_check==3),"you should define all the --GRID_MIN --GRID_MAX and --GRID_BIN keys");
 
    PlumedMain plumed;
    std::string ss;
@@ -169,16 +176,18 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 		actioninput+=string(" PERIODIC=NO "); 
         }else{
 		actioninput+=string(" PERIODIC=")+myperiod_min[i]+string(",")+myperiod_max[i]; 
-                // check if min and max values are ok
-                double gm; Tools::convert(gmin[i],gm);              
-                double pm; Tools::convert(myperiod_min[i],pm);              
-                if(  gm<pm ){
-                     plumed_merror("Periodicity issue : GRID_MIN value ( "+gmin[i]+" ) is less than periodicity in HILLS file in "+mycvs[i]+ " ( "+myperiod_min[i]+" ) ");
-                } 
-                Tools::convert(gmax[i],gm);              
-                Tools::convert(myperiod_max[i],pm);              
-		if(  gm>pm ){
-                     plumed_merror("Periodicity issue : GRID_MAX value ( "+gmax[i]+" ) is more than periodicity in HILLS file in "+mycvs[i]+ " ( "+myperiod_max[i]+" ) ");
+                // check if min and max values are ok with grids
+                if(grid_check==3){  
+                    double gm; Tools::convert(gmin[i],gm);              
+                    double pm; Tools::convert(myperiod_min[i],pm);              
+                    if(  gm<pm ){
+                         plumed_merror("Periodicity issue : GRID_MIN value ( "+gmin[i]+" ) is less than periodicity in HILLS file in "+mycvs[i]+ " ( "+myperiod_min[i]+" ) ");
+                    } 
+                    Tools::convert(gmax[i],gm);              
+                    Tools::convert(myperiod_max[i],pm);              
+	            if(  gm>pm ){
+                         plumed_merror("Periodicity issue : GRID_MAX value ( "+gmax[i]+" ) is more than periodicity in HILLS file in "+mycvs[i]+ " ( "+myperiod_max[i]+" ) ");
+                    }
                 } 
         } 
    //     cerr<<"FAKELINE: "<<actioninput<<endl;
@@ -196,24 +205,29 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
     actioninput+=hillsFile;
 
     // set the grid 
-    actioninput+=std::string(" GRID_MAX=");
-    for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
-    actioninput+=gmax[ncv-1];
-    actioninput+=std::string(" GRID_MIN=");
-    for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
-    actioninput+=gmin[ncv-1];
-    actioninput+=std::string(" GRID_BIN=");
-    for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
-    actioninput+=gbin[ncv-1];
-    actioninput+=std::string(" GRID_WFILE=fes.dat  ");
-    // take the stride 
-    std::string  stride; 
-    if(parse("--stride",stride)){
-   	 actioninput+=std::string("  GRID_WSTRIDE=")+stride;
+    if(grid_check==3){
+       actioninput+=std::string(" GRID_MAX=");
+       for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
+       actioninput+=gmax[ncv-1];
+       actioninput+=std::string(" GRID_MIN=");
+       for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
+       actioninput+=gmin[ncv-1];
+       actioninput+=std::string(" GRID_BIN=");
+       for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
+       actioninput+=gbin[ncv-1];
     }
     // the input keyword
-    actioninput+=std::string(" SUMHILLS ");
+    string fesname; fesname="fes.dat";parse("--outfile",fesname);
+    actioninput+=std::string(" SUMHILLS=");
+    actioninput+=fesname+" ";
     // 
+    // take the stride (otherwise it is default) 
+    //
+    std::string  stride; 
+    if(parse("--stride",stride)){
+      actioninput+=std::string(" SUMHILLS_WSTRIDE=")+stride;
+    }
+
     vector<std::string> idw;
     parseVector("--idw",idw);
     // check if the variables to be used are correct 

@@ -40,6 +40,7 @@ class Grid
  std::vector< std::vector<double> > der_;
 protected:
  std::string funcname;
+ std::vector<Value*> args_;
  std::vector<std::string> argnames;
  std::vector<std::string> str_min_, str_max_;
  std::vector<double> min_,max_,dx_;  
@@ -76,6 +77,8 @@ public:
  unsigned getDimension() const;
 /// get argument names  of this grid 
  std::vector<std::string> getArgNames() const;
+/// get the pointer to the arguments
+ std::vector<Value*> getPntrToArgs() const;
  
 /// methods to handle grid indices 
  std::vector<unsigned> getIndices(unsigned index) const;
@@ -139,8 +142,10 @@ public:
  virtual ~Grid(){};
 
 /// project a high dimensional grid onto a low dimensional one 
- static void project( Grid &out , const Grid &in , const std::vector<unsigned> dimMapping ); 
- static void projectOnLowDimension(double &val ,const Grid &in, std::vector<int> &varHigh); 
+// static void project( Grid &out , const Grid &in , const std::vector<unsigned> dimMapping ); 
+// Grid * projectnew( const std::vector<string> proj ); 
+ Grid projectnew( const std::vector<std::string> proj ); 
+ void projectOnLowDimension(double &val , std::vector<int> &varHigh); 
 };
 
   

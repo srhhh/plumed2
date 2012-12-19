@@ -143,15 +143,20 @@ private:
   bool sumhills_;
   
   void   readGaussians(IFile*);
+  void   chooseGridSizes(IFile *ifile,vector<string> &gmin,vector<string> &gmax, vector<unsigned> &gbin, unsigned const default_size);
   bool   readChunkOfGaussians(IFile *ifile, unsigned n);
   void   writeGaussian(const Gaussian&,OFile&);
   void   addGaussian(const Gaussian&);
+  /// this method finds the min value, max value and optimal bin size for this particular gaussian
+  /// note that the parameters for optimal choice are embedded into it and should probably 
+  /// resemble  to those of getGaussianSupport 
+  void   getMinMaxBin(const Gaussian&,vector<double> &min,vector<double> &max, vector<double> &bin);
   double getHeight(const vector<double>&);
   double getBiasAndDerivatives(const vector<double>&,double* der=NULL);
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-  void   sumHills(string &fname,vector<string> proj);
+  void   sumHills(string &hillsname, string &outname , string &stride, vector<string> proj, vector<string> &gmin,  vector<string> &gmax, vector<unsigned> &gbin );
   bool   scanOneHill(IFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
 
 public:
@@ -187,7 +192,8 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","WALKERS_N", "number of walkers");
   keys.add("optional","WALKERS_DIR", "shared directory with the hills files from all the walkers");
   keys.add("optional","WALKERS_RSTRIDE","stride for reading hills files");
-  keys.addFlag("SUMHILLS",false," this keyword is reserved to be used via commandline");
+  keys.add("optional","SUMHILLS"," this keyword is reserved to be used via commandline and expect the name for the file to be projected ");
+  keys.add("optional","SUMHILLS_WSTRIDE"," this keyword is reserved to be used via commandline and expect the stride for the file to be projected ");
   keys.add("optional","PROJ"," only with sumhills: the projection to the cvs");
 }
 
@@ -261,7 +267,13 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   // check the sumhills option: do it now so to accept wgridstride=0
   vector<string> proj_;
   parseVector("PROJ",proj_);
-  parseFlag("SUMHILLS",sumhills_);
+  string sumHillsFile,sumHillsWStride; 
+  sumHillsFile="";
+  parse("SUMHILLS",sumHillsFile);
+  if(sumHillsFile!="")sumhills_=true;
+  sumHillsWStride="";
+  parse("SUMHILLS_WSTRIDE",sumHillsWStride);
+   
 
   // Grid Stuff
   vector<std::string> gmin(getNumberOfArguments());
@@ -334,18 +346,18 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
 // for performance
   dp_ = new double[getNumberOfArguments()];
 
+// now input is acquired: if sumhills then do it now 
+  if(sumhills_){
+    sumHills(hillsfname,sumHillsFile,sumHillsWStride,proj_,gmin,gmax,gbin);
+    return;
+  };
+
 // initializing grid
   if(grid_){
    std::string funcl=getLabel() + ".bias";
    if(!sparsegrid){BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
    else{BiasGrid_=new SparseGrid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
   }
-
-// now input is acquired: if sumhills then do it now 
-  if(sumhills_){
-    sumHills(hillsfname,proj_);
-    return;
-  };
 
 // creating vector of ifile* for hills reading 
 // open all files at the beginning and read Gaussians if restarting
@@ -407,7 +419,57 @@ void MetaD::readGaussians(IFile *ifile)
   if(welltemp_){height*=(biasf_-1.0)/biasf_;}
   addGaussian(Gaussian(center,sigma,height,multivariate));
  }     
- log.printf("  %d Gaussians read\n",nhills);
+ log.printf("      %d Gaussians read\n",nhills);
+}
+/// this function allows to prescreen a files of gaussians and find boundary and size according some 
+/// criteria
+void MetaD::chooseGridSizes(IFile *ifile,vector<string> &gmin_s,vector<string> &gmax_s, vector<unsigned> &gbin,unsigned const default_size)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ vector<double> sigma(ncv);
+ double height;
+ bool multivariate=false;
+ log.printf("  Doing prescreening of Gaussians\n");
+
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<ncv;++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ std::vector<double> rmin,rmax,rbin;// min val, max val , minimum size of one bin 
+ std::vector<double> tbin; 
+ vector<double> gmin,gmax;
+ gmin.resize(ncv, 1.e10); 
+ gmax.resize(ncv,-1.e10); 
+ gbin.resize(ncv,default_size); 
+ tbin.resize(ncv, 1.e10); 
+ rmin.resize(ncv); 
+ rmax.resize(ncv); 
+ rbin.resize(ncv); 
+ while(scanOneHill(ifile,tmpvalues,center,sigma,height,multivariate)){;
+    getMinMaxBin(Gaussian(center,sigma,height,multivariate),rmin,rmax,rbin);
+    for(unsigned j=0;j<getNumberOfArguments();++j){
+       if(rmin[j]<gmin[j])gmin[j]=rmin[j];   
+       if(rmax[j]>gmax[j])gmax[j]=rmax[j];   
+       if(rbin[j]<tbin[j])tbin[j]=rbin[j];   
+    } 
+ }     
+ for(unsigned j=0;j<ncv;++j){
+    // now take care of periodicity
+    if( tmpvalues[j].isPeriodic() ){
+          double lower,upper;   getPntrToArgument(j)->getDomain( lower, upper ); 
+          if(gmax[j]>upper || gmin[j]<lower){ gmin[j]=lower; gmax[j]=upper;};//easy way for the moment
+    }  
+ 
+ }
+ gmin_s.resize(ncv);
+ gmax_s.resize(ncv);
+ for(unsigned j=0;j<ncv;++j){
+      gbin[j]=int((gmax[j]-gmin[j])/tbin[j]);
+      Tools::convert(gmin[j],gmin_s[j]); 
+      Tools::convert(gmax[j],gmax_s[j]); 
+      log.printf("    Automatically found limits for cv %s : min %12.6f max %12.6f binsize %12.6f nbins %6d\n",(getPntrToArgument(j)->getName()).c_str(),gmin[j],gmax[j],tbin[j],gbin[j]); 
+ }
+ log.printf("  Prescreen of Gaussians done\n");
 }
 
 bool MetaD::readChunkOfGaussians(IFile *ifile, unsigned n)
@@ -768,71 +830,79 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
-void MetaD::sumHills(string &fname, vector<string> proj){
+void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin){
      log<<"  >>  Entering sumhills utility  <<\n"; 
+     log<<"      inputfile  is: "<<hillsname<<"\n"; 
+     log<<"      outputfile is: "<<outname<<"\n"; 
+     //
+     // default grid nbins
+     //
+     unsigned mybin;mybin=10;
+     unsigned stride; 
+     if(stringstride==""){
+         stride=0;
+     }else{
+	 Tools::convert(stringstride,stride); 
+     }
+
      IFile *ifile = new IFile();
      ifile->link(*this);
      ifiles.push_back(ifile); /// this is needed since this is the file that will be checked to be closed 
-     if(ifile->FileExist(fname)){
-             ifile->open(fname);
-             if(wgridstride_==0){
+
+     if(ifile->FileExist(hillsname)){
+             // if the parameters for the grid are not defined then try to assign them 
+             if(!grid_){
+                  ifile->open(hillsname);
+                  chooseGridSizes(ifile,gmin,gmax,gbin,mybin); // default size for grid 
+                  ifile->close();
+             }
+             // now create the grid
+             std::string funcl=getLabel() + ".bias";
+             BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
+             grid_=true; 
+             ifile->open(hillsname);
+             if(stride==0){
                   readGaussians(ifile);		
+                  OFile gridfile; gridfile.link(*this);
+                  gridfile.open(outname);
                   if(proj.size()==0){ // normal projection
-                     OFile gridfile; gridfile.link(*this);
-                     gridfile.open(gridfilename_);
                      BiasGrid_->writeToFile(gridfile);
-                     gridfile.close();    
                   }else{
                      // special projection
-                     // find extrema only for the projection
-                     vector<string> smallMin,smallMax;
-                     vector<unsigned> smallBin;
-                     vector<Value*>  smallVal;
-                     vector<unsigned>     dimMapping;
-                     for(unsigned j=0;j<proj.size();j++){
-                          for(unsigned i=0;i<getNumberOfArguments();i++){
-                                if(proj[j]==getPntrToArgument(i)->getName()){ 
-				     unsigned offset;		 
- 				     // note that at sizetime the non periodic dimension get a bin more  	
-                                     if(getPntrToArgument(i)->isPeriodic()){offset=0;}else{offset=1;}
-                                     smallMax.push_back((BiasGrid_->getMax())[i]);
-                                     smallMin.push_back((BiasGrid_->getMin())[i]);
-                                     smallBin.push_back((BiasGrid_->getNbin())[i]+offset);
-                                     smallVal.push_back(getPntrToArgument(i));
-                                     dimMapping.push_back(i);
-                                     break;
-                                }
-                          }
-                     }
                      // create an additional grid with the limits of the current grid but do it in a lower dimensionality
-                     Grid smallGrid("small",smallVal,smallMin,smallMax,smallBin,false,false,true);  
-                     // loop over the points of the small grid and calculate the projection on the full grid 
-                     // TODO: parallelize over the gridpoints
-                     Grid::project(smallGrid,(*BiasGrid_),dimMapping);
-                     OFile gridfile; gridfile.link(*this);
-                     gridfile.open(gridfilename_);
+                     Grid smallGrid=BiasGrid_->projectnew(proj);
                      smallGrid.writeToFile(gridfile);
-                     gridfile.close();     
                   } 
+                  gridfile.close();    
              }else{
                   // divide in chunks
                   unsigned i=0; 
-                  while(readChunkOfGaussians(ifile, wgridstride_ )){
+                  while(readChunkOfGaussians(ifile,stride)){
                      std::ostringstream ostr;ostr<<i;
-                     string newgrid;newgrid=gridfilename_+"."+ostr.str();
+                     string newgrid;newgrid=outname+"."+ostr.str();
                      log<<"  new output gridfile "<<newgrid<<"\n";
                      OFile gridfile; gridfile.link(*this);
                      gridfile.open(newgrid);
-                     BiasGrid_->writeToFile(gridfile);
+                     if(proj.size()==0){ // normal projection: no reduction
+                    	BiasGrid_->writeToFile(gridfile);
+                     }else{ // reduction
+                     	Grid smallGrid=BiasGrid_->projectnew(proj);
+			smallGrid.writeToFile(gridfile);
+                     }
                      gridfile.close();    
                      i++;
                   }; 
                   std::ostringstream ostr;ostr<<i;
-                  string newgrid;newgrid=gridfilename_+"."+ostr.str();
+                  string newgrid;newgrid=outname+"."+ostr.str();
                   log<<"  new output gridfile "<<newgrid<<"\n";
                   OFile gridfile; gridfile.link(*this);
                   gridfile.open(newgrid);
-                  BiasGrid_->writeToFile(gridfile);
+		  if(proj.size()==0){ 	
+                  	BiasGrid_->writeToFile(gridfile);
+                  }else{
+		   	Grid smallGrid=BiasGrid_->projectnew(proj);
+			smallGrid.writeToFile(gridfile);
+                  }
                   gridfile.close();    
              }
      }  
@@ -889,7 +959,9 @@ bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> 
    		}
    	 }
      }else{
-     	for(unsigned i=0;i<ncv;++i)ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
+     	for(unsigned i=0;i<ncv;++i){
+            ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
+        }
      }
      
      ifile->scanField("height",height);
@@ -900,6 +972,47 @@ bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> 
   }else{ 
     return false; 
   }; 
+};
+void   MetaD::getMinMaxBin(const Gaussian& hill,vector<double> &min,vector<double> &max, vector<double> &bin){
+ unsigned ncut; ncut=2; // number of stdeviation to consider that a gaussian is completely in 
+ unsigned ndiv; ndiv=50; // number of needed point each gaussian 
+ if(hill.multivariate){
+	unsigned ncv=getNumberOfArguments();
+	unsigned k=0;
+	//log<<"------- GET GAUSSIAN SUPPORT --------\n"; 
+	Matrix<double> mymatrix(ncv,ncv);
+	for(unsigned i=0;i<ncv;i++){
+		for(unsigned j=i;j<ncv;j++){
+			mymatrix(i,j)=mymatrix(j,i)=hill.sigma[k]; // recompose the full inverse matrix
+			k++;
+		}
+	}
+        //
+        // Reinvert so to have the ellipses 
+        //
+	Matrix<double> myinv(ncv,ncv);
+	Invert(mymatrix,myinv);
+	//log<<"INVERSE \n"; 
+        matrixOut(log,myinv);	
+        // diagonalizes it
+	Matrix<double> myautovec(ncv,ncv);
+	vector<double> myautoval(ncv); //should I take this or their square root? 
+	diagMat(myinv,myautoval,myautovec);
+	for (unsigned i=0;i<ncv;i++){
+		double cutoff=sqrt(ncut*DP2CUTOFF)*abs(sqrt(myautoval[0])*myautovec(i,0));
+		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
+                min[i]=(hill.center[i]-cutoff);
+                max[i]=(hill.center[i]+cutoff);
+                bin[i]=(ncut*cutoff/double(ndiv) ); // assume that  
+        }
+ }else{
+	for(unsigned i=0;i<getNumberOfArguments();++i){
+	  double cutoff=sqrt(ndiv*DP2CUTOFF)*hill.sigma[i];
+          min[i]=(hill.center[i]-cutoff);
+          max[i]=(hill.center[i]+cutoff);
+          bin[i]=(ncut*cutoff/double(ndiv) ); // assume that  
+ 	}
+ }
 };
 
 }

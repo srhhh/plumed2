@@ -42,6 +42,7 @@ Grid::Grid(const std::string& funcl, std::vector<Value*> args, const vector<std:
  plumed_massert(args.size()==nbin.size(),"grid dimensions in input do not match number of arguments");
  plumed_massert(args.size()==gmax.size(),"grid dimensions in input do not match number of arguments");
  dimension_=gmax.size(); 
+ args_=args;
  str_min_=gmin; str_max_=gmax; 
  argnames.resize( dimension_ );
  min_.resize( dimension_ ); 
@@ -115,6 +116,12 @@ vector<unsigned> Grid::getNbin() const {
 vector<string> Grid::getArgNames() const {
  return argnames;
 }
+
+vector<Value*> Grid::getPntrToArgs() const {
+ return args_ ;
+}
+
+
 
 
 
@@ -629,47 +636,47 @@ void SparseGrid::writeToFile(OFile& ofile){
  }
 }
 
-void  Grid::project(Grid &out, const Grid &in, const std::vector<unsigned> dimMapping ){
-   // check that the two grids are commensurate 
-   for(unsigned i=0;i<dimMapping.size();i++){
- 	plumed_massert(  (out.getMax())[i] == (in.getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  
- 	plumed_massert(  (out.getMin())[i] == (in.getMin())[dimMapping[i]],  "the two input grids are not compatible in min"   );  
- 	plumed_massert(  (out.getNbin())[i]== (in.getNbin())[dimMapping[i]], "the two input grids are not compatible in bin"   );  
-   }
-   vector<unsigned> toBeIntegrated;
-   for(unsigned i=0;i<(in.getArgNames()).size();i++){
-        bool doappend=true;
-   	for(unsigned j=0;j<dimMapping.size();j++){
-           if(dimMapping[j]==i){doappend=false; break;}  
-        }
-        if(doappend)toBeIntegrated.push_back(i);
-   }
-   for(unsigned i=0;i<dimMapping.size();i++ ){
- 	cerr<<"Dimension to preserve "<<dimMapping[i]<<endl;
-   }
-   for(unsigned i=0;i<toBeIntegrated.size();i++ ){
- 	cerr<<"Dimension to integrate "<<toBeIntegrated[i]<<endl;
-   }
-
-   // loop over all the points in the Grid, find the corresponding fixed index, rotate over all the other ones  
-   for(unsigned i=0;i<out.getSize();i++){
-           std::vector<unsigned> v;
-           v=out.getIndices(i);
-           std::vector<int> vHigh((in.getArgNames()).size(),-1);   
-           for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
-           // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
-           double initval=0.;  
-           projectOnLowDimension(initval,in,vHigh); 
-           out.setValue(i,initval);  
-   }
-};
-void Grid::projectOnLowDimension(double &val, const Grid &in,std::vector<int> &vHigh){
+//void  Grid::project(Grid &out, const Grid &in, const std::vector<unsigned> dimMapping ){
+//   // check that the two grids are commensurate 
+//   for(unsigned i=0;i<dimMapping.size();i++){
+// 	plumed_massert(  (out.getMax())[i] == (in.getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  
+// 	plumed_massert(  (out.getMin())[i] == (in.getMin())[dimMapping[i]],  "the two input grids are not compatible in min"   );  
+// 	plumed_massert(  (out.getNbin())[i]== (in.getNbin())[dimMapping[i]], "the two input grids are not compatible in bin"   );  
+//   }
+//   vector<unsigned> toBeIntegrated;
+//   for(unsigned i=0;i<(in.getArgNames()).size();i++){
+//        bool doappend=true;
+//   	for(unsigned j=0;j<dimMapping.size();j++){
+//           if(dimMapping[j]==i){doappend=false; break;}  
+//        }
+//        if(doappend)toBeIntegrated.push_back(i);
+//   }
+//   for(unsigned i=0;i<dimMapping.size();i++ ){
+// 	cerr<<"Dimension to preserve "<<dimMapping[i]<<endl;
+//   }
+//   for(unsigned i=0;i<toBeIntegrated.size();i++ ){
+// 	cerr<<"Dimension to integrate "<<toBeIntegrated[i]<<endl;
+//   }
+//
+//   // loop over all the points in the Grid, find the corresponding fixed index, rotate over all the other ones  
+//   for(unsigned i=0;i<out.getSize();i++){
+//           std::vector<unsigned> v;
+//           v=out.getIndices(i);
+//           std::vector<int> vHigh((in.getArgNames()).size(),-1);   
+//           for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
+//           // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
+//           double initval=0.;  
+//           projectOnLowDimension(initval,vHigh); 
+//           out.setValue(i,initval);  
+//   }
+//};
+void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh){
     unsigned i=0;
     for(i=0;i<vHigh.size();i++){
        if(vHigh[i]<0){
-    	  for(unsigned j=0;j<(in.getNbin())[i];j++){
+    	  for(unsigned j=0;j<(getNbin())[i];j++){
             vHigh[i]=int(j);  
-            projectOnLowDimension(val,in,vHigh); // recursive function: this is the core of the mechanism
+            projectOnLowDimension(val,vHigh); // recursive function: this is the core of the mechanism
             vHigh[i]=-1;
           } 
           return; // 
@@ -685,10 +692,68 @@ void Grid::projectOnLowDimension(double &val, const Grid &in,std::vector<int> &v
         //
         // this is the real assignment !!!!! (hack this to have bias or other stuff)
         //
-        val+=in.getValue(vv) ; 
+        val+=getValue(vv) ; 
         //std::cerr<<" VAL: "<<v <<endl;
     }
 };
 
+Grid Grid::projectnew(const std::vector<std::string> proj ){
+         // find extrema only for the projection
+         vector<string>   smallMin,smallMax;
+         vector<unsigned> smallBin;
+         vector<Value*>   smallVal;
+         vector<unsigned> dimMapping;
+         for(unsigned j=0;j<proj.size();j++){
+              for(unsigned i=0;i<getArgNames().size();i++){
+                    if(proj[j]==getArgNames()[i]){ 
+	    	         unsigned offset;		 
+ 	    	         // note that at sizetime the non periodic dimension get a bin more  	
+                         if(getIsPeriodic()[i]){offset=0;}else{offset=1;}
+                         smallMax.push_back(getMax()[i]);
+                         smallMin.push_back(getMin()[i]);
+                         smallBin.push_back(getNbin()[i]-offset);
+                         smallVal.push_back(getPntrToArgs()[i]);
+                         dimMapping.push_back(i);
+                         break;
+                    }
+              }
+         }
+         Grid smallgrid("projection",smallVal,smallMin,smallMax,smallBin,false,false,true);  
+         // check that the two grids are commensurate 
+         for(unsigned i=0;i<dimMapping.size();i++){
+              plumed_massert(  (smallgrid.getMax())[i] == (getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  
+              plumed_massert(  (smallgrid.getMin())[i] == (getMin())[dimMapping[i]],  "the two input grids are not compatible in min"   );  
+              plumed_massert(  (smallgrid.getNbin())[i]== (getNbin())[dimMapping[i]], "the two input grids are not compatible in bin"   );  
+         }
+         vector<unsigned> toBeIntegrated;
+         for(unsigned i=0;i<getArgNames().size();i++){
+              bool doappend=true;
+         	for(unsigned j=0;j<dimMapping.size();j++){
+                 if(dimMapping[j]==i){doappend=false; break;}  
+              }
+              if(doappend)toBeIntegrated.push_back(i);
+         }
+         //for(unsigned i=0;i<dimMapping.size();i++ ){
+         //     cerr<<"Dimension to preserve "<<dimMapping[i]<<endl;
+         //}
+         //for(unsigned i=0;i<toBeIntegrated.size();i++ ){
+         //     cerr<<"Dimension to integrate "<<toBeIntegrated[i]<<endl;
+         //}
+
+         // loop over all the points in the Grid, find the corresponding fixed index, rotate over all the other ones  
+         for(unsigned i=0;i<smallgrid.getSize();i++){
+                 std::vector<unsigned> v;
+                 v=smallgrid.getIndices(i);
+                 std::vector<int> vHigh((getArgNames()).size(),-1);   
+                 for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
+                 // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
+                 double initval=0.;  
+                 projectOnLowDimension(initval,vHigh); 
+                 smallgrid.setValue(i,initval);  
+         }
+
+     //new  smallgrid() 
+     return smallgrid; 
+}
 
 }
