@@ -858,6 +858,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
              }
              // now create the grid
              std::string funcl=getLabel() + ".bias";
+             log<<"  Allocating full grid... \n";
              BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
              grid_=true; 
              ifile->open(hillsname);
@@ -866,11 +867,14 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   OFile gridfile; gridfile.link(*this);
                   gridfile.open(outname);
                   if(proj.size()==0){ // normal projection
+                     log<<"  Writing full grid... \n";
                      BiasGrid_->writeToFile(gridfile);
                   }else{
                      // special projection
                      // create an additional grid with the limits of the current grid but do it in a lower dimensionality
-                     Grid smallGrid=BiasGrid_->projectnew(proj);
+                     log<<"  Projecting on subgrid... \n";
+                     Grid smallGrid=BiasGrid_->project(proj);
+                     log<<"  Writing subgrid.. \n";
                      smallGrid.writeToFile(gridfile);
                   } 
                   gridfile.close();    
@@ -880,13 +884,16 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   while(readChunkOfGaussians(ifile,stride)){
                      std::ostringstream ostr;ostr<<i;
                      string newgrid;newgrid=outname+"."+ostr.str();
-                     log<<"  new output gridfile "<<newgrid<<"\n";
+                     log<<"  New output gridfile "<<newgrid<<"\n";
                      OFile gridfile; gridfile.link(*this);
                      gridfile.open(newgrid);
                      if(proj.size()==0){ // normal projection: no reduction
+                        log<<"  Writing full grid... \n";
                     	BiasGrid_->writeToFile(gridfile);
                      }else{ // reduction
-                     	Grid smallGrid=BiasGrid_->projectnew(proj);
+                        log<<"  Projecting on subgrid... \n";
+                     	Grid smallGrid=BiasGrid_->project(proj);
+                        log<<"  Writing subgrid \n";
 			smallGrid.writeToFile(gridfile);
                      }
                      gridfile.close();    
@@ -894,13 +901,13 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   }; 
                   std::ostringstream ostr;ostr<<i;
                   string newgrid;newgrid=outname+"."+ostr.str();
-                  log<<"  new output gridfile "<<newgrid<<"\n";
+                  log<<"  New output gridfile "<<newgrid<<"\n";
                   OFile gridfile; gridfile.link(*this);
                   gridfile.open(newgrid);
 		  if(proj.size()==0){ 	
                   	BiasGrid_->writeToFile(gridfile);
                   }else{
-		   	Grid smallGrid=BiasGrid_->projectnew(proj);
+		   	Grid smallGrid=BiasGrid_->project(proj);
 			smallGrid.writeToFile(gridfile);
                   }
                   gridfile.close();    

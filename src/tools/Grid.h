@@ -142,9 +142,7 @@ public:
  virtual ~Grid(){};
 
 /// project a high dimensional grid onto a low dimensional one 
-// static void project( Grid &out , const Grid &in , const std::vector<unsigned> dimMapping ); 
-// Grid * projectnew( const std::vector<string> proj ); 
- Grid projectnew( const std::vector<std::string> proj ); 
+ Grid project( const std::vector<std::string> proj ); 
  void projectOnLowDimension(double &val , std::vector<int> &varHigh); 
 };
 

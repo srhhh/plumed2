@@ -245,7 +245,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
     } 
  
     // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    
-    cerr<<"METASTRING:  "<<actioninput<<endl;
+    //cerr<<"METASTRING:  "<<actioninput<<endl;
     plumed.readInputString(actioninput);
 
     // if not a grid, then set it up automatically

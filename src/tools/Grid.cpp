@@ -457,6 +457,7 @@ void Grid::writeToFile(OFile& ofile){
  vector<double> der(dimension_);
  double f;
  writeHeader(ofile); 
+ unsigned wstep=getSize()/10; 
  for(unsigned i=0;i<getSize();++i){
    xx=getPoint(i);
    if(usederiv_){f=getValueAndDerivatives(i,der);} 
@@ -636,40 +637,7 @@ void SparseGrid::writeToFile(OFile& ofile){
  }
 }
 
-//void  Grid::project(Grid &out, const Grid &in, const std::vector<unsigned> dimMapping ){
-//   // check that the two grids are commensurate 
-//   for(unsigned i=0;i<dimMapping.size();i++){
-// 	plumed_massert(  (out.getMax())[i] == (in.getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  
-// 	plumed_massert(  (out.getMin())[i] == (in.getMin())[dimMapping[i]],  "the two input grids are not compatible in min"   );  
-// 	plumed_massert(  (out.getNbin())[i]== (in.getNbin())[dimMapping[i]], "the two input grids are not compatible in bin"   );  
-//   }
-//   vector<unsigned> toBeIntegrated;
-//   for(unsigned i=0;i<(in.getArgNames()).size();i++){
-//        bool doappend=true;
-//   	for(unsigned j=0;j<dimMapping.size();j++){
-//           if(dimMapping[j]==i){doappend=false; break;}  
-//        }
-//        if(doappend)toBeIntegrated.push_back(i);
-//   }
-//   for(unsigned i=0;i<dimMapping.size();i++ ){
-// 	cerr<<"Dimension to preserve "<<dimMapping[i]<<endl;
-//   }
-//   for(unsigned i=0;i<toBeIntegrated.size();i++ ){
-// 	cerr<<"Dimension to integrate "<<toBeIntegrated[i]<<endl;
-//   }
-//
-//   // loop over all the points in the Grid, find the corresponding fixed index, rotate over all the other ones  
-//   for(unsigned i=0;i<out.getSize();i++){
-//           std::vector<unsigned> v;
-//           v=out.getIndices(i);
-//           std::vector<int> vHigh((in.getArgNames()).size(),-1);   
-//           for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
-//           // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
-//           double initval=0.;  
-//           projectOnLowDimension(initval,vHigh); 
-//           out.setValue(i,initval);  
-//   }
-//};
+
 void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh){
     unsigned i=0;
     for(i=0;i<vHigh.size();i++){
@@ -697,7 +665,7 @@ void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh){
     }
 };
 
-Grid Grid::projectnew(const std::vector<std::string> proj ){
+Grid Grid::project(const std::vector<std::string> proj ){
          // find extrema only for the projection
          vector<string>   smallMin,smallMax;
          vector<unsigned> smallBin;
