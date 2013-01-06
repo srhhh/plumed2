@@ -608,13 +608,18 @@ vector<unsigned> MetaD::getGaussianSupport(const Gaussian& hill)
 	Matrix<double> myinv(ncv,ncv);
 	Invert(mymatrix,myinv);
 	//log<<"INVERSE \n"; 
-        matrixOut(log,myinv);	
+        //matrixOut(log,myinv);	
         // diagonalizes it
 	Matrix<double> myautovec(ncv,ncv);
 	vector<double> myautoval(ncv); //should I take this or their square root? 
 	diagMat(myinv,myautoval,myautovec);
+	double maxautoval;maxautoval=0.;
+        unsigned ind_maxautoval; 
 	for (unsigned i=0;i<ncv;i++){
-		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(myautoval[0])*myautovec(i,0));
+		if(myautoval[i]>maxautoval){maxautoval=myautoval[i];ind_maxautoval=i;}
+        }  
+	for (unsigned i=0;i<ncv;i++){
+		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(maxautoval)*myautovec(i,ind_maxautoval));
 		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
 	  	nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
         }
@@ -838,7 +843,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
      log<<"  >>  Entering sumhills utility  <<\n"; 
      log<<"      inputfile  is: "<<hillsname<<"\n"; 
      log<<"      outputfile is: "<<outname<<"\n"; 
-     log<<"      beta       is:"<<std::string(beta)<<"\n";
+     log<<"      kt         is: "<<std::string(kt)<<"\n";
      //
      // default grid nbins
      //
@@ -867,7 +872,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
              }
              // now create the grid
              std::string funcl=getLabel() + ".bias";
-             log<<"  Allocating full grid... \n";
+             log<<"      Allocating full grid... \n";
              BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
              grid_=true; 
              ifile->open(hillsname);
@@ -880,14 +885,14 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   if(proj.size()==0){ // normal projection
 		     // invert the potential	
                      BiasGrid_->scaleAllValuesAndDerivatives(-1.);
-                     log<<"  Writing full grid... \n";
+                     log<<"      Writing full grid... \n";
                      BiasGrid_->writeToFile(gridfile);
                   }else{
                      // special projection
                      // create an additional grid with the limits of the current grid but do it in a lower dimensionality
-                     log<<"  Projecting on subgrid... \n";
+                     log<<"      Projecting on subgrid... \n";
                      Grid smallGrid=BiasGrid_->project(proj,beta);
-                     log<<"  Writing subgrid.. \n";
+                     log<<"      Writing subgrid.. \n";
                      smallGrid.writeToFile(gridfile);
                   } 
                   gridfile.close();    
@@ -897,18 +902,18 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   while(readChunkOfGaussians(ifile,stride)){
                      std::ostringstream ostr;ostr<<i;
                      string newgrid;newgrid=outname+"."+ostr.str();
-                     log<<"  New output gridfile "<<newgrid<<"\n";
+                     log<<"      New output gridfile "<<newgrid<<"\n";
 		     plumed.setRestart(false);
                      OFile gridfile; gridfile.link(*this);
                      gridfile.open(newgrid);
                      if(proj.size()==0){ // normal projection: no reduction
 			BiasGrid_->scaleAllValuesAndDerivatives(-1.);
-                        log<<"  Writing full grid... \n";
+                        log<<"      Writing full grid... \n";
                     	BiasGrid_->writeToFile(gridfile);
                      }else{ // reduction
-                        log<<"  Projecting on subgrid... \n";
+                        log<<"      Projecting on subgrid... \n";
                      	Grid smallGrid=BiasGrid_->project(proj,beta);
-                        log<<"  Writing subgrid \n";
+                        log<<"      Writing subgrid \n";
 			smallGrid.writeToFile(gridfile);
                      }
                      gridfile.close();    
@@ -916,7 +921,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                   }; 
                   std::ostringstream ostr;ostr<<i;
                   string newgrid;newgrid=outname+"."+ostr.str();
-                  log<<"  New output gridfile "<<newgrid<<"\n";
+                  log<<"      New output gridfile "<<newgrid<<"\n";
                   OFile gridfile; gridfile.link(*this);
                   gridfile.open(newgrid);
 		  if(proj.size()==0){ 	
@@ -958,28 +963,36 @@ bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> 
      else if(sss=="false") multivariate=false;
      else plumed_merror("cannot parse multivariate = "+ sss);
      if(multivariate){
-           sigma.resize(ncv*(ncv+1)/2);
-           Matrix<double> upper(ncv,ncv);
-           Matrix<double> lower(ncv,ncv);
+        sigma.resize(ncv*(ncv+1)/2);
+        Matrix<double> upper(ncv,ncv);
+        Matrix<double> lower(ncv,ncv);
    	for (unsigned i=0;i<ncv;i++){
                  for (unsigned j=0;j<ncv-i;j++){
                          ifile->scanField("sigma_"+getPntrToArgument(j+i)->getName()+"_"+getPntrToArgument(j)->getName(),lower(j+i,j));
                          upper(j,j+i)=lower(j+i,j);
                  }
-         }
-         Matrix<double> mymult(ncv,ncv);       
-         Matrix<double> invmatrix(ncv,ncv);       
-         mult(lower,upper,mymult);          
-         // now invert and get the sigmas
-         Invert(mymult,invmatrix);
-         // put the sigmas in the usual order 
-         unsigned k=0;
-   	 for (unsigned i=0;i<ncv;i++){
-   		for (unsigned j=i;j<ncv;j++){
-   			sigma[k]=invmatrix(i,j);
-   			k++;
-   		}
-   	 }
+        }
+        Matrix<double> mymult(ncv,ncv);       
+        Matrix<double> invmatrix(ncv,ncv);       
+	//log<<"Lower \n";
+        //matrixOut(log,lower); 
+	//log<<"Upper \n";
+        //matrixOut(log,upper); 
+        mult(lower,upper,mymult);          
+	//log<<"Mult \n";
+        //matrixOut(log,mymult); 
+        // now invert and get the sigmas
+        Invert(mymult,invmatrix);
+	//log<<"Invert \n";
+        //matrixOut(log,invmatrix); 
+        // put the sigmas in the usual order: upper diagonal (this time in normal form and not in band form) 
+        unsigned k=0;
+   	for (unsigned i=0;i<ncv;i++){
+   	       for (unsigned j=i;j<ncv;j++){
+   	       	sigma[k]=invmatrix(i,j);
+   	       	k++;
+   	       }
+   	}
      }else{
      	for(unsigned i=0;i<ncv;++i){
             ifile->scanField("sigma_"+getPntrToArgument(i)->getName(),sigma[i]);
