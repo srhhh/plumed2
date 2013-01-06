@@ -59,8 +59,6 @@ public:
  Grid(const std::string& funcl, std::vector<Value*> args, const std::vector<std::string> & gmin, 
       const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, 
       bool usederiv, bool doclear=true);
-
-
 /// get lower boundary
  std::vector<std::string> getMin() const;
 /// get upper boundary
@@ -142,8 +140,8 @@ public:
  virtual ~Grid(){};
 
 /// project a high dimensional grid onto a low dimensional one 
- Grid project( const std::vector<std::string> proj ); 
- void projectOnLowDimension(double &val , std::vector<int> &varHigh); 
+ Grid project( const std::vector<std::string> proj , double &beta  ); 
+ void projectOnLowDimension(double &val , std::vector<int> &varHigh, double &beta); 
 };
 
   

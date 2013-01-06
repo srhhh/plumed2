@@ -156,7 +156,7 @@ private:
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-  void   sumHills(string &hillsname, string &outname , string &stride, vector<string> proj, vector<string> &gmin,  vector<string> &gmax, vector<unsigned> &gbin );
+  void   sumHills(string &hillsname, string &outname , string &stride, vector<string> proj, vector<string> &gmin,  vector<string> &gmax, vector<unsigned> &gbin ,string &kt);
   bool   scanOneHill(IFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
 
 public:
@@ -166,6 +166,7 @@ public:
   void update();
   static void registerKeywords(Keywords& keys);
   bool checkNeedsGradients()const{if(adaptive_==FlexibleBin::geometry){return true;}else{return false;}};
+  double addExpBetaV(const double &beta, const double &value, double &inoutval);
 };
 
 PLUMED_REGISTER_ACTION(MetaD,"METAD")
@@ -194,7 +195,8 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","WALKERS_RSTRIDE","stride for reading hills files");
   keys.add("optional","SUMHILLS"," this keyword is reserved to be used via commandline and expect the name for the file to be projected ");
   keys.add("optional","SUMHILLS_WSTRIDE"," this keyword is reserved to be used via commandline and expect the stride for the file to be projected ");
-  keys.add("optional","PROJ"," only with sumhills: the projection to the cvs");
+  keys.add("optional","PROJ"," only with sumhills: the projection on the cvs");
+  keys.add("optional","KT"," only with sumhills: the kt factor when projection on cvs");
 }
 
 MetaD::~MetaD(){
@@ -268,6 +270,8 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   vector<string> proj_;
   parseVector("PROJ",proj_);
   string sumHillsFile,sumHillsWStride; 
+  string kt; 
+  parse("KT",kt);
   sumHillsFile="";
   parse("SUMHILLS",sumHillsFile);
   if(sumHillsFile!="")sumhills_=true;
@@ -348,7 +352,7 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
 
 // now input is acquired: if sumhills then do it now 
   if(sumhills_){
-    sumHills(hillsfname,sumHillsFile,sumHillsWStride,proj_,gmin,gmax,gbin);
+    sumHills(hillsfname,sumHillsFile,sumHillsWStride,proj_,gmin,gmax,gbin,kt);
     return;
   };
 
@@ -830,15 +834,20 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
-void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin){
+void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin, string &kt){
      log<<"  >>  Entering sumhills utility  <<\n"; 
      log<<"      inputfile  is: "<<hillsname<<"\n"; 
      log<<"      outputfile is: "<<outname<<"\n"; 
+     log<<"      beta       is:"<<std::string(beta)<<"\n";
      //
      // default grid nbins
      //
      unsigned mybin;mybin=10;
      unsigned stride; 
+     double beta;
+     Tools::convert(kt,beta);
+     beta=1./beta;
+    /// log<<"beta "<<std::string(beta)<<"\n";
      if(stringstride==""){
          stride=0;
      }else{
@@ -864,16 +873,20 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
              ifile->open(hillsname);
              if(stride==0){
                   readGaussians(ifile);		
+                  // now that it is read, just unset the restart so to cleanup the frames 
+		  plumed.setRestart(false);
                   OFile gridfile; gridfile.link(*this);
                   gridfile.open(outname);
                   if(proj.size()==0){ // normal projection
+		     // invert the potential	
+                     BiasGrid_->scaleAllValuesAndDerivatives(-1.);
                      log<<"  Writing full grid... \n";
                      BiasGrid_->writeToFile(gridfile);
                   }else{
                      // special projection
                      // create an additional grid with the limits of the current grid but do it in a lower dimensionality
                      log<<"  Projecting on subgrid... \n";
-                     Grid smallGrid=BiasGrid_->project(proj);
+                     Grid smallGrid=BiasGrid_->project(proj,beta);
                      log<<"  Writing subgrid.. \n";
                      smallGrid.writeToFile(gridfile);
                   } 
@@ -885,14 +898,16 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
                      std::ostringstream ostr;ostr<<i;
                      string newgrid;newgrid=outname+"."+ostr.str();
                      log<<"  New output gridfile "<<newgrid<<"\n";
+		     plumed.setRestart(false);
                      OFile gridfile; gridfile.link(*this);
                      gridfile.open(newgrid);
                      if(proj.size()==0){ // normal projection: no reduction
+			BiasGrid_->scaleAllValuesAndDerivatives(-1.);
                         log<<"  Writing full grid... \n";
                     	BiasGrid_->writeToFile(gridfile);
                      }else{ // reduction
                         log<<"  Projecting on subgrid... \n";
-                     	Grid smallGrid=BiasGrid_->project(proj);
+                     	Grid smallGrid=BiasGrid_->project(proj,beta);
                         log<<"  Writing subgrid \n";
 			smallGrid.writeToFile(gridfile);
                      }
@@ -907,7 +922,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
 		  if(proj.size()==0){ 	
                   	BiasGrid_->writeToFile(gridfile);
                   }else{
-		   	Grid smallGrid=BiasGrid_->project(proj);
+		   	Grid smallGrid=BiasGrid_->project(proj,beta);
 			smallGrid.writeToFile(gridfile);
                   }
                   gridfile.close();    

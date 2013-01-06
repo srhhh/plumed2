@@ -638,13 +638,13 @@ void SparseGrid::writeToFile(OFile& ofile){
 }
 
 
-void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh){
+void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh, double &beta){
     unsigned i=0;
     for(i=0;i<vHigh.size();i++){
        if(vHigh[i]<0){
     	  for(unsigned j=0;j<(getNbin())[i];j++){
             vHigh[i]=int(j);  
-            projectOnLowDimension(val,vHigh); // recursive function: this is the core of the mechanism
+            projectOnLowDimension(val,vHigh,beta); // recursive function: this is the core of the mechanism
             vHigh[i]=-1;
           } 
           return; // 
@@ -660,12 +660,16 @@ void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh){
         //
         // this is the real assignment !!!!! (hack this to have bias or other stuff)
         //
-        val+=getValue(vv) ; 
-        //std::cerr<<" VAL: "<<v <<endl;
+
+        // this case: produce fes
+        val+=exp(beta*getValue(vv)) ;
+        // to be added: bias (same as before without negative sign) 
+        
+        //std::cerr<<" VAL: "<<val <<endl;
     }
 };
 
-Grid Grid::project(const std::vector<std::string> proj ){
+Grid Grid::project(const std::vector<std::string> proj ,  double &beta ){
          // find extrema only for the projection
          vector<string>   smallMin,smallMax;
          vector<unsigned> smallBin;
@@ -716,11 +720,11 @@ Grid Grid::project(const std::vector<std::string> proj ){
                  for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
                  // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
                  double initval=0.;  
-                 projectOnLowDimension(initval,vHigh); 
-                 smallgrid.setValue(i,initval);  
+                 projectOnLowDimension(initval,vHigh,beta); 
+                 // to integrate metadynamics
+                 smallgrid.setValue(i,-(1./beta)*log(initval));  
          }
 
-     //new  smallgrid() 
      return smallgrid; 
 }
 

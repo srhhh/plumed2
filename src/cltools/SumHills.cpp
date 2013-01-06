@@ -61,11 +61,12 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   //keys.add("compulsory","--plumed","plumed.dat","specify the name of the plumed input file");
   keys.add("compulsory","--hills","HILLS","specify the name of the hills file");
   keys.add("optional","--stride","specify the stride for integrating hills file (default 0=never)");
-  keys.add("optional","--GRID_MIN","the lower bounds for the grid");
-  keys.add("optional","--GRID_MAX","the upper bounds for the grid");
-  keys.add("optional","--GRID_BIN","the number of bins for the grid");
+  keys.add("optional","--min","the lower bounds for the grid");
+  keys.add("optional","--max","the upper bounds for the grid");
+  keys.add("optional","--bin","the number of bins for the grid");
   keys.add("optional","--idw","specify the variables to be integrated (default is all)");
   keys.add("optional","--outfile","specify the outputfile for sumhills");
+  keys.add("optional","--kt","specify temperature for integrating out variables");
 }
 
 CLToolSumHills::CLToolSumHills(const CLToolOptions& co ):
@@ -141,22 +142,23 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
    // setup grids
    unsigned grid_check=0; 
    vector<std::string> gmin(mycvs.size());
-   if(parseVector("--GRID_MIN",gmin)){
-   	if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for --GRID_MIN");
+   if(parseVector("--min",gmin)){
+   	if(gmin.size()!=mycvs.size() && gmin.size()!=0) plumed_merror("not enough values for --min");
 	grid_check++;
    }
    vector<std::string> gmax(mycvs.size() );
-   if(parseVector("--GRID_MAX",gmax)){
-   	if(gmax.size()!=mycvs.size() && gmax.size()!=0) plumed_merror("not enough values for --GRID_MAX");
+   if(parseVector("--max",gmax)){
+   	if(gmax.size()!=mycvs.size() && gmax.size()!=0) plumed_merror("not enough values for --max");
 	grid_check++;
    }
    vector<std::string> gbin(mycvs.size());
-   if(parseVector("--GRID_BIN",gbin)){
-	if(gbin.size()!=mycvs.size() && gbin.size()!=0) plumed_merror("not enough values for --GRID_BIN");
-	grid_check++;
+   bool grid_has_bin; grid_has_bin=false;	
+   if(parseVector("--bin",gbin)){
+	if(gbin.size()!=mycvs.size() && gbin.size()!=0) plumed_merror("not enough values for --bin");
+	grid_has_bin=true;
    }
-   plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
-   plumed_massert((grid_check==0 || grid_check==3),"you should define all the --GRID_MIN --GRID_MAX and --GRID_BIN keys");
+   plumed_massert( gmin.size()==gmax.size() && gmin.size()==gbin.size() ,"you should specify --min and --max and --bin together ");
+   plumed_massert(( (grid_check==0 && grid_has_bin==false ) || (grid_check==2 && grid_has_bin==true) ),"you should define all the --min --max --bin keys");
 
    PlumedMain plumed;
    std::string ss;
@@ -205,13 +207,15 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
     actioninput+=hillsFile;
 
     // set the grid 
-    if(grid_check==3){
+    if(grid_check==2){
        actioninput+=std::string(" GRID_MAX=");
        for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
        actioninput+=gmax[ncv-1];
        actioninput+=std::string(" GRID_MIN=");
        for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
        actioninput+=gmin[ncv-1];
+    }
+    if(grid_has_bin){
        actioninput+=std::string(" GRID_BIN=");
        for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
        actioninput+=gbin[ncv-1];
@@ -229,8 +233,8 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
     }
 
     vector<std::string> idw;
-    parseVector("--idw",idw);
     // check if the variables to be used are correct 
+    std::string kt; kt=std::string("1.");// assign an arbitrary value just in case that idw.size()==mycvs.size() 
     if(parseVector("--idw",idw)){
         for(unsigned i=0;i<idw.size();i++){
             bool found=false;
@@ -242,10 +246,18 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
         actioninput+=std::string(" PROJ=");
         for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
         actioninput+=idw.back();  
+        plumed_massert( idw.size()<=mycvs.size() ,"the number of variables to be integrated should be at most equal to the total number of cvs  "); 
+	// in this case you neeed a beta factor!
+        if(idw.size()<mycvs.size() ){
+           if(!parse("--kt",kt)) { 	 
+	   	 plumed_merror("need a  factor kt to integrate out variables: use --kt ");
+       	   } 
+	}
     } 
+    actioninput+=std::string(" KT=")+kt ; // beta is eventually ignored whenever the size of the projection is small
  
     // multivariate? welltemp? grids? restart from grid? automatically generate it? which projection? stride?    
-    //cerr<<"METASTRING:  "<<actioninput<<endl;
+    cerr<<"METASTRING:  "<<actioninput<<endl;
     plumed.readInputString(actioninput);
 
     // if not a grid, then set it up automatically
