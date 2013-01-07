@@ -130,7 +130,8 @@ public:
  virtual void addValueAndDerivatives(const std::vector<unsigned> & indices, double value, std::vector<double>& der); 
 /// Scale all grid values and derivatives by a constant factor
  virtual void scaleAllValuesAndDerivatives( const double& scalef );
-
+/// apply function: takes  pointer to  function that accepts a double and apply 
+ virtual void applyFunctionAllValuesAndDerivatives( double (*func)(double val), double (*funcder)(double valder) );
 /// add a kernel function to the grid
  void addKernel( const KernelFunctions& kernel );
 
@@ -139,7 +140,8 @@ public:
 
  virtual ~Grid(){};
 
-/// project a high dimensional grid onto a low dimensional one 
+/// project a high dimensional grid onto a low dimensional one: this should be changed at some time 
+/// to enable many types of weighting
  Grid project( const std::vector<std::string> proj , double &beta  ); 
  void projectOnLowDimension(double &val , std::vector<int> &varHigh, double &beta); 
 };

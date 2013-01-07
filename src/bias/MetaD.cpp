@@ -143,6 +143,8 @@ private:
   bool sumhills_;
   
   void   readGaussians(IFile*);
+  /// read gaussians from a file that might be a simple colvar and impose the sigma
+  void   readGaussiansFromPoints(IFile*,const vector<double> &hsigma, const double hheight);
   void   chooseGridSizes(IFile *ifile,vector<string> &gmin,vector<string> &gmax, vector<unsigned> &gbin, unsigned const default_size);
   bool   readChunkOfGaussians(IFile *ifile, unsigned n);
   void   writeGaussian(const Gaussian&,OFile&);
@@ -156,8 +158,10 @@ private:
   double evaluateGaussian(const vector<double>&, const Gaussian&,double* der=NULL);
   void   finiteDifferenceGaussian(const vector<double>&, const Gaussian&);
   vector<unsigned> getGaussianSupport(const Gaussian&);
-  void   sumHills(string &hillsname, string &outname , string &stride, vector<string> proj, vector<string> &gmin,  vector<string> &gmax, vector<unsigned> &gbin ,string &kt);
+  void   sumHills(string &hillsname, string &outname , string &stride, vector<string> proj, vector<string> &gmin,  vector<string> &gmax, vector<unsigned> &gbin ,string &kt, string &histofile, vector<string> &histosigma);
   bool   scanOneHill(IFile *ifile,  vector<Value> &v, vector<double> &center, vector<double>  &sigma, double &height, bool &multivariate  );
+  /// this scan one point from a simple colvar file and gives back the centers 
+  bool   scanOnePoint(IFile *ifile,  vector<Value> &v, vector<double> &center );
 
 public:
   MetaD(const ActionOptions&);
@@ -166,7 +170,6 @@ public:
   void update();
   static void registerKeywords(Keywords& keys);
   bool checkNeedsGradients()const{if(adaptive_==FlexibleBin::geometry){return true;}else{return false;}};
-  double addExpBetaV(const double &beta, const double &value, double &inoutval);
 };
 
 PLUMED_REGISTER_ACTION(MetaD,"METAD")
@@ -197,6 +200,8 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","SUMHILLS_WSTRIDE"," this keyword is reserved to be used via commandline and expect the stride for the file to be projected ");
   keys.add("optional","PROJ"," only with sumhills: the projection on the cvs");
   keys.add("optional","KT"," only with sumhills: the kt factor when projection on cvs");
+  keys.add("optional","HISTOFILE","only with sumhills: source file for histogram creation(may be the same as HILLS)");
+  keys.add("optional","HISTOSIGMA"," only with sumhills: vector of bin sizes for histogram");
 }
 
 MetaD::~MetaD(){
@@ -277,7 +282,10 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
   if(sumHillsFile!="")sumhills_=true;
   sumHillsWStride="";
   parse("SUMHILLS_WSTRIDE",sumHillsWStride);
-   
+  string histofile_; 
+  parse("HISTOFILE",histofile_);
+  vector<string> histosigma_; 
+  parseVector("HISTOSIGMA",histosigma_);
 
   // Grid Stuff
   vector<std::string> gmin(getNumberOfArguments());
@@ -352,8 +360,8 @@ mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),sumhills_(false)
 
 // now input is acquired: if sumhills then do it now 
   if(sumhills_){
-    sumHills(hillsfname,sumHillsFile,sumHillsWStride,proj_,gmin,gmax,gbin,kt);
-    return;
+    sumHills(hillsfname,sumHillsFile,sumHillsWStride,proj_,gmin,gmax,gbin,kt,histofile_,histosigma_);
+    return; // once you have integrated, just give up
   };
 
 // initializing grid
@@ -424,6 +432,23 @@ void MetaD::readGaussians(IFile *ifile)
   addGaussian(Gaussian(center,sigma,height,multivariate));
  }     
  log.printf("      %d Gaussians read\n",nhills);
+}
+void MetaD::readGaussiansFromPoints(IFile *ifile,const vector<double> &hsigma, const double hheight)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ int nhills=0; 
+ bool multivariate=false;
+
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
+
+ while(scanOnePoint(ifile,tmpvalues,center)){;
+   nhills++;
+   addGaussian(Gaussian(center,hsigma,hheight,multivariate));
+ }     
+ log.printf("      %d Gaussians read\n",nhills);
+
 }
 /// this function allows to prescreen a files of gaussians and find boundary and size according some 
 /// criteria
@@ -839,7 +864,15 @@ void MetaD::finiteDifferenceGaussian
  log<<"--------- END finiteDifferenceGaussian ------------\n";
 }
 
-void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin, string &kt){
+double  mylog( double v1 ){
+      return log(v1);
+};
+
+double  mylogder( double v1 ){
+      return 1./v1;
+};
+ 
+void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin, string &kt, string &histofile,  vector<string> &histosigma){
      log<<"  >>  Entering sumhills utility  <<\n"; 
      log<<"      inputfile  is: "<<hillsname<<"\n"; 
      log<<"      outputfile is: "<<outname<<"\n"; 
@@ -863,77 +896,171 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
      ifile->link(*this);
      ifiles.push_back(ifile); /// this is needed since this is the file that will be checked to be closed 
 
-     if(ifile->FileExist(hillsname)){
-             // if the parameters for the grid are not defined then try to assign them 
-             if(!grid_){
-                  ifile->open(hillsname);
-                  chooseGridSizes(ifile,gmin,gmax,gbin,mybin); // default size for grid 
-                  ifile->close();
-             }
-             // now create the grid
-             std::string funcl=getLabel() + ".bias";
-             log<<"      Allocating full grid... \n";
-             BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
-             grid_=true; 
-             ifile->open(hillsname);
-             if(stride==0){
-                  readGaussians(ifile);		
-                  // now that it is read, just unset the restart so to cleanup the frames 
-		  plumed.setRestart(false);
-                  OFile gridfile; gridfile.link(*this);
-                  gridfile.open(outname);
-                  if(proj.size()==0){ // normal projection
-		     // invert the potential	
-                     BiasGrid_->scaleAllValuesAndDerivatives(-1.);
-                     log<<"      Writing full grid... \n";
-                     BiasGrid_->writeToFile(gridfile);
-                  }else{
-                     // special projection
-                     // create an additional grid with the limits of the current grid but do it in a lower dimensionality
-                     log<<"      Projecting on subgrid... \n";
-                     Grid smallGrid=BiasGrid_->project(proj,beta);
-                     log<<"      Writing subgrid.. \n";
-                     smallGrid.writeToFile(gridfile);
-                  } 
-                  gridfile.close();    
-             }else{
-                  // divide in chunks
-                  unsigned i=0; 
-                  while(readChunkOfGaussians(ifile,stride)){
-                     std::ostringstream ostr;ostr<<i;
-                     string newgrid;newgrid=outname+"."+ostr.str();
-                     log<<"      New output gridfile "<<newgrid<<"\n";
-		     plumed.setRestart(false);
-                     OFile gridfile; gridfile.link(*this);
-                     gridfile.open(newgrid);
-                     if(proj.size()==0){ // normal projection: no reduction
-			BiasGrid_->scaleAllValuesAndDerivatives(-1.);
-                        log<<"      Writing full grid... \n";
-                    	BiasGrid_->writeToFile(gridfile);
-                     }else{ // reduction
-                        log<<"      Projecting on subgrid... \n";
-                     	Grid smallGrid=BiasGrid_->project(proj,beta);
-                        log<<"      Writing subgrid \n";
-			smallGrid.writeToFile(gridfile);
-                     }
-                     gridfile.close();    
-                     i++;
-                  }; 
-                  std::ostringstream ostr;ostr<<i;
-                  string newgrid;newgrid=outname+"."+ostr.str();
-                  log<<"      New output gridfile "<<newgrid<<"\n";
-                  OFile gridfile; gridfile.link(*this);
-                  gridfile.open(newgrid);
-		  if(proj.size()==0){ 	
-                  	BiasGrid_->writeToFile(gridfile);
-                  }else{
-		   	Grid smallGrid=BiasGrid_->project(proj,beta);
-			smallGrid.writeToFile(gridfile);
+     IFile *ifileh = new IFile();
+     ifileh->link(*this);
+     ifiles.push_back(ifileh); /// this is needed since this is the file that will be checked to be closed 
+
+
+     if(plumed.getRestart()){;
+   	  log<<"      There is a hills file that looks good... \n";
+   	  if(ifile->FileExist(hillsname)){
+   	          // if the parameters for the grid are not defined then try to assign them 
+   	          if(!grid_){
+   	               ifile->open(hillsname);
+   	               chooseGridSizes(ifile,gmin,gmax,gbin,mybin); // default size for grid 
+   	               ifile->close();
+   	          }
+   	          // now create the grid
+   	          std::string funcl=getLabel() + ".bias";
+   	          log<<"      Allocating full grid... \n";
+   	          BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
+   	          grid_=true; 
+   	          ifile->open(hillsname);
+   	          if(stride==0){
+   	               readGaussians(ifile);		
+   	               // now that it is read, just unset the restart so to cleanup the frames 
+   	     	       plumed.setRestart(false);
+   	               OFile gridfile; gridfile.link(*this);
+   	               gridfile.open(outname);
+   	               if(proj.size()==0){ // normal projection
+   	     	     // invert the potential	
+   	                  BiasGrid_->scaleAllValuesAndDerivatives(-1.);
+   	                  log<<"      Writing full grid... \n";
+   	                  BiasGrid_->writeToFile(gridfile);
+   	               }else{
+   	                  // special projection
+   	                  // create an additional grid with the limits of the current grid but do it in a lower dimensionality
+   	                  log<<"      Projecting on subgrid... \n";
+   	                  Grid smallGrid=BiasGrid_->project(proj,beta);
+   	                  log<<"      Writing subgrid.. \n";
+   	                  smallGrid.writeToFile(gridfile);
+   	               } 
+   	               gridfile.close();    
+   	          }else{
+   	               // divide in chunks
+   	               unsigned i=0; 
+   	               while(readChunkOfGaussians(ifile,stride)){
+   	                  std::ostringstream ostr;ostr<<i;
+   	                  string newgrid;newgrid=outname+"."+ostr.str();
+   	                  log<<"      New output gridfile "<<newgrid<<"\n";
+   	     	     plumed.setRestart(false);
+   	                  OFile gridfile; gridfile.link(*this);
+   	                  gridfile.open(newgrid);
+   	                  if(proj.size()==0){ // normal projection: no reduction
+   	     		BiasGrid_->scaleAllValuesAndDerivatives(-1.);
+   	                     log<<"      Writing full grid... \n";
+   	                 	BiasGrid_->writeToFile(gridfile);
+   	                  }else{ // reduction
+   	                     log<<"      Projecting on subgrid... \n";
+   	                  	Grid smallGrid=BiasGrid_->project(proj,beta);
+   	                     log<<"      Writing subgrid \n";
+   	     		smallGrid.writeToFile(gridfile);
+   	                  }
+   	                  gridfile.close();    
+   	                  i++;
+   	               }; 
+   	               std::ostringstream ostr;ostr<<i;
+   	               string newgrid;newgrid=outname+"."+ostr.str();
+   	               log<<"      New output gridfile "<<newgrid<<"\n";
+   	               OFile gridfile; gridfile.link(*this);
+   	               gridfile.open(newgrid);
+   	     	  if(proj.size()==0){ 	
+   	               	BiasGrid_->writeToFile(gridfile);
+   	               }else{
+   	     	   	Grid smallGrid=BiasGrid_->project(proj,beta);
+   	     		smallGrid.writeToFile(gridfile);
+   	               }
+   	               gridfile.close();    
+                       free(BiasGrid_);
+   	          }
+   	  }  
+   	  ifile->close();
+     }
+     if(histosigma.size()!=0){;
+   	  log<<"      There seems a histogram calculation ... \n";
+   	  if(ifileh->FileExist(histofile)){
+   	         // if the parameters for the grid are not defined then try to assign them 
+                 plumed_massert(grid_,"you need to fully define a grid to do the histogram calculation" );
+   	         // if(!grid_){
+   	         //      ifile->open(hillsname);
+   	         //      chooseGridSizes(ifile,gmin,gmax,gbin,mybin); // default size for grid 
+   	         //      ifile->close();
+   	         // }
+   	          // now create the grid
+   	          std::string funcl=getLabel() + ".histo";
+   	          log<<"      Allocating full grid... \n";
+                  vector<double> hsigma(histosigma.size());
+		  for(unsigned i=0;i<histosigma.size();i++){ 
+			Tools::convert(histosigma[i],hsigma[i]);
                   }
-                  gridfile.close();    
-             }
-     }  
-     ifile->close();
+   	          BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
+   	          grid_=true; 
+   	          ifileh->open(histofile);
+   	          if(stride==0){
+                       // this takes a COLVAR or HILLS and read in as it was a 
+		       // file containing non multivariate hills of predefined width and height
+	               // it is usefult to create a continuous binning  		
+   	               readGaussiansFromPoints(ifileh,hsigma,1.0);		
+   	               // now that it is read, just unset the restart so to cleanup the frames 
+   	     	       plumed.setRestart(false);
+   	               OFile gridfile; gridfile.link(*this);
+   	               gridfile.open(outname);
+   	               if(proj.size()==0){ // normal projection
+   	                  log<<"      Writing full grid... \n";
+                          // now should do -1/beta*log(histo) 
+                          BiasGrid_->applyFunctionAllValuesAndDerivatives(&mylog,&mylogder); 
+                          BiasGrid_->scaleAllValuesAndDerivatives(-1./beta); 
+   	                  BiasGrid_->writeToFile(gridfile);
+   	              // }else{
+   	              //    // special projection
+   	              //    // create an additional grid with the limits of the current grid but do it in a lower dimensionality
+   	              //    log<<"      Projecting on subgrid... \n";
+   	              //    Grid smallGrid=BiasGrid_->project(proj,beta);
+   	              //    log<<"      Writing subgrid.. \n";
+   	              //    smallGrid.writeToFile(gridfile);
+   	               } 
+   	               gridfile.close();    
+   	          //}else{
+   	          //     // divide in chunks
+   	          //     unsigned i=0; 
+   	          //     while(readChunkOfGaussians(ifile,stride)){
+   	          //        std::ostringstream ostr;ostr<<i;
+   	          //        string newgrid;newgrid=outname+"."+ostr.str();
+   	          //        log<<"      New output gridfile "<<newgrid<<"\n";
+   	     	  //   plumed.setRestart(false);
+   	          //        OFile gridfile; gridfile.link(*this);
+   	          //        gridfile.open(newgrid);
+   	          //        if(proj.size()==0){ // normal projection: no reduction
+   	     	  //      BiasGrid_->scaleAllValuesAndDerivatives(-1.);
+   	          //           log<<"      Writing full grid... \n";
+   	          //       	BiasGrid_->writeToFile(gridfile);
+   	          //        }else{ // reduction
+   	          //           log<<"      Projecting on subgrid... \n";
+   	          //        	Grid smallGrid=BiasGrid_->project(proj,beta);
+   	          //           log<<"      Writing subgrid \n";
+   	     	  //      smallGrid.writeToFile(gridfile);
+   	          //        }
+   	          //        gridfile.close();    
+   	          //        i++;
+   	          //     }; 
+   	          //     std::ostringstream ostr;ostr<<i;
+   	          //     string newgrid;newgrid=outname+"."+ostr.str();
+   	          //     log<<"      New output gridfile "<<newgrid<<"\n";
+   	          //     OFile gridfile; gridfile.link(*this);
+   	          //     gridfile.open(newgrid);
+   	     	  //if(proj.size()==0){ 	
+   	          //     	BiasGrid_->writeToFile(gridfile);
+   	          //     }else{
+   	     	  // 	Grid smallGrid=BiasGrid_->project(proj,beta);
+   	     	  //      smallGrid.writeToFile(gridfile);
+   	          //     }
+   	          //     gridfile.close();    
+   	          }
+   	  }  
+   	  ifile->close();
+ 
+     }
+ 
      log<<"  >>  Exiting sumhills utility   <<\n"; 
 }
 
@@ -1008,6 +1135,32 @@ bool MetaD::scanOneHill(IFile *ifile,  vector<Value> &tmpvalues, vector<double> 
     return false; 
   }; 
 };
+/// takes a pointer to the file and a template string with values v and gives back the next center
+bool MetaD::scanOnePoint(IFile *ifile,  vector<Value> &tmpvalues, vector<double> &center ){
+  double dummy;
+  if(ifile->scanField("time",dummy)){
+     unsigned ncv; ncv=tmpvalues.size();
+     for(unsigned i=0;i<ncv;++i){
+       ifile->scanField( &tmpvalues[i] );
+       if( tmpvalues[i].isPeriodic() && ! getPntrToArgument(i)->isPeriodic() ){
+          error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+       } else if( tmpvalues[i].isPeriodic() ){
+          std::string imin, imax; tmpvalues[i].getDomain( imin, imax );
+          std::string rmin, rmax; getPntrToArgument(i)->getDomain( rmin, rmax );
+          if( imin!=rmin || imax!=rmax ){
+            error("in hills file periodicity for variable " + tmpvalues[i].getName() + " does not match periodicity in input");
+          }
+       }
+       center[i]=tmpvalues[i].get();
+     }
+     // this passes to a new line
+     ifile->scanField();
+     return true;
+  }else{ 
+    return false; 
+  }; 
+};
+
 void   MetaD::getMinMaxBin(const Gaussian& hill,vector<double> &min,vector<double> &max, vector<double> &bin){
  unsigned ncut; ncut=2; // number of stdeviation to consider that a gaussian is completely in 
  unsigned ndiv; ndiv=50; // number of needed point each gaussian 

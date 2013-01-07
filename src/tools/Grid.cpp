@@ -443,6 +443,17 @@ void Grid::scaleAllValuesAndDerivatives( const double& scalef ){
   }
 }
 
+void Grid::applyFunctionAllValuesAndDerivatives( double (*func)(double val), double (*funcder)(double valder) ){
+  if(usederiv_){
+     for(unsigned i=0;i<grid_.size();++i){
+         grid_[i]=func(grid_[i]);
+         for(unsigned j=0;j<dimension_;++j) der_[i][j]=funcder(der_[i][j]);
+     }
+  } else {
+     for(unsigned i=0;i<grid_.size();++i) grid_[i]=func(grid_[i]);
+  }
+}
+
 void Grid::writeHeader(OFile& ofile){
  for(unsigned i=0;i<dimension_;++i){
      ofile.addConstantField("min_" + argnames[i]);

@@ -137,10 +137,6 @@ bool CLTool::parseVector(const std::string&key,std::vector<T>&t){
   }
   // check the size
   if( !skipcheck && t.size()!=size ) {
-     for(unsigned i=0;i<t.size();i++){
-       std::cerr<<"ELEM "<<i<<" "<<t[i]<<std::endl;            
-     }
-     std::cerr<<"EXPECTED "<<size<<std::endl;            
      plumed_merror("vector read in for keyword  "+key+" has wrong size" );
   }
   std::string def;
