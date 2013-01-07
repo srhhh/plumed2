@@ -649,13 +649,13 @@ void SparseGrid::writeToFile(OFile& ofile){
 }
 
 
-void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh, double &beta){
+void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh, WeightBase * ptr2obj ){
     unsigned i=0;
     for(i=0;i<vHigh.size();i++){
        if(vHigh[i]<0){
     	  for(unsigned j=0;j<(getNbin())[i];j++){
             vHigh[i]=int(j);  
-            projectOnLowDimension(val,vHigh,beta); // recursive function: this is the core of the mechanism
+            projectOnLowDimension(val,vHigh,ptr2obj); // recursive function: this is the core of the mechanism
             vHigh[i]=-1;
           } 
           return; // 
@@ -673,19 +673,26 @@ void Grid::projectOnLowDimension(double &val, std::vector<int> &vHigh, double &b
         //
 
         // this case: produce fes
-        val+=exp(beta*getValue(vv)) ;
+        //val+=exp(beta*getValue(vv)) ;
+        double myv=getValue(vv);
+        val=ptr2obj->projectInnerLoop(val,myv) ;
         // to be added: bias (same as before without negative sign) 
         
         //std::cerr<<" VAL: "<<val <<endl;
     }
 };
 
-Grid Grid::project(const std::vector<std::string> proj ,  double &beta ){
+Grid Grid::project(const std::vector<std::string> proj , WeightBase *ptr2obj ){
          // find extrema only for the projection
          vector<string>   smallMin,smallMax;
          vector<unsigned> smallBin;
          vector<Value*>   smallVal;
          vector<unsigned> dimMapping;
+
+         // check if the two key methods are there
+         WeightBase* pp = dynamic_cast<WeightBase*>(ptr2obj);
+         if (!pp)plumed_merror("This WeightBase is not complete: you need a projectInnerLoop and projectOuterLoop ");
+ 
          for(unsigned j=0;j<proj.size();j++){
               for(unsigned i=0;i<getArgNames().size();i++){
                     if(proj[j]==getArgNames()[i]){ 
@@ -731,9 +738,9 @@ Grid Grid::project(const std::vector<std::string> proj ,  double &beta ){
                  for(unsigned j=0;j<dimMapping.size();j++)vHigh[dimMapping[j]]=int(v[j]);
                  // the vector vhigh now contains at the beginning the index of the low dimension and -1 for the values that need to be calculated 
                  double initval=0.;  
-                 projectOnLowDimension(initval,vHigh,beta); 
+                 projectOnLowDimension(initval,vHigh, ptr2obj); 
                  // to integrate metadynamics
-                 smallgrid.setValue(i,-(1./beta)*log(initval));  
+                 smallgrid.setValue(i,ptr2obj->projectOuterLoop(initval));  
          }
 
      return smallgrid; 

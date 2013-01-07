@@ -28,6 +28,36 @@
 
 namespace PLMD{ 
 
+
+// simple function to enable various weighting
+
+class WeightBase{
+    public:
+        virtual double projectInnerLoop(double &input, double &v)=0;
+        virtual double projectOuterLoop(double &v)=0;
+};
+
+class BiasWeight:public WeightBase{
+    public:
+      double beta,invbeta;
+      BiasWeight(double v){beta=v;invbeta=1./beta;};
+      double projectInnerLoop(double &input, double &v){return  input+exp(beta*v);};
+      double projectOuterLoop(double &v){return -invbeta*log(v);};
+};
+
+class ProbWeight:public WeightBase{
+    public:
+      double beta,invbeta;
+      ProbWeight(double v){beta=v;invbeta=1./beta;};
+      double projectInnerLoop(double &input, double &v){return  input+v;};
+      double projectOuterLoop(double &v){return -invbeta*log(v);};
+};
+
+
+
+
+
+
 class Value;
 class IFile;
 class OFile;
@@ -142,8 +172,8 @@ public:
 
 /// project a high dimensional grid onto a low dimensional one: this should be changed at some time 
 /// to enable many types of weighting
- Grid project( const std::vector<std::string> proj , double &beta  ); 
- void projectOnLowDimension(double &val , std::vector<int> &varHigh, double &beta); 
+ Grid project( const std::vector<std::string> proj , WeightBase *ptr2obj  ); 
+ void projectOnLowDimension(double &val , std::vector<int> &varHigh, WeightBase* ptr2obj ); 
 };
 
   
@@ -194,7 +224,6 @@ class SparseGrid : public Grid
 
  virtual ~SparseGrid(){};
 };
-
 }
 
 #endif

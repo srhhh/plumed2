@@ -871,12 +871,12 @@ double  mylog( double v1 ){
 double  mylogder( double v1 ){
       return 1./v1;
 };
- 
+
 void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, vector<string> proj, vector<std::string> &gmin,  vector<std::string> &gmax,  vector<unsigned> &gbin, string &kt, string &histofile,  vector<string> &histosigma){
      log<<"  >>  Entering sumhills utility  <<\n"; 
-     log<<"      inputfile  is: "<<hillsname<<"\n"; 
-     log<<"      outputfile is: "<<outname<<"\n"; 
-     log<<"      kt         is: "<<std::string(kt)<<"\n";
+     log<<"      inputfile          is: "<<hillsname<<"\n"; 
+     log<<"      outputfile for fes is: "<<outname<<"\n"; 
+     log<<"      kt                 is: "<<std::string(kt)<<"\n";
      //
      // default grid nbins
      //
@@ -931,7 +931,9 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	                  // special projection
    	                  // create an additional grid with the limits of the current grid but do it in a lower dimensionality
    	                  log<<"      Projecting on subgrid... \n";
-   	                  Grid smallGrid=BiasGrid_->project(proj,beta);
+                          BiasWeight *Bw=new BiasWeight(beta); 
+                          WeightBase *Wb=dynamic_cast<WeightBase*>(Bw); 
+   	                  Grid smallGrid=BiasGrid_->project(proj,Wb);
    	                  log<<"      Writing subgrid.. \n";
    	                  smallGrid.writeToFile(gridfile);
    	               } 
@@ -943,7 +945,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	                  std::ostringstream ostr;ostr<<i;
    	                  string newgrid;newgrid=outname+"."+ostr.str();
    	                  log<<"      New output gridfile "<<newgrid<<"\n";
-   	     	     plumed.setRestart(false);
+   	     	          plumed.setRestart(false);
    	                  OFile gridfile; gridfile.link(*this);
    	                  gridfile.open(newgrid);
    	                  if(proj.size()==0){ // normal projection: no reduction
@@ -952,7 +954,9 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	                 	BiasGrid_->writeToFile(gridfile);
    	                  }else{ // reduction
    	                     log<<"      Projecting on subgrid... \n";
-   	                  	Grid smallGrid=BiasGrid_->project(proj,beta);
+	  	             BiasWeight *Bw=new BiasWeight(beta); 
+			     WeightBase *Wb=dynamic_cast<WeightBase*>(Bw);
+   	                     Grid smallGrid=BiasGrid_->project(proj,Wb);
    	                     log<<"      Writing subgrid \n";
    	     		smallGrid.writeToFile(gridfile);
    	                  }
@@ -967,8 +971,10 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	     	  if(proj.size()==0){ 	
    	               	BiasGrid_->writeToFile(gridfile);
    	               }else{
-   	     	   	Grid smallGrid=BiasGrid_->project(proj,beta);
-   	     		smallGrid.writeToFile(gridfile);
+	  	         BiasWeight *Bw=new BiasWeight(beta); 
+                         WeightBase *Wb=dynamic_cast<WeightBase*>(Bw);
+   	                 Grid smallGrid=BiasGrid_->project(proj,Wb);
+   	     		 smallGrid.writeToFile(gridfile);
    	               }
    	               gridfile.close();    
                        free(BiasGrid_);
@@ -996,6 +1002,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	          BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,false,true);
    	          grid_=true; 
    	          ifileh->open(histofile);
+                  string histooutname;histooutname="correction.dat";
    	          if(stride==0){
                        // this takes a COLVAR or HILLS and read in as it was a 
 		       // file containing non multivariate hills of predefined width and height
@@ -1004,20 +1011,23 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	               // now that it is read, just unset the restart so to cleanup the frames 
    	     	       plumed.setRestart(false);
    	               OFile gridfile; gridfile.link(*this);
-   	               gridfile.open(outname);
+                       
+   	               gridfile.open(histooutname);
    	               if(proj.size()==0){ // normal projection
    	                  log<<"      Writing full grid... \n";
                           // now should do -1/beta*log(histo) 
                           BiasGrid_->applyFunctionAllValuesAndDerivatives(&mylog,&mylogder); 
                           BiasGrid_->scaleAllValuesAndDerivatives(-1./beta); 
    	                  BiasGrid_->writeToFile(gridfile);
-   	              // }else{
-   	              //    // special projection
-   	              //    // create an additional grid with the limits of the current grid but do it in a lower dimensionality
-   	              //    log<<"      Projecting on subgrid... \n";
-   	              //    Grid smallGrid=BiasGrid_->project(proj,beta);
-   	              //    log<<"      Writing subgrid.. \n";
-   	              //    smallGrid.writeToFile(gridfile);
+   	               }else{
+   	                  // special projection
+   	                  // create an additional grid with the limits of the current grid but do it in a lower dimensionality
+                          ProbWeight *Pw=new ProbWeight(beta);
+                          WeightBase *Wb=dynamic_cast<WeightBase*>(Pw);
+   	                  log<<"      Projecting on subgrid... \n";
+                          Grid smallGrid=BiasGrid_->project(proj,Wb);
+   	                  log<<"      Writing subgrid.. \n";
+   	                  smallGrid.writeToFile(gridfile);
    	               } 
    	               gridfile.close();    
    	          //}else{
