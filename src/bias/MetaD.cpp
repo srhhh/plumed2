@@ -147,6 +147,7 @@ private:
   void   readGaussiansFromPoints(IFile*,const vector<double> &hsigma, const double hheight);
   void   chooseGridSizes(IFile *ifile,vector<string> &gmin,vector<string> &gmax, vector<unsigned> &gbin, unsigned const default_size);
   bool   readChunkOfGaussians(IFile *ifile, unsigned n);
+  bool   readChunkOfGaussiansFromPoints(IFile *ifile, unsigned n,const vector<double> &hsigma, const double &hheight);
   void   writeGaussian(const Gaussian&,OFile&);
   void   addGaussian(const Gaussian&);
   /// this method finds the min value, max value and optimal bin size for this particular gaussian
@@ -516,16 +517,36 @@ bool MetaD::readChunkOfGaussians(IFile *ifile, unsigned n)
   if(welltemp_){height*=(biasf_-1.0)/biasf_;}
   addGaussian(Gaussian(center,sigma,height,multivariate));
   if(nhills==n){
-      log.printf("  %d Gaussians read\n",nhills);
+      log.printf("      %d Gaussians read\n",nhills);
       return true;
   }
   nhills++;
  }     
- log.printf("  %d Gaussians read\n",nhills);
+ log.printf("      %d Gaussians read\n",nhills);
  return false;
 }
 
+bool MetaD::readChunkOfGaussiansFromPoints(IFile *ifile, unsigned n, const vector<double> &hsigma, const double &hheight)
+{
+ unsigned ncv=getNumberOfArguments();
+ vector<double> center(ncv);
+ plumed_massert(hsigma.size()==ncv,"the sigma and the input point size should be the same");
+ unsigned nhills=0; 
+ bool multivariate=false;
+ std::vector<Value> tmpvalues;
+ for(unsigned j=0;j<getNumberOfArguments();++j) tmpvalues.push_back( Value( this, getPntrToArgument(j)->getName(), false ) ); 
 
+ while(scanOnePoint(ifile,tmpvalues,center)){;
+  addGaussian(Gaussian(center,hsigma,hheight,multivariate));
+  if(nhills==n){
+      log.printf("      %d Gaussians read\n",nhills);
+      return true;
+  }
+  nhills++;
+ }     
+ log.printf("      %d Gaussians read\n",nhills);
+ return false;
+}
 
 void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
   unsigned ncv=getNumberOfArguments();
@@ -967,6 +988,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	               string newgrid;newgrid=outname+"."+ostr.str();
    	               log<<"      New output gridfile "<<newgrid<<"\n";
    	               OFile gridfile; gridfile.link(*this);
+   	               log<<"      Writing full grid... \n";
    	               gridfile.open(newgrid);
    	     	  if(proj.size()==0){ 	
    	               	BiasGrid_->writeToFile(gridfile);
@@ -974,6 +996,7 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
 	  	         BiasWeight *Bw=new BiasWeight(beta); 
                          WeightBase *Wb=dynamic_cast<WeightBase*>(Bw);
    	                 Grid smallGrid=BiasGrid_->project(proj,Wb);
+   	                 log<<"      Writing subgrid \n";
    	     		 smallGrid.writeToFile(gridfile);
    	               }
    	               gridfile.close();    
@@ -1030,45 +1053,53 @@ void MetaD::sumHills(string &hillsname , string &outname, string &stringstride, 
    	                  smallGrid.writeToFile(gridfile);
    	               } 
    	               gridfile.close();    
-   	          //}else{
-   	          //     // divide in chunks
-   	          //     unsigned i=0; 
-   	          //     while(readChunkOfGaussians(ifile,stride)){
-   	          //        std::ostringstream ostr;ostr<<i;
-   	          //        string newgrid;newgrid=outname+"."+ostr.str();
-   	          //        log<<"      New output gridfile "<<newgrid<<"\n";
-   	     	  //   plumed.setRestart(false);
-   	          //        OFile gridfile; gridfile.link(*this);
-   	          //        gridfile.open(newgrid);
-   	          //        if(proj.size()==0){ // normal projection: no reduction
-   	     	  //      BiasGrid_->scaleAllValuesAndDerivatives(-1.);
-   	          //           log<<"      Writing full grid... \n";
-   	          //       	BiasGrid_->writeToFile(gridfile);
-   	          //        }else{ // reduction
-   	          //           log<<"      Projecting on subgrid... \n";
-   	          //        	Grid smallGrid=BiasGrid_->project(proj,beta);
-   	          //           log<<"      Writing subgrid \n";
-   	     	  //      smallGrid.writeToFile(gridfile);
-   	          //        }
-   	          //        gridfile.close();    
-   	          //        i++;
-   	          //     }; 
-   	          //     std::ostringstream ostr;ostr<<i;
-   	          //     string newgrid;newgrid=outname+"."+ostr.str();
-   	          //     log<<"      New output gridfile "<<newgrid<<"\n";
-   	          //     OFile gridfile; gridfile.link(*this);
-   	          //     gridfile.open(newgrid);
-   	     	  //if(proj.size()==0){ 	
-   	          //     	BiasGrid_->writeToFile(gridfile);
-   	          //     }else{
-   	     	  // 	Grid smallGrid=BiasGrid_->project(proj,beta);
-   	     	  //      smallGrid.writeToFile(gridfile);
-   	          //     }
-   	          //     gridfile.close();    
+   	          }else{
+   	               // divide in chunks
+   	               unsigned i=0; 
+   	               while(readChunkOfGaussiansFromPoints(ifileh,stride,hsigma,1.0)){
+   	                  std::ostringstream ostr;ostr<<i;
+   	                  string newgrid;newgrid=histooutname+"."+ostr.str();
+   	                  log<<"      New output gridfile "<<newgrid<<"\n";
+   	     	          plumed.setRestart(false);
+   	                  OFile gridfile; gridfile.link(*this);
+   	                  gridfile.open(newgrid);
+   	                  if(proj.size()==0){ // normal projection: no reduction
+   	     	             BiasGrid_->scaleAllValuesAndDerivatives(-1.);
+   	                     log<<"      Writing full grid... \n";
+                             BiasGrid_->applyFunctionAllValuesAndDerivatives(&mylog,&mylogder);
+                             BiasGrid_->scaleAllValuesAndDerivatives(-1./beta);
+                       	     BiasGrid_->writeToFile(gridfile);
+   	                  }else{ // reduction
+		             ProbWeight *Pw=new ProbWeight(beta);
+                             WeightBase *Wb=dynamic_cast<WeightBase*>(Pw);
+                             log<<"      Projecting on subgrid... \n";
+                             Grid smallGrid=BiasGrid_->project(proj,Wb);
+                             log<<"      Writing subgrid.. \n";
+                             smallGrid.writeToFile(gridfile);
+   	                  }
+   	                  gridfile.close();    
+   	                  i++;
+   	               }; 
+   	               std::ostringstream ostr;ostr<<i;
+   	               string newgrid;newgrid=histooutname+"."+ostr.str();
+   	               log<<"      New output gridfile "<<newgrid<<"\n";
+   	               OFile gridfile; gridfile.link(*this);
+   	               gridfile.open(newgrid);
+   	     	       if(proj.size()==0){ 	
+   	                log<<"      Writing full grid... \n";
+   	               	BiasGrid_->writeToFile(gridfile);
+   	               }else{
+			ProbWeight *Pw=new ProbWeight(beta);
+                        WeightBase *Wb=dynamic_cast<WeightBase*>(Pw);
+                        log<<"      Projecting on subgrid... \n";
+   	     	   	Grid smallGrid=BiasGrid_->project(proj,Wb);
+                        log<<"      Writing subgrid.. \n";
+   	     	        smallGrid.writeToFile(gridfile);
+   	               }
+   	               gridfile.close();    
    	          }
    	  }  
    	  ifile->close();
- 
      }
  
      log<<"  >>  Exiting sumhills utility   <<\n"; 
