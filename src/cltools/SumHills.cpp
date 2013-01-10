@@ -264,8 +264,36 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
         actioninput+=sigma.back();  
   } 
   //  welltemp? grids? restart from grid? automatically generate it?     
-  cerr<<"METASTRING:  "<<actioninput<<endl;
+  //cerr<<"METASTRING:  "<<actioninput<<endl;
+  //plumed.readInputString(actioninput);
+
+  /*
+
+	different implementation through function
+
+  */
+
+  actioninput="FUNCSUMHILLS ISCLTOOL ARG=";
+  for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
+  actioninput+=cvs[ncv-1];
+  if(dohills)actioninput+=" HILLSFILES="+hillsFile;
+  // set the grid 
+  if(grid_check==2){
+     actioninput+=std::string(" GRID_MAX=");
+     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
+     actioninput+=gmax[ncv-1];
+     actioninput+=std::string(" GRID_MIN=");
+     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
+     actioninput+=gmin[ncv-1];
+  }
+  if(grid_has_bin){
+     actioninput+=std::string(" GRID_BIN=");
+     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
+     actioninput+=gbin[ncv-1];
+  }
+  cerr<<"FUNCSTRING:  "<<actioninput<<endl;
   plumed.readInputString(actioninput);
+
 
   // if not a grid, then set it up automatically
   cerr<<"end of sum_hills"<<endl;
