@@ -106,14 +106,13 @@ constant(0.0)
   parse("EPSILON",epsilon);
   checkRead();
   plumed_assert(!plumed.getAtoms().usingNaturalUnits());
-  atoms.getUnits().getLength();
-  constant=138.935458111/atoms.getUnits().getEnergy();
-  k=sqrt(I/(epsilon*T))*502.903741125;
+  constant=138.935458111/atoms.getUnits().getEnergy()/atoms.getUnits().getLength();
+  k=sqrt(I/(epsilon*T))*502.903741125*atoms.getUnits().getLength();
   checkRead();
   log<<"  with solvent dielectric constant "<<epsilon<<"\n";
   log<<"  at temperature "<<T<<" K\n";
   log<<"  at ionic strength "<<I<< "M\n";
-  log<<"  Bibliography "<<plumed.cite("Trang, Carloni, Varani and Bussi, submitted (2013)");
+  log<<"  Bibliography "<<plumed.cite("Trang, Carloni, Varani and Bussi, submitted (2013)")<<" \n";
 }
 
 double DHEnergy::pairing(double distance,double&dfunc,unsigned i,unsigned j)const{
