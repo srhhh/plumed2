@@ -98,7 +98,7 @@ void MultiColvar::addColvar( const std::vector<unsigned>& newatoms ){
 
 void MultiColvar::readAtoms( int& natoms ){
   if( keywords.exists("ATOMS") ) readAtomsKeyword( natoms );
-  if( keywords.exists("GROUP") ) readGroupsKeyword( natoms );
+  if( keywords.exists("GROUP") || keywords.exists("GROUPA") ) readGroupsKeyword( natoms );
   if( keywords.exists("SPECIES") ) readSpeciesKeyword( natoms );
 
   if( !readatoms ) error("No atoms have been read in");
@@ -174,7 +174,7 @@ void MultiColvar::readGroupsKeyword( int& natoms ){
   }
   
   std::vector<AtomNumber> t;
-  parseAtomList("GROUP",t);
+  if( keywords.exists("GROUP") ) parseAtomList("GROUP",t);
   if( !t.empty() ){
       readatoms=true;
       for(unsigned i=0;i<t.size();++i) all_atoms.addIndexToList( t[i] );

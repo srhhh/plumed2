@@ -86,6 +86,12 @@ protected:
   void addAtomsDerivatives(const int&,const Vector&);
 /// Add some derivatives to the virial
   void addBoxDerivatives(const Tensor&);
+/// Get the absolute index of an atom
+  AtomNumber getAbsoluteIndex(const unsigned&) const;
+/// Get the charge of a particular atom
+  double getCharge(const unsigned&) const;
+/// Get the mass of a particular atom
+  double getMass(const unsigned&) const;
 public:
   MultiColvar(const ActionOptions&);
   ~MultiColvar(){};
@@ -154,6 +160,24 @@ inline
 const Value & MultiColvar::retreiveLastCalculatedValue(){
   return thisval;
   // copy( thisval, myvalue );  
+}
+
+inline
+AtomNumber MultiColvar::getAbsoluteIndex(const unsigned& iatom) const {
+  plumed_assert( iatom<colvar_atoms[current].getNumberActive() );
+  return ActionAtomistic::getAbsoluteIndex( colvar_atoms[current][iatom] );
+}
+
+inline
+double MultiColvar::getCharge(const unsigned& iatom) const {
+  plumed_assert( iatom<colvar_atoms[current].getNumberActive() );
+  return ActionAtomistic::getCharge( colvar_atoms[current][iatom] );
+}
+
+inline
+double MultiColvar::getMass(const unsigned& iatom) const {
+  plumed_assert( iatom<colvar_atoms[current].getNumberActive() );
+  return ActionAtomistic::getMass( colvar_atoms[current][iatom] );
 }
 
 inline
