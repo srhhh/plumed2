@@ -21,6 +21,7 @@
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "KernelFunctions.h"
 #include "IFile.h"
+#include "Grid.h"
 
 namespace PLMD {
 
@@ -156,8 +157,13 @@ std::vector<unsigned> KernelFunctions::getSupport( const std::vector<double>& dx
      Invert(mymatrix,myinv);
      Matrix<double> myautovec(ncv,ncv); std::vector<double> myautoval(ncv);  
      diagMat(myinv,myautoval,myautovec);
+     double maxautoval;maxautoval=0.;
+     unsigned ind_maxautoval;
+     for (unsigned i=0;i<ncv;i++){
+             if(myautoval[i]>maxautoval){maxautoval=myautoval[i];ind_maxautoval=i;}
+     }
      for(unsigned i=0;i<dx.size();++i){
-         double extent=fabs(sqrt(myautoval[0])*myautovec(i,0)); 
+         double extent=fabs(sqrt(maxautoval)*myautovec(i,ind_maxautoval)); 
          support[i]=static_cast<unsigned>(ceil( getCutoff( extent )/dx[i] ));
      }
   }

@@ -83,13 +83,13 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   cerr<<"sum_hills utility  "<<endl;
   
 // Read the hills input file name  
-  string hillsFile; 
+  vector<string> hillsFiles; 
   bool dohills;
-  dohills=parse("--hills",hillsFile);
+  dohills=parseVector("--hills",hillsFiles);
 // Read the histogram file
-  string histoFile; 
+  vector<string> histoFiles; 
   bool dohisto;
-  dohisto=parse("--histo",histoFile);
+  dohisto=parseVector("--histo",histoFiles);
 
   plumed_massert(!dohisto || !dohills,"you should use --histo or/and --hills command");
 
@@ -100,7 +100,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   if(dohills){
        // parse it as it was a restart
        IFile *ifile=new IFile();
-       ifile->findCvsAndPeriodic(hillsFile, vcvs, vpmin, vpmax, vmultivariate);
+       ifile->findCvsAndPeriodic(hillsFiles[0], vcvs, vpmin, vpmax, vmultivariate);
        free(ifile);
   }
 
@@ -112,7 +112,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   vector<std::string> sigma; 
   if(dohisto){
        IFile *ifile=new IFile();
-       ifile->findCvsAndPeriodic(histoFile, hcvs, hpmin, hpmax, hmultivariate);
+       ifile->findCvsAndPeriodic(histoFiles[0], hcvs, hpmin, hpmax, hmultivariate);
        free(ifile);
        // here need also the vector of sigmas
        parseVector("--sigma",sigma);
@@ -206,7 +206,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
   actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1");
   // this sets the restart 
-  if(dohills)actioninput+=" FILE="+hillsFile;
+  if(dohills)actioninput+=" FILE=";  
+  for(unsigned i=0;i<hillsFiles.size();i++)actioninput+=hillsFiles[i]+",";
+     actioninput+=hillsFiles[hillsFiles.size()-1];
   // set the grid 
   if(grid_check==2){
      actioninput+=std::string(" GRID_MAX=");
@@ -228,7 +230,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   // 
   // take the stride (otherwise it is default) 
   //
-  std::string  stride; 
+  std::string  stride; stride=""; 
   if(parse("--stride",stride)){
     actioninput+=std::string(" SUMHILLS_WSTRIDE=")+stride;
   }
@@ -258,7 +260,10 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 
   // for the histogram
   if(dohisto){
-	actioninput+=" HISTOFILE="+histoFile ;
+	actioninput+=" HISTOFILE=";
+        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
+        actioninput+=histoFiles[histoFiles.size()-1];
+ 
         actioninput+=std::string(" HISTOSIGMA=");
         for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
         actioninput+=sigma.back();  
@@ -276,7 +281,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   actioninput="FUNCSUMHILLS ISCLTOOL ARG=";
   for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
   actioninput+=cvs[ncv-1];
-  if(dohills)actioninput+=" HILLSFILES="+hillsFile;
+  if(dohills)actioninput+=" HILLSFILES=";
+  for(unsigned i=0;i<hillsFiles.size()-1;i++)actioninput+=hillsFiles[i]+",";
+     actioninput+=hillsFiles[hillsFiles.size()-1];
   // set the grid 
   if(grid_check==2){
      actioninput+=std::string(" GRID_MAX=");
@@ -291,6 +298,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
      for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
      actioninput+=gbin[ncv-1];
   }
+  if(stride!="")actioninput+=std::string(" INITSTRIDE=")+stride;
   cerr<<"FUNCSTRING:  "<<actioninput<<endl;
   plumed.readInputString(actioninput);
 
