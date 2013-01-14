@@ -37,7 +37,7 @@ namespace colvar{
 //+PLUMEDOC COLVAR DHENERGY
 /*
 Calculate Debye-Huckel interaction energy among GROUPA and GROUPB. The two groups should
-be disjointed.
+be disjointed. Notice that the value of the DHEN is returned in plumed units (see \ref UNITS).
 
 \par Examples
 \verbatim
@@ -112,7 +112,8 @@ constant(0.0)
   log<<"  with solvent dielectric constant "<<epsilon<<"\n";
   log<<"  at temperature "<<T<<" K\n";
   log<<"  at ionic strength "<<I<< "M\n";
-  log<<"  Bibliography "<<plumed.cite("Trang, Carloni, Varani and Bussi, submitted (2013)")<<" \n";
+  log<<"  these parameters correspond to a screening length of "<<(1.0/k)<<"\n";
+  log<<"  Bibliography "<<plumed.cite("Do, Carloni, Varani and Bussi, submitted (2013)")<<" \n";
 }
 
 double DHEnergy::pairing(double distance,double&dfunc,unsigned i,unsigned j)const{
