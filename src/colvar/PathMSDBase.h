@@ -32,6 +32,8 @@
 #include "tools/Tools.h"
 
 namespace PLMD{
+class Value;
+
 namespace colvar{
 
 class PathMSDBase : public Colvar {
@@ -65,6 +67,8 @@ class PathMSDBase : public Colvar {
   bool pbc;
   int neigh_size;
   double neigh_stride;
+  bool components;
+  std::vector<Value*> componentValues;
   std::vector<RMSD> msdv;
   std::string reference;
   std::vector<Vector> derivs_s;

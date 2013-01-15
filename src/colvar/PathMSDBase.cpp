@@ -40,6 +40,7 @@ void PathMSDBase::registerKeywords(Keywords& keys){
   keys.add("compulsory","REFERENCE","the pdb is needed to provide the various milestones");
   keys.add("optional","NEIGH_SIZE","size of the neighbor list");
   keys.add("optional","NEIGH_STRIDE","how often the neighbor list needs to be calculated in time units");
+  keys.addFlag("COMPONENTS",false,"also store each square distance, as a component with name d1, d2, ...");
 }
 
 PathMSDBase::PathMSDBase(const ActionOptions&ao):
@@ -47,12 +48,14 @@ PLUMED_COLVAR_INIT(ao),
 pbc(true),
 neigh_size(-1),
 neigh_stride(-1.),
+components(false),
 nframes(0)
 {
   parse("LAMBDA",lambda);
   parse("NEIGH_SIZE",neigh_size);
   parse("NEIGH_STRIDE",neigh_stride);
   parse("REFERENCE",reference);
+  parseFlag("COMPONENTS",components);
 
   // open the file
   FILE* fp=fopen(reference.c_str(),"r");
@@ -79,6 +82,15 @@ nframes(0)
     fclose (fp);
     log<<"Found TOTAL "<<nframes<< " PDB in the file "<<reference.c_str()<<" \n"; 
   } 
+  if(components){
+    log<<"  saving all the "<<nframes<<" squared distances as named components\n";
+    for(unsigned i=0;i<nframes;++i){
+      std::string number; Tools::convert(i+1,number);
+      std::string name="d"+number;
+      addComponentWithDerivatives(name); componentIsNotPeriodic(name);
+      componentValues.push_back(getPntrToComponent(name));
+    }
+  }
   if(neigh_stride>0. || neigh_size>0){
            if(neigh_size>nframes){
            	log.printf(" List size required ( %d ) is too large: resizing to the maximum number of frames required: %u  \n",neigh_size,nframes);
@@ -137,6 +149,14 @@ void PathMSDBase::calculate(){
   }
 
 // END OF THE HEAVY PART
+
+  if(components){
+    for(unsigned v=0;v<componentValues.size();++v){
+      componentValues[v]->set(tmp_distances[v]);
+      for(unsigned i=0;i< nat;i++) setAtomsDerivatives(componentValues[v],i,imgVec[v].distder[i]);
+      setBoxDerivativesNoPbc(componentValues[v]);
+    }
+  }
 
   vector<Value*> val_s_path;
   if(labels.size()>0){
