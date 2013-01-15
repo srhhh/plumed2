@@ -46,12 +46,13 @@ class FilesHandler{
         Log *log;
         bool parallelread;
         unsigned beingread;  
+        bool isopen;
 	public:
 		FilesHandler(const vector<string> &filenames, const bool &parallelread ,  Action &myaction , Log &mylog);
 		bool readBunch(BiasRepresentation *br, unsigned stride);
 		bool scanOneHill(BiasRepresentation *br, IFile *ifile );
 }; 
-FilesHandler::FilesHandler(const vector<string> &filenames, const bool &parallelread , Action &action , Log &mylog ):filenames(filenames),parallelread(parallelread),beingread(0),log(&mylog){
+FilesHandler::FilesHandler(const vector<string> &filenames, const bool &parallelread , Action &action , Log &mylog ):filenames(filenames),parallelread(parallelread),beingread(0),log(&mylog),isopen(false){
    this->action=&action;
    for(unsigned i=0;i<filenames.size();i++){
       IFile *ifile = new IFile();
@@ -66,6 +67,8 @@ FilesHandler::FilesHandler(const vector<string> &filenames, const bool &parallel
 // note that the FileHandler is completely transparent respect to the biasrepresentation 
 // no check are made at this level
 bool FilesHandler::readBunch(BiasRepresentation *br , unsigned stride = -1){
+        bool morefiles; morefiles=true;
+        bool fileisover; fileisover=false;
 	if(parallelread){
 		(*log)<<"  doing parallelread \n";
         }else{
@@ -74,106 +77,56 @@ bool FilesHandler::readBunch(BiasRepresentation *br , unsigned stride = -1){
 		// is the type defined? if not, assume it is a gaussian 
                 IFile *ff; 
                 ff=ifiles[beingread];
-                ff->open(filenames[beingread]);
-		unsigned n=0;
-                
-                while(n<stride && stride >0 ){
+                if(!isopen){
+                	(*log)<<"  opening file "<<filenames[beingread]<<"\n";
+			ff->open(filenames[beingread]);isopen=true;
+                }
+		int n;
+                while(true){
+			fileisover=true;
 			while(scanOneHill(br,ff)){
- 				n++;
-                        }   // read one hill and update the bias representation
-                        (*log)<<"  closing file "<<filenames[beingread]<<"\n";
-                        ff->close();
-			beingread++;
- 		        if(beingread<ifiles.size()){ff=ifiles[beingread];ff->open(filenames[beingread]);}else{break;}  
+				// here do the dump if needed 
+				n=br->getNumberOfKernels();
+				if(stride>0 && n%stride==0 && n!=0  ){
+                	        	(*log)<<"  done with this chunk: now with "<<n<<" kernels  \n";
+					fileisover=false;
+					break;	
+                                }
+                        }   
+                        if(fileisover){
+                	        (*log)<<"  closing file "<<filenames[beingread]<<"\n";
+                	        ff->close();
+				isopen=false;
+                	        (*log)<<"  now total "<<br->getNumberOfKernels()<<" kernels \n"; 
+				beingread++;
+ 			        if(beingread<ifiles.size()){
+					ff=ifiles[beingread];ff->open(filenames[beingread]);
+                			(*log)<<"  opening file "<<filenames[beingread]<<"\n";
+					isopen=true;
+				}else{morefiles=false; 
+                                      (*log)<<"  final chunk: now with "<<n<<" kernels  \n";
+				      break;
+				}  
+                        }
+			// if there are no more files to read and this file is over then quit 	
+                        if(fileisover && !morefiles){break;} 
+                        // if you are in the middle of a file and you are here
+			// then means that you read what you need to read
+                        if(!fileisover ){break;} 
                 } 
         }        
-	return true;
+	return morefiles;
 };
 bool FilesHandler::scanOneHill(BiasRepresentation *br, IFile *ifile ){
-	// return false if the file is over	
-	std::string kernel;
 	double dummy;
 	if(ifile->scanField("time",dummy)){
-	        (*log)<<"   scanning one hill: "<<dummy<<" \n";
-                // find the kernel
-	        if(ifile->FieldExist("kernel")){ifile->scanField("kernel",kernel);
-	        }else{
-	          (*log)<<"  kernel is assumed Gaussian \n"; 
-                  kernel="gaussian";
-	        };	 
-                // scan the line
-                unsigned ncv; 
-                ncv=br->getNumberOfDimensions();
-                vector<double> center(ncv); 
-                Value* v;
-		for(unsigned i=0;i<ncv;i++){
-			v=br->getPtrToValue(i);
- 		 	(*log)<<"scanning "<<br->getName(i)<<"\n";	
-			ifile->scanField(v);
-			center[i]=v->get();		
-			//ifile->scanField( br->getName(i), center[i]);
-	        	std::string imin, imax;
-                	v->getDomain( imin, imax );
-		}
-		// kernel dependent reading
-	        if(kernel=="gaussian"){
-			bool multivariate;
-			std::string sss;
-			ifile->scanField("multivariate",sss);
-			if(sss=="true") multivariate=true;
-			else if(sss=="false") multivariate=false;
-			else plumed_merror("cannot parse multivariate = "+ sss);
-                        vector<double> sigma; 
-			if(multivariate){
-			   sigma.resize(ncv*(ncv+1)/2);
-			   Matrix<double> upper(ncv,ncv);
-			   Matrix<double> lower(ncv,ncv);
-			   for (unsigned i=0;i<ncv;i++){
-			            for (unsigned j=0;j<ncv-i;j++){
-                                            string mysigma;
-					    mysigma="sigma_"+(br->getPtrToValue(j+i))->getName()+"_"+(br->getPtrToValue(j))->getName();
-			                    //ifile->scanField("sigma_"+(br->getValue(j+i))->getName()+"_"+(br->getValue(j))->getName(),lower(j+i,j));
-			                    ifile->scanField(mysigma,lower(j+i,j));
-			                    upper(j,j+i)=lower(j+i,j);
-			            }
-			   }
-			   Matrix<double> mymult(ncv,ncv);       
-			   Matrix<double> invmatrix(ncv,ncv);       
-			   //log<<"Lower \n";
-			   //matrixOut(log,lower); 
-			   //log<<"Upper \n";
-			   //matrixOut(log,upper); 
-			   mult(lower,upper,mymult);          
-			   //log<<"Mult \n";
-			   //matrixOut(log,mymult); 
-			   // now invert and get the sigmas
-			   Invert(mymult,invmatrix);
-			   //log<<"Invert \n";
-			   //matrixOut(log,invmatrix); 
-			   // put the sigmas in the usual order: upper diagonal (this time in normal form and not in band form) 
-			   unsigned k=0;
-			   for (unsigned i=0;i<ncv;i++){
-			          for (unsigned j=i;j<ncv;j++){
-			          	sigma[k]=invmatrix(i,j);
-			          	k++;
-			          }
-			   }
-			}else{
-				for(unsigned i=0;i<ncv;++i){
-			       ifile->scanField("sigma_"+(br->getPtrToValue(i))->getName(),sigma[i]);
-			   }
-			}
-			double height,dummy;
-			ifile->scanField("height",height);
-			ifile->scanField("biasf",dummy);
-			if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
-                	// now push this into the bias representation
-			// the centers are already inside the updated values
-                        br->pushGaussian( sigma, height);
-                }else{
-			plumed_merror("This kernel reader is not implemented");
-                };	
-	 	(*log)<<"  read hill\n";	
+	        //(*log)<<"   scanning one hill: "<<dummy<<" \n";
+	        ifile->scanField("biasf",dummy);
+	        if(ifile->FieldExist("clock")) ifile->scanField("clock",dummy);
+                // keep this intermediate function in case you need to parse more data in the future
+                br->pushKernel(ifile);
+	 	//(*log)<<"  read hill\n";	
+		if(br->hasSigmaInInput())ifile->allowIgnoredFields();
 	        ifile->scanField();  
  		return true;
 	}else{
@@ -181,14 +134,28 @@ bool FilesHandler::scanOneHill(BiasRepresentation *br, IFile *ifile ){
 	}
 };
 
+
+double  mylog( double v1 ){
+      return log(v1);
+};
+
+double  mylogder( double v1 ){
+      return 1./v1;
+};
+
+
+
 class FuncSumHills :
   public Function
 {
   vector<string> hillsFiles,histoFiles; 
   vector<string> proj; 
-  unsigned initstride,stride,highdim, lowdim;
+  unsigned highdim, lowdim;
+  int initstride,stride;
   bool iscltool,integratehills,integratehisto,parallelread;
+  bool negativebias;
   double beta;
+  string outhills,outhisto;
   BiasRepresentation *biasrep;
   BiasRepresentation *historep;
 public:
@@ -206,16 +173,19 @@ void FuncSumHills::registerKeywords(Keywords& keys){
   keys.use("ARG"); 
   keys.add("optional","HILLSFILES"," source file for hills creation(may be the same as HILLS)"); // this can be a vector! 
   keys.add("optional","HISTOFILES"," source file for histogram creation(may be the same as HILLS)"); // also this can be a vector!
+  keys.add("optional","HISTOSIGMA"," sigmas for binning when the histogram correction is needed    "); 
   keys.add("optional","PROJ"," only with sumhills: the projection on the cvs");
   keys.add("optional","KT"," only with sumhills: the kt factor when projection on cvs");
   keys.add("optional","GRID_MIN","the lower bounds for the grid");
   keys.add("optional","GRID_MAX","the upper bounds for the grid");
   keys.add("optional","GRID_BIN","the number of bins for the grid"); 
   keys.add("optional","OUTHILLS"," output file for hills ");
+  keys.add("optional","OUTHISTO"," output file for histogram ");
   keys.add("optional","INITSTRIDE"," stride if you want an initial dump ");
   keys.add("optional","STRIDE"," stride when you do it on the fly ");
   keys.addFlag("ISCLTOOL",true,"use via plumed commandline: calculate at read phase and then go");
   keys.addFlag("PARALLELREAD",false,"read parallel HILLS file");
+  keys.addFlag("NEGBIAS",false,"dump  negative bias ( -bias )   instead of the free energy: needed in welltempered with flexible hills ");
 }
 
 FuncSumHills::FuncSumHills(const ActionOptions&ao):
@@ -225,9 +195,10 @@ initstride(-1),
 stride(-1),
 iscltool(false),
 beta(-1.),
-integratehills(true),
+integratehills(false),
 integratehisto(false),
-parallelread(false)
+parallelread(false),
+negativebias(false)
 {
   // here read 
   // Grid Stuff
@@ -250,32 +221,44 @@ parallelread(false)
   // hills file: 
   parseVector("HILLSFILES",hillsFiles);
   if(hillsFiles.size()==0){
-  	hillsFiles.push_back("HILLS");
-  	integratehills=true; // default behaviour  
+  	integratehills=false; // default behaviour 
+  }else{
+  	integratehills=true; 
   }
   // histo file: 
   parseVector("HISTOFILES",histoFiles);
   if(histoFiles.size()==0){
   	integratehisto=false;  
+  }else{
+  	integratehisto=true;  
+  }
+  vector<double> histoSigma;
+  if(integratehisto){
+  	parseVector("HISTOSIGMA",histoSigma);
+	plumed_massert(histoSigma.size()==getNumberOfArguments()," The number of sigmas must be the same of the number of arguments ");
   }
   // needs a projection? 
   proj.clear();
   parseVector("PROJ",proj);
   plumed_massert(proj.size()<getNumberOfArguments()," The number of projection must be less than the full list of arguments ");
-  string kt="";
-  if(proj.size()>0 ) {
-    parse("KT",kt);
-    plumed_massert(kt!="","if you make a projection then you need KT flag!"); 
-    Tools::convert(beta,kt); beta=1./beta; 
+
+  if( proj.size() != 0 || integratehisto==true  ) {
+    parse("KT",beta);
+    plumed_massert(beta>0.,"if you make a projection or a histogram correction then you need KT flag!"); 
+    beta=1./beta; 
+    log<<"    beta is "<<beta<<"\n"; 
   }
   // is a cltool: then you start and then die
   parseFlag("ISCLTOOL",iscltool);
+  // 
+  parseFlag("NEGBIAS",negativebias); 
   //
   parseFlag("PARALLELREAD",parallelread);
   // stride
-  string initstride_s;
-  parse("INITSTRIDE",initstride_s);
-  Tools::convert(initstride,initstride_s);
+  parse("INITSTRIDE",initstride);
+  // output suffix or names
+  if(initstride<0){outhills="fes.dat";outhisto="correction.dat";}
+  else{outhills="fes_";outhisto="correction_";}
 
   //what might it be this? 
   checkRead();
@@ -286,7 +269,6 @@ parallelread(false)
   // create a bias representation for this
   if(iscltool){
 
-    //std::vector<Value> tmpvalues; 
     std::vector<Value*> tmpvalues; 
     for(unsigned i=0;i<getNumberOfArguments();i++){
         // allocate a new value from the old one: no deriv here
@@ -298,10 +280,21 @@ parallelread(false)
     if(integratehills){
          checkFilesAreExisting(hillsFiles); 
          biasrep=new BiasRepresentation(tmpvalues,comm, gmax,gmin,gbin);
+	 if(negativebias){
+		biasrep->setRescaledToBias(true);
+	        log<<"  required the -bias instead of the free energy \n";
+		if(initstride<0){outhills="negativebias.dat";}
+		else{outhills="negativebias_";}
+	 }
     }
+
+    parse("OUTHILLS",outhills);
+    parse("OUTHISTO",outhisto);
+
+
     if(integratehisto){
          checkFilesAreExisting(histoFiles); 
-         historep=new BiasRepresentation(tmpvalues,comm,gmax,gmin,gbin);
+         historep=new BiasRepresentation(tmpvalues,comm,gmax,gmin,gbin,histoSigma);
     }
 
     // decide how to source hills ( serial/parallel )
@@ -311,13 +304,98 @@ parallelread(false)
     // of hills (i.e. a list of hills and the associated grid)
 
     // decide how to source colvars ( serial parallel )
-    FilesHandler *hillsHandler=new FilesHandler(hillsFiles,parallelread,*this, log);
+    FilesHandler *hillsHandler;
+    FilesHandler *histoHandler;
+
+    if(integratehills)	hillsHandler=new FilesHandler(hillsFiles,parallelread,*this, log);
+    if(integratehisto)	histoHandler=new FilesHandler(histoFiles,parallelread,*this, log);
 
     // read a number of hills and put in the bias representation
-    hillsHandler->readBunch(biasrep,initstride);
+    int nfiles=0;
+    bool ibias=integratehills; bool ihisto=integratehisto;
+    while(true){
+        if(  integratehills  && ibias  ){ ibias=hillsHandler->readBunch(biasrep,initstride) ; }   
+        if(  integratehisto  && ihisto ){ ihisto=histoHandler->readBunch(historep,initstride) ;}    
+	log<<"  read another bunch \n";
+	// dump: need to project?	
+        if(proj.size()!=0){
 
+		if(integratehills){
+    	      		log<<"      Projecting on subgrid... \n";
+              		BiasWeight *Bw=new BiasWeight(beta); 
+              		WeightBase *Wb=dynamic_cast<WeightBase*>(Bw); 
+             		Grid biasGrid=*(biasrep->getGridPtr());
+   	      		Grid smallGrid=biasGrid.project(proj,Wb);
+              		OFile gridfile; gridfile.link(*this);
+	      		std::ostringstream ostr;ostr<<nfiles;
+              		string myout; myout=outhills+ostr.str()+".dat" ;
+              		log<<"      Writing subgrid on file "<<myout<<" \n";
+              		gridfile.open(myout);	
+         
+   	      		smallGrid.writeToFile(gridfile);
+              		gridfile.close();
+                        if(!ibias)integratehills=false;// once you get to the final bunch just give up 
+		}
+		if(integratehisto){
 
-    // project and dump
+                        ProbWeight *Pw=new ProbWeight(beta);
+                        WeightBase *Wb=dynamic_cast<WeightBase*>(Pw);
+             		Grid histoGrid=*(historep->getGridPtr());
+   	      		Grid smallGrid=histoGrid.project(proj,Wb);
+
+              		OFile gridfile; gridfile.link(*this);
+	      		std::ostringstream ostr;ostr<<nfiles;
+              		string myout; myout=outhisto+ostr.str()+".dat" ;
+              		log<<"      Writing subgrid on file "<<myout<<" \n";
+              		gridfile.open(myout);	
+         
+   	      		smallGrid.writeToFile(gridfile);
+              		gridfile.close();
+
+                        if(!ihisto)integratehisto=false;// once you get to the final bunch just give up 
+                } 
+
+	}else{
+
+		if(integratehills){
+	                Grid biasGrid=*(biasrep->getGridPtr());
+			biasGrid.scaleAllValuesAndDerivatives(-1.);
+	
+	                OFile gridfile; gridfile.link(*this);
+			std::ostringstream ostr;ostr<<nfiles;
+			string myout;
+			if(initstride>0){ myout=outhills+ostr.str()+".dat" ;}else{myout=outhills;}
+	                log<<"      Writing full grid on file "<<myout<<" \n";
+	                gridfile.open(myout);	
+	
+	                biasGrid.writeToFile(gridfile);
+	                gridfile.close();
+			// rescale back prior to accumulate
+                        if(!ibias)integratehills=false;// once you get to the final bunch just give up 
+		}
+		if(integratehisto){
+
+	                Grid histoGrid=*(historep->getGridPtr());
+                        histoGrid.applyFunctionAllValuesAndDerivatives(&mylog,&mylogder);
+                        histoGrid.scaleAllValuesAndDerivatives(-1./beta);	
+
+			OFile gridfile; gridfile.link(*this);
+			std::ostringstream ostr;ostr<<nfiles;
+			string myout;
+			if(initstride>0){ myout=outhisto+ostr.str()+".dat" ;}else{myout=outhisto;}
+	                log<<"      Writing full grid on file "<<myout<<" \n";
+	                gridfile.open(myout);	
+	
+	                histoGrid.writeToFile(gridfile);
+	                gridfile.close();
+
+                        if(!ihisto)integratehisto=false;// once you get to the final bunch just give up 
+                } 
+	} 	
+        if ( !ibias && !ihisto) break; //when both are over then just quit 
+
+	nfiles++;
+    }
 
     return;
   } 

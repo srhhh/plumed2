@@ -46,18 +46,29 @@ class BiasRepresentation {
   public:
 	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc  ); 
 	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc , vector<string> gmin, vector<string> gmax, vector<unsigned> nbin );
-	  unsigned getNumberOfDimensions();
-	  void pushGaussian( const vector <double> &sigma, const double &height);
+	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc , vector<string> gmin, vector<string> gmax, vector<unsigned> nbin , vector<double> sigma);
+	  unsigned 	getNumberOfDimensions();
+	  void 		addGrid( vector<string> gmin, vector<string> gmax, vector<unsigned> nbin );
+	  void 		pushKernel( IFile * ff);
+	  void 		setRescaledToBias(bool rescaled);
+   	  const bool & 	isRescaledToBias();
+   	  bool  	hasSigmaInInput();
 	  vector<string> getNames();
 	  const vector<Value*> & getPtrToValues();
+	  int 		getNumberOfKernels();
           const string & getName(unsigned i);
-	  Value* getPtrToValue(unsigned i);
+	  Value* 	getPtrToValue(unsigned i);
+	  Grid* 	getGridPtr();
+          KernelFunctions* readFromPoint(IFile *ifile); 
   private:
     int ndim; 
     bool hasgrid;
+    bool rescaledToBias;
     vector<Value*> values;
     vector<string> names;
     vector<KernelFunctions*> hills;
+    vector<double> biasf;
+    vector<double> histosigma;	
     Grid* BiasGrid_;
     Communicator& mycomm;
     // if this is set then you rescale the hills in read and write phase 

@@ -69,6 +69,7 @@ void CLToolSumHills::registerKeywords( Keywords& keys ){
   keys.add("optional","--outhisto","specify the outputfile for the histogram");
   keys.add("optional","--kt","specify temperature for integrating out variables");
   keys.add("optional","--sigma"," a vector that specify the sigma for binning (only needed when doing histogram ");
+  keys.addFlag("--negbias",false," print the negative bias instead of the free energy (only needed with welltempered runs and flexible hills) ");
 }
 
 CLToolSumHills::CLToolSumHills(const CLToolOptions& co ):
@@ -91,7 +92,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   bool dohisto;
   dohisto=parseVector("--histo",histoFiles);
 
-  plumed_massert(!dohisto || !dohills,"you should use --histo or/and --hills command");
+  plumed_massert(dohisto || dohills,"you should use --histo or/and --hills command");
 
   vector<string> vcvs;
   vector<string> vpmin;
@@ -171,7 +172,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   ss="init";
   plumed.cmd("init",&nn);  
   // it is a restart with HILLS  
-  if(dohills)plumed.readInputString(string("RESTART"));
+  //if(dohills)plumed.readInputString(string("RESTART"));
   for(int i=0;i<cvs.size();i++){
        std::string actioninput; 
        actioninput=std::string("FAKE  ATOMS=1 LABEL=")+cvs[i];           //the CV 
@@ -199,41 +200,43 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   }
   // define the metadynamics
   unsigned ncv=cvs.size();
-  std::string actioninput=std::string("METAD ARG=");
-  for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
-  actioninput+=cvs[ncv-1];
-  actioninput+=std::string(" SIGMA=");
-  for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
-  actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1");
-  // this sets the restart 
-  if(dohills)actioninput+=" FILE=";  
-  for(unsigned i=0;i<hillsFiles.size();i++)actioninput+=hillsFiles[i]+",";
-     actioninput+=hillsFiles[hillsFiles.size()-1];
-  // set the grid 
-  if(grid_check==2){
-     actioninput+=std::string(" GRID_MAX=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
-     actioninput+=gmax[ncv-1];
-     actioninput+=std::string(" GRID_MIN=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
-     actioninput+=gmin[ncv-1];
-  }
-  if(grid_has_bin){
-     actioninput+=std::string(" GRID_BIN=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
-     actioninput+=gbin[ncv-1];
-  }
-  // the input keyword
-  string fesname; fesname="fes.dat";parse("--outfile",fesname);
-  actioninput+=std::string(" SUMHILLS=");
-  actioninput+=fesname+" ";
+  std::string actioninput;
+//  std::string actioninput=std::string("METAD ARG=");
+//  for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
+//  actioninput+=cvs[ncv-1];
+//  actioninput+=std::string(" SIGMA=");
+//  for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
+//  actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1");
+//  // this sets the restart 
+//  if(dohills){actioninput+=" FILE=";  
+// 	 for(unsigned i=0;i<hillsFiles.size();i++)actioninput+=hillsFiles[i]+",";
+//   	  actioninput+=hillsFiles[hillsFiles.size()-1];
+//  } 
+//  // set the grid 
+//  if(grid_check==2){
+//     actioninput+=std::string(" GRID_MAX=");
+//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
+//     actioninput+=gmax[ncv-1];
+//     actioninput+=std::string(" GRID_MIN=");
+//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
+//     actioninput+=gmin[ncv-1];
+//  }
+//  if(grid_has_bin){
+//     actioninput+=std::string(" GRID_BIN=");
+//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
+//     actioninput+=gbin[ncv-1];
+//  }
+//  // the input keyword
+//  string fesname; fesname="fes.dat";parse("--outfile",fesname);
+//  actioninput+=std::string(" SUMHILLS=");
+//  actioninput+=fesname+" ";
   // 
   // take the stride (otherwise it is default) 
   //
-  std::string  stride; stride=""; 
-  if(parse("--stride",stride)){
-    actioninput+=std::string(" SUMHILLS_WSTRIDE=")+stride;
-  }
+//  std::string  stride; stride=""; 
+//  if(parse("--stride",stride)){
+//    actioninput+=std::string(" SUMHILLS_WSTRIDE=")+stride;
+//  }
 
   vector<std::string> idw;
   // check if the variables to be used are correct 
@@ -245,9 +248,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
           }
           if(!found)plumed_merror("variable "+idw[i]+" is not found in the bunch of cvs: revise your --idw option" ); 
       } 
-      actioninput+=std::string(" PROJ=");
-      for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
-      actioninput+=idw.back();  
+ //     actioninput+=std::string(" PROJ=");
+ //     for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
+ //     actioninput+=idw.back();  
       plumed_massert( idw.size()<=cvs.size() ,"the number of variables to be integrated should be at most equal to the total number of cvs  "); 
       // in this case you neeed a beta factor!
   } 
@@ -255,19 +258,19 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   std::string kt; kt=std::string("1.");// assign an arbitrary value just in case that idw.size()==cvs.size() 
   if ( dohisto || idw.size()!=0  ) {
   		plumed_massert(parse("--kt",kt),"if you make a dimensionality reduction (--idw) or a histogram (--histo) then you need to define --kt ");
-                actioninput+=std::string(" KT=")+kt ; // beta is eventually ignored whenever the size of the projection is small
+  //              actioninput+=std::string(" KT=")+kt ; // beta is eventually ignored whenever the size of the projection is small
   }
 
-  // for the histogram
-  if(dohisto){
-	actioninput+=" HISTOFILE=";
-        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
-        actioninput+=histoFiles[histoFiles.size()-1];
- 
-        actioninput+=std::string(" HISTOSIGMA=");
-        for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
-        actioninput+=sigma.back();  
-  } 
+//  // for the histogram
+//  if(dohisto){
+//	actioninput+=" HISTOFILE=";
+//        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
+//        actioninput+=histoFiles[histoFiles.size()-1];
+// 
+//        actioninput+=std::string(" HISTOSIGMA=");
+//        for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
+//        actioninput+=sigma.back();  
+//  } 
   //  welltemp? grids? restart from grid? automatically generate it?     
   //cerr<<"METASTRING:  "<<actioninput<<endl;
   //plumed.readInputString(actioninput);
@@ -281,10 +284,11 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   actioninput="FUNCSUMHILLS ISCLTOOL ARG=";
   for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
   actioninput+=cvs[ncv-1];
-  if(dohills)actioninput+=" HILLSFILES=";
+  if(dohills){ actioninput+=" HILLSFILES=";
   for(unsigned i=0;i<hillsFiles.size()-1;i++)actioninput+=hillsFiles[i]+",";
      actioninput+=hillsFiles[hillsFiles.size()-1];
   // set the grid 
+  }
   if(grid_check==2){
      actioninput+=std::string(" GRID_MAX=");
      for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
@@ -298,11 +302,36 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
      for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
      actioninput+=gbin[ncv-1];
   }
-  if(stride!="")actioninput+=std::string(" INITSTRIDE=")+stride;
+  std::string  stride; stride="";
+  if(parse("--stride",stride)){
+    actioninput+=std::string(" INITSTRIDE=")+stride;
+  }
+  if(idw.size()!=0){ 
+     actioninput+=std::string(" PROJ=");
+     for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
+     actioninput+=idw.back();  
+  }
+  if(idw.size()!=0 || dohisto){
+     actioninput+=std::string(" KT=")+kt ;
+  } 
+  if(dohisto){
+	actioninput+=" HISTOFILES=";
+        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
+        actioninput+=histoFiles[histoFiles.size()-1];
+ 
+        actioninput+=std::string(" HISTOSIGMA=");
+        for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
+        actioninput+=sigma.back();  
+  } 
+ 
+  bool negbias;
+  parseFlag("--negbias",negbias);
+  if(negbias){
+ 	actioninput+=" NEGBIAS ";
+  }
+
   cerr<<"FUNCSTRING:  "<<actioninput<<endl;
   plumed.readInputString(actioninput);
-
-
   // if not a grid, then set it up automatically
   cerr<<"end of sum_hills"<<endl;
   return 0;
