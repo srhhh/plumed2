@@ -41,7 +41,7 @@ namespace PLMD {
 
 //+PLUMEDOC TOOLS sum_hills 
 /*
-sumhills is a tool that allows one to to use plumed to post-process an existing hills/colvar file 
+sum_hills is a tool that allows one to to use plumed to post-process an existing hills/colvar file 
 
 a typical case is about the integration of a hills file: 
 
@@ -53,6 +53,12 @@ The default name for the output file will be fes.dat
 Note that starting from this version plumed will automatically detect the 
 number of the variables you have and their periodicity. 
 Additionally, if you use flexible hills (multivariate gaussians), plumed will understand it from the HILLS file.
+
+now sum_hills tool accepts als multiple files that will be integrated one after the other 
+
+\verbatim
+plumed sum_hills  --hills PATHTOMYHILLSFILE1,PATHTOMYHILLSFILE2,PATHTOMYHILLSFILE3 
+\endverbatim
 
 if you want to integrate out some variable you do
 
@@ -111,6 +117,13 @@ in this case you need a --kt to do the reweighting and then you
 need also some width (with the --sigma keyword) for the histogram calculation (actually will be done with 
 gaussians, so it will be a continuous histogram)
 Here the default output will be correction.dat.
+Note that also here you can have multiple input files separated by a comma.
+
+Additionally, if you want to do histogram and hills from the same file you can do as this   
+\verbatim
+plumed sum_hills --hills --histo PATHTOMYCOLVARORHILLSFILE  --sigma 0.2,0.2 --kt 0.6  
+\endverbatim
+The two files can be eventually the same 
 
 */
 //+ENDPLUMEDOC

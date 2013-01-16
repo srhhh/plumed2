@@ -220,7 +220,7 @@ bool IFile::findCvsAndPeriodic(std::string filename, std::vector<std::string> &c
               found=fields[i].find("time", pos); 
               if( found==std::string::npos && before_sigma){
                    cvs.push_back(fields[i]);
-                   std::cerr<<"found variable number  "<<cvs.size()<<" :  "<<cvs.back()<<std::endl;
+                   //std::cerr<<"found variable number  "<<cvs.size()<<" :  "<<cvs.back()<<std::endl;
                    // get periodicity
                    pmin.push_back("none");
                    pmax.push_back("none");
