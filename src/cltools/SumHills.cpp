@@ -254,13 +254,15 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   ss="init";
   plumed.cmd("init",&nn);  
   for(int i=0;i<cvs.size();i++){
-       std::string actioninput; 
-       actioninput=std::string("FAKE  ATOMS=1 LABEL=")+cvs[i];           //the CV 
+       std::vector<std::string> actioninput; 
+       actioninput.push_back("FAKE");
+       actioninput.push_back("ATOMS=1");
+       actioninput.push_back("LABEL="+cvs[i]);
        // periodicity
        if (pmax[i]==string("none")){
-       	actioninput+=string(" PERIODIC=NO "); 
+       	actioninput.push_back("PERIODIC=NO "); 
        }else{
-       	actioninput+=string(" PERIODIC=")+pmin[i]+string(",")+pmax[i]; 
+       	actioninput.push_back("PERIODIC="+pmin[i]+","+pmax[i]);
                // check if min and max values are ok with grids
                if(grid_check==2){  
                    double gm; Tools::convert(gmin[i],gm);              
@@ -275,11 +277,11 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
                    }
                } 
        } 
-       plumed.readInputString(actioninput);
+       plumed.readInputWords(actioninput);
   }
   // define the metadynamics
   unsigned ncv=cvs.size();
-  std::string actioninput;
+  std::vector<std::string> actioninput;
   vector<std::string> idw;
   // check if the variables to be used are correct 
   if(parseVector("--idw",idw)){
@@ -305,57 +307,57 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 
   */
 
-  actioninput="FUNCSUMHILLS ISCLTOOL ARG=";
-  for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
-  actioninput+=cvs[ncv-1];
-  if(dohills){ actioninput+=" HILLSFILES=";
-  for(unsigned i=0;i<hillsFiles.size()-1;i++)actioninput+=hillsFiles[i]+",";
-     actioninput+=hillsFiles[hillsFiles.size()-1];
+  std::string addme;
+  actioninput.push_back("FUNCSUMHILLS");
+  actioninput.push_back("ISCLTOOL");
+  addme="ARG="; for(unsigned i=0;i<(ncv-1);i++)addme+=std::string(cvs[i])+","; addme+=cvs[ncv-1];
+  actioninput.push_back(addme);
+  if(dohills){
+    addme="HILLSFILES="; for(unsigned i=0;i<hillsFiles.size()-1;i++)addme+=hillsFiles[i]+","; addme+=hillsFiles[hillsFiles.size()-1];
+     actioninput.push_back(addme);
   // set the grid 
   }
   if(grid_check==2){
-     actioninput+=std::string(" GRID_MAX=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
-     actioninput+=gmax[ncv-1];
-     actioninput+=std::string(" GRID_MIN=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
-     actioninput+=gmin[ncv-1];
+     addme="GRID_MAX="; for(unsigned i=0;i<(ncv-1);i++)addme+=gmax[i]+","; addme+=gmax[ncv-1];
+     actioninput.push_back(addme);
+     addme="GRID_MIN="; for(unsigned i=0;i<(ncv-1);i++)addme+=gmin[i]+","; addme+=gmin[ncv-1];
+     actioninput.push_back(addme);
   }
   if(grid_has_bin){
-     actioninput+=std::string(" GRID_BIN=");
-     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
-     actioninput+=gbin[ncv-1];
+     addme="GRID_BIN="; for(unsigned i=0;i<(ncv-1);i++)addme+=gbin[i]+","; addme+=gbin[ncv-1];
+     actioninput.push_back(addme);
   }
   std::string  stride; stride="";
   if(parse("--stride",stride)){
-    actioninput+=std::string(" INITSTRIDE=")+stride;
+    actioninput.push_back(" INITSTRIDE="+stride);
   }
   if(idw.size()!=0){ 
-     actioninput+=std::string(" PROJ=");
-     for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
-     actioninput+=idw.back();  
+     addme="PROJ=";
+     for(unsigned i=0;i<idw.size()-1;i++){addme+=idw[i]+",";}
+     addme+=idw.back();  
+     actioninput.push_back(addme);
   }
   if(idw.size()!=0 || dohisto){
-     actioninput+=std::string(" KT=")+kt ;
+     actioninput.push_back("KT="+kt);
   } 
   if(dohisto){
-	actioninput+=" HISTOFILES=";
-        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
-        actioninput+=histoFiles[histoFiles.size()-1];
+        addme="HISTOFILES="; for(unsigned i=0;i<histoFiles.size()-1;i++){addme+=histoFiles[i]+",";}addme+=histoFiles[histoFiles.size()-1];
+	actioninput.push_back(addme);
  
-        actioninput+=std::string(" HISTOSIGMA=");
-        for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
-        actioninput+=sigma.back();  
+        addme="HISTOSIGMA=";
+        for(unsigned i=0;i<sigma.size()-1;i++){addme+=sigma[i]+",";}
+        addme+=sigma.back();  
+	actioninput.push_back(addme);
   } 
  
   bool negbias;
   parseFlag("--negbias",negbias);
   if(negbias){
- 	actioninput+=" NEGBIAS ";
+ 	actioninput.push_back("NEGBIAS");
   }
 
   //cerr<<"FUNCSTRING:  "<<actioninput<<endl;
-  plumed.readInputString(actioninput);
+  plumed.readInputWords(actioninput);
   // if not a grid, then set it up automatically
   return 0;
 }

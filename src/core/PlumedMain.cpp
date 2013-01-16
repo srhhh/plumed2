@@ -71,7 +71,6 @@ PlumedMain::PlumedMain():
   log.link(comm);
   log.setLinePrefix("PLUMED: ");
   log.link(stdout);
-  exchangePatterns.setFlag(exchangePatterns.NONE);
   stopwatch.start();
   stopwatch.pause();
 }
@@ -381,40 +380,14 @@ void PlumedMain::readInputFile(std::string str){
   ifile.open(str);
   std::vector<std::string> words;
   exchangePatterns.setFlag(exchangePatterns.NONE);
-  while(Tools::getParsedLine(ifile,words)){
-    if(words.empty())continue;
-    else if(words[0]=="ENDPLUMED") break;
-    else if(words[0]=="_SET_SUFFIX"){
-      plumed_assert(words.size()==2);
-      setSuffix(words[1]);
-    }
-    else if(words[0]=="RANDOM_EXCHANGES"){
-      exchangePatterns.setFlag(exchangePatterns.RANDOM);
-      // I convert the seed to -seed because I think it is more general to use a positive seed in input
-      if(words.size()>2&&words[1]=="SEED") {int seed; Tools::convert(words[2],seed); exchangePatterns.setSeed(-seed); }
-    } else {
-      Tools::interpretLabel(words);
-      Action* action=actionRegister().create(ActionOptions(*this,words));
-      if(!action){
-        log<<"ERROR\n";
-        log<<"I cannot understand line:";
-        for(unsigned i=0;i<words.size();++i) log<<" "<<words[i];
-        log<<"\n";
-        exit(1);
-      };
-      action->checkRead();
-      actionSet.push_back(action);
-    };
-  };
+  while(Tools::getParsedLine(ifile,words)) readInputWords(words);
   log.printf("END FILE: %s\n",str.c_str());
 
   pilots=actionSet.select<ActionPilot*>();
 }
 
-void PlumedMain::readInputString(std::string str){
+void PlumedMain::readInputWords(const std::vector<std::string> & words){
   plumed_assert(initialized);
-  std::vector<std::string> words;
-  words=Tools::getWords(str);
   if(words.empty())return;
   else if(words[0]=="ENDPLUMED") return;
   else if(words[0]=="_SET_SUFFIX"){
@@ -426,12 +399,13 @@ void PlumedMain::readInputString(std::string str){
     // I convert the seed to -seed because I think it is more general to use a positive seed in input
     if(words.size()>2&&words[1]=="SEED") {int seed; Tools::convert(words[2],seed); exchangePatterns.setSeed(-seed); }
   } else {
-    Tools::interpretLabel(words);
-    Action* action=actionRegister().create(ActionOptions(*this,words));
+    std::vector<std::string> interpreted(words);
+    Tools::interpretLabel(interpreted);
+    Action* action=actionRegister().create(ActionOptions(*this,interpreted));
     if(!action){
       log<<"ERROR\n";
       log<<"I cannot understand line:";
-      for(unsigned i=0;i<words.size();++i) log<<" "<<words[i];
+      for(unsigned i=0;i<interpreted.size();++i) log<<" "<<interpreted[i];
       log<<"\n";
       exit(1);
     };

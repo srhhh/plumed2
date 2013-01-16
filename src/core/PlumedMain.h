@@ -164,7 +164,7 @@ public:
   Read an input string.
   \param str name of the string
 */
-  void readInputString(std::string str);
+  void readInputWords(const std::vector<std::string> &  str);
 
 /**
   Initialize the object.
