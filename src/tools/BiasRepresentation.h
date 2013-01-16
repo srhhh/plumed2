@@ -39,12 +39,13 @@ namespace PLMD{
 //+ENDPLUMEDOC
 
 /// this class implements a general purpose class that aims to 
-/// provide a Grid/list of onsian representation an  
-/// transparently add/remove gaussians from a bias  
+/// provide a Grid/list  
+/// transparently add gaussians to a bias  
 
 class BiasRepresentation {
   public:
 	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc  ); 
+	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc  ,  vector<double> sigma); 
 	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc , vector<string> gmin, vector<string> gmax, vector<unsigned> nbin );
 	  BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc , vector<string> gmin, vector<string> gmax, vector<unsigned> nbin , vector<double> sigma);
 	  unsigned 	getNumberOfDimensions();
@@ -60,6 +61,7 @@ class BiasRepresentation {
 	  Value* 	getPtrToValue(unsigned i);
 	  Grid* 	getGridPtr();
           KernelFunctions* readFromPoint(IFile *ifile); 
+          void getMinMaxBin(vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin);
   private:
     int ndim; 
     bool hasgrid;

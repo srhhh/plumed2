@@ -41,8 +41,76 @@ namespace PLMD {
 
 //+PLUMEDOC TOOLS sum_hills 
 /*
-driver is a tool that allows one to to use plumed to post-process an existing trajectory.
+sumhills is a tool that allows one to to use plumed to post-process an existing hills/colvar file 
 
+a typical case is about the integration of a hills file: 
+
+\verbatim
+plumed sum_hills  --hills PATHTOMYHILLSFILE 
+\endverbatim
+
+The default name for the output file will be fes.dat 
+Note that starting from this version plumed will automatically detect the 
+number of the variables you have and their periodicity. 
+Additionally, if you use flexible hills (multivariate gaussians), plumed will understand it from the HILLS file.
+
+if you want to integrate out some variable you do
+
+\verbatim
+plumed sum_hills  --hills PATHTOMYHILLSFILE   --idw t1 --kt 0.6 
+\endverbatim
+
+where with --idw you define the variables that you want
+all the others will be integrated out. --kt defines the temperature of the system in energy units.
+(be consistent with the units you have in your hills: plumed will not check this for you)  
+If you need more variables then you may use a comma separated syntax
+
+\verbatim
+plumed sum_hills  --hills PATHTOMYHILLSFILE   --idw t1,t2 --kt 0.6  
+\endverbatim
+
+You can define the output grid only with the number of bins you want 
+while min/max will be detected for you
+
+\verbatim
+plumed sum_hills --bin 99,99 --hills PATHTOMYHILLSFILE   
+\endverbatim
+
+or full grid specification
+
+\verbatim
+plumed sum_hills --bin 99,99 --min -pi,-pi --max pi,pi --hills PATHTOMYHILLSFILE   
+\endverbatim
+
+You can of course use numbers instead of -pi/pi.
+
+You can use a --stride keyword to have a dump each bunch of hills you read 
+\verbatim
+plumed sum_hills --stride 300 --hills PATHTOMYHILLSFILE   
+\endverbatim
+ 
+You can also have, in case of welltempered metadynamics, only the negative 
+bias instead of the free energy through the keyword --negbias
+
+\verbatim
+plumed sum_hills --negbias --hills PATHTOMYHILLSFILE   
+\endverbatim
+
+Here the default name will be negativebias.dat 
+
+From time to time you might need to use HILLS or a COLVAR file 
+as it was just a simple set  of points from which you want to build 
+a free energy by using -(1/beta)log(P)
+then you use --histo
+
+\verbatim
+plumed sum_hills --histo PATHTOMYCOLVARORHILLSFILE  --sigma 0.2,0.2 --kt 0.6  
+\endverbatim
+
+in this case you need a --kt to do the reweighting and then you
+need also some width (with the --sigma keyword) for the histogram calculation (actually will be done with 
+gaussians, so it will be a continuous histogram)
+Here the default output will be correction.dat.
 
 */
 //+ENDPLUMEDOC
@@ -81,7 +149,6 @@ CLTool(co)
 string CLToolSumHills::description()const{ return "sum the hills with  plumed"; }
 
 int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
-  cerr<<"sum_hills utility  "<<endl;
   
 // Read the hills input file name  
   vector<string> hillsFiles; 
@@ -161,8 +228,10 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
        if(gbin.size()!=cvs.size() && gbin.size()!=0) plumed_merror("not enough values for --bin");
        grid_has_bin=true;
   }
-  plumed_massert( gmin.size()==gmax.size() && gmin.size()==gbin.size() ,"you should specify --min and --max and --bin together ");
-  plumed_massert(( (grid_check==0 && grid_has_bin==false ) || (grid_check==2 && grid_has_bin==true) ),"you should define all the --min --max --bin keys");
+  // allowed: no grids only bin
+  // not allowed: partial grid definition 
+  plumed_massert( gmin.size()==gmax.size() && (gmin.size()==0 ||  gmin.size()==cvs.size() ) ,"you should specify --min and --max together with same number of components");
+  //plumed_massert(( (grid_check==0 && grid_has_bin==false ) || (grid_check==2 && grid_has_bin==true) ),"you should define all the --min --max --bin keys");
 
   PlumedMain plumed;
   std::string ss;
@@ -171,8 +240,6 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   plumed.cmd(ss,&nn);  
   ss="init";
   plumed.cmd("init",&nn);  
-  // it is a restart with HILLS  
-  //if(dohills)plumed.readInputString(string("RESTART"));
   for(int i=0;i<cvs.size();i++){
        std::string actioninput; 
        actioninput=std::string("FAKE  ATOMS=1 LABEL=")+cvs[i];           //the CV 
@@ -195,49 +262,11 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
                    }
                } 
        } 
-  //     cerr<<"FAKELINE: "<<actioninput<<endl;
        plumed.readInputString(actioninput);
   }
   // define the metadynamics
   unsigned ncv=cvs.size();
   std::string actioninput;
-//  std::string actioninput=std::string("METAD ARG=");
-//  for(unsigned i=0;i<(ncv-1);i++)actioninput+=std::string(cvs[i])+",";
-//  actioninput+=cvs[ncv-1];
-//  actioninput+=std::string(" SIGMA=");
-//  for(unsigned i=1;i<ncv;i++)actioninput+=std::string("0.1,");
-//  actioninput+=std::string("0.1 HEIGHT=1.0 PACE=1");
-//  // this sets the restart 
-//  if(dohills){actioninput+=" FILE=";  
-// 	 for(unsigned i=0;i<hillsFiles.size();i++)actioninput+=hillsFiles[i]+",";
-//   	  actioninput+=hillsFiles[hillsFiles.size()-1];
-//  } 
-//  // set the grid 
-//  if(grid_check==2){
-//     actioninput+=std::string(" GRID_MAX=");
-//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmax[i]+",";
-//     actioninput+=gmax[ncv-1];
-//     actioninput+=std::string(" GRID_MIN=");
-//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gmin[i]+",";
-//     actioninput+=gmin[ncv-1];
-//  }
-//  if(grid_has_bin){
-//     actioninput+=std::string(" GRID_BIN=");
-//     for(unsigned i=0;i<(ncv-1);i++)actioninput+=gbin[i]+",";
-//     actioninput+=gbin[ncv-1];
-//  }
-//  // the input keyword
-//  string fesname; fesname="fes.dat";parse("--outfile",fesname);
-//  actioninput+=std::string(" SUMHILLS=");
-//  actioninput+=fesname+" ";
-  // 
-  // take the stride (otherwise it is default) 
-  //
-//  std::string  stride; stride=""; 
-//  if(parse("--stride",stride)){
-//    actioninput+=std::string(" SUMHILLS_WSTRIDE=")+stride;
-//  }
-
   vector<std::string> idw;
   // check if the variables to be used are correct 
   if(parseVector("--idw",idw)){
@@ -248,9 +277,6 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
           }
           if(!found)plumed_merror("variable "+idw[i]+" is not found in the bunch of cvs: revise your --idw option" ); 
       } 
- //     actioninput+=std::string(" PROJ=");
- //     for(unsigned i=0;i<idw.size()-1;i++){actioninput+=idw[i]+",";}
- //     actioninput+=idw.back();  
       plumed_massert( idw.size()<=cvs.size() ,"the number of variables to be integrated should be at most equal to the total number of cvs  "); 
       // in this case you neeed a beta factor!
   } 
@@ -258,22 +284,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   std::string kt; kt=std::string("1.");// assign an arbitrary value just in case that idw.size()==cvs.size() 
   if ( dohisto || idw.size()!=0  ) {
   		plumed_massert(parse("--kt",kt),"if you make a dimensionality reduction (--idw) or a histogram (--histo) then you need to define --kt ");
-  //              actioninput+=std::string(" KT=")+kt ; // beta is eventually ignored whenever the size of the projection is small
   }
-
-//  // for the histogram
-//  if(dohisto){
-//	actioninput+=" HISTOFILE=";
-//        for(unsigned i=0;i<histoFiles.size()-1;i++){actioninput+=histoFiles[i]+",";}
-//        actioninput+=histoFiles[histoFiles.size()-1];
-// 
-//        actioninput+=std::string(" HISTOSIGMA=");
-//        for(unsigned i=0;i<sigma.size()-1;i++){actioninput+=sigma[i]+",";}
-//        actioninput+=sigma.back();  
-//  } 
-  //  welltemp? grids? restart from grid? automatically generate it?     
-  //cerr<<"METASTRING:  "<<actioninput<<endl;
-  //plumed.readInputString(actioninput);
 
   /*
 
@@ -330,10 +341,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
  	actioninput+=" NEGBIAS ";
   }
 
-  cerr<<"FUNCSTRING:  "<<actioninput<<endl;
+  //cerr<<"FUNCSTRING:  "<<actioninput<<endl;
   plumed.readInputString(actioninput);
   // if not a grid, then set it up automatically
-  cerr<<"end of sum_hills"<<endl;
   return 0;
 }
 

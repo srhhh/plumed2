@@ -26,13 +26,21 @@
 
 namespace PLMD {
 
-//+PLUMEDOC INTERNAL kernelfunctions
+//+PLUMEDOC INTERNAL BiasRepresentation 
 /*
 */
 //+ENDPLUMEDOC
 
 /// the constructor here
 BiasRepresentation::BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc ):hasgrid(false),mycomm(cc){
+    ndim=tmpvalues.size();
+    for(int i=0;i<ndim;i++){
+         values.push_back(tmpvalues[i]);
+         names.push_back(values[i]->getName());
+    } 
+}; 
+/// overload the constructor: add the sigma  at constructor time 
+BiasRepresentation::BiasRepresentation(vector<Value*> tmpvalues, Communicator &cc,  vector<double> sigma ):hasgrid(false),mycomm(cc),histosigma(sigma){
     ndim=tmpvalues.size();
     for(int i=0;i<ndim;i++){
          values.push_back(tmpvalues[i]);
@@ -65,7 +73,7 @@ void  BiasRepresentation::addGrid( vector<string> gmin, vector<string> gmax, vec
     plumed_massert(hasgrid==false,"to build the grid you should not having the grid in this bias representation");
     string ss; ss="file.free"; 
     vector<Value*> vv;for(unsigned i=0;i<values.size();i++)vv.push_back(values[i]);
-    cerr<<" initializing grid "<<endl;
+    //cerr<<" initializing grid "<<endl;
     BiasGrid_=new Grid(ss,vv,gmin,gmax,nbin,false,true);
     hasgrid=true;	
 };
@@ -197,7 +205,39 @@ Grid* BiasRepresentation::getGridPtr(){
         plumed_massert(hasgrid,"if you want the grid pointer then you should have defined a grid before"); 
 	return BiasGrid_;
 };
-
+void BiasRepresentation::getMinMaxBin(vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin){
+	vector<double> ss,cc,dd,binsize; 
+	vmin.clear();vmin.resize(ndim,10.e20);
+	vmax.clear();vmax.resize(ndim,-10.e20);
+	vbin.clear();vbin.resize(ndim);
+	binsize.clear();binsize.resize(ndim,10.e20);
+	int ndiv=10; // adjustable parameter: division per support
+	for(unsigned i=0;i<hills.size();i++){
+		if(histosigma.size()!=0){
+			ss=histosigma;
+		}else{
+			ss=hills[i]->getContinuousSupport();	
+		}
+		cc=hills[i]->getCenter();
+		for(unsigned j=0;j<ndim;j++){
+			double dmin=cc[j]-ss[j];
+			double dmax=cc[j]+ss[j];
+			double ddiv=ss[j]/double(ndiv);
+			if(dmin<vmin[j])vmin[j]=dmin; 
+			if(dmax>vmax[j])vmax[j]=dmax; 
+			if(ddiv<binsize[j])binsize[j]=ddiv;		
+		};
+	}
+	for(unsigned j=0;j<ndim;j++){
+		double minv,maxv;
+		// reset to periodicity
+		values[j]->getDomain(minv,maxv);
+		if(minv>vmin[j])vmin[j]=minv;
+		if(maxv<vmax[j])vmax[j]=maxv;
+		vbin[j]=static_cast<unsigned>(ceil((vmax[j]-vmin[j])/binsize[j]) );	
+		//cerr<<"MMM "<<vmin[j]<<" "<<vmax[j]<<" "<<vbin[j]<<endl;
+	}
+};
 
 
 

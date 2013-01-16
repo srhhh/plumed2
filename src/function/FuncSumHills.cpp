@@ -51,6 +51,8 @@ class FilesHandler{
 		FilesHandler(const vector<string> &filenames, const bool &parallelread ,  Action &myaction , Log &mylog);
 		bool readBunch(BiasRepresentation *br, unsigned stride);
 		bool scanOneHill(BiasRepresentation *br, IFile *ifile );
+		void getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin);
+		void getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin, vector<double> &histosigma);
 }; 
 FilesHandler::FilesHandler(const vector<string> &filenames, const bool &parallelread , Action &action , Log &mylog ):filenames(filenames),parallelread(parallelread),beingread(0),log(&mylog),isopen(false){
    this->action=&action;
@@ -116,6 +118,22 @@ bool FilesHandler::readBunch(BiasRepresentation *br , unsigned stride = -1){
                 } 
         }        
 	return morefiles;
+};
+void FilesHandler::getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin){
+        // create the representation (no grid)
+     	BiasRepresentation br(vals,cc);
+        // read all the kernels
+        readBunch(&br);
+        // loop over the kernels and get the support 
+ 	br.getMinMaxBin(vmin,vmax,vbin);
+};
+void FilesHandler::getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin, vector<double> &histosigma){
+     	BiasRepresentation br(vals,cc,histosigma);
+        // read all the kernels
+        readBunch(&br);
+        // loop over the kernels and get the support 
+ 	br.getMinMaxBin(vmin,vmax,vbin);
+        //for(unsigned i=0;i<vals.size();i++){cerr<<"XXX "<<vmin[i]<<" "<<vmax[i]<<" "<<vbin[i]<<"\n";}	
 };
 bool FilesHandler::scanOneHill(BiasRepresentation *br, IFile *ifile ){
 	double dummy;
@@ -202,28 +220,27 @@ negativebias(false)
 {
   // here read 
   // Grid Stuff
-  vector<std::string> gmin(getNumberOfArguments());
+  vector<std::string> gmin;
   parseVector("GRID_MIN",gmin);
   if(gmin.size()!=getNumberOfArguments() && gmin.size()!=0) error("not enough values for GRID_MIN");
-  plumed_massert(gmin.size()==getNumberOfArguments(),"need GRID_MIN argument for this") ;
-  vector<std::string> gmax(getNumberOfArguments());
+  plumed_massert(gmin.size()==getNumberOfArguments() || gmin.size()==0,"need GRID_MIN argument for this") ;
+  vector<std::string> gmax;
   parseVector("GRID_MAX",gmax);
   if(gmax.size()!=getNumberOfArguments() && gmax.size()!=0) error("not enough values for GRID_MAX");
-  plumed_massert(gmax.size()==getNumberOfArguments(),"need GRID_MAX argument for this") ;
-  vector<unsigned> gbin(getNumberOfArguments());
+  plumed_massert(gmax.size()==getNumberOfArguments() || gmax.size()==0,"need GRID_MAX argument for this") ;
+  vector<unsigned> gbin;
   parseVector("GRID_BIN",gbin);
-  plumed_massert(gbin.size()==getNumberOfArguments(),"need GRID_BIN argument for this"); 
+  plumed_massert(gbin.size()==getNumberOfArguments() || gbin.size()==0,"need GRID_BIN argument for this"); 
   if(gbin.size()!=getNumberOfArguments() && gbin.size()!=0) error("not enough values for GRID_BIN");
-  plumed_assert(gmin.size()==gmax.size() && gmin.size()==gbin.size());
-  // add some automatic hills width: not in case stride is defined  
-  // since when you start from zero the automatic size will be zero!
- 
+  //plumed_assert(getNumberOfArguments()==gbin.size());
+
   // hills file: 
   parseVector("HILLSFILES",hillsFiles);
   if(hillsFiles.size()==0){
   	integratehills=false; // default behaviour 
   }else{
   	integratehills=true; 
+        for(unsigned i;i<hillsFiles.size();i++) log<<"  hillsfile  : "<<hillsFiles[i]<<"\n";
   }
   // histo file: 
   parseVector("HISTOFILES",histoFiles);
@@ -231,12 +248,67 @@ negativebias(false)
   	integratehisto=false;  
   }else{
   	integratehisto=true;  
+        for(unsigned i=0;i<histoFiles.size();i++) log<<"  histofile  : "<<histoFiles[i]<<"\n";
   }
   vector<double> histoSigma;
   if(integratehisto){
   	parseVector("HISTOSIGMA",histoSigma);
 	plumed_massert(histoSigma.size()==getNumberOfArguments()," The number of sigmas must be the same of the number of arguments ");
+        for(unsigned i=0;i<histoSigma.size();i++) log<<"  histosigma  : "<<histoSigma[i]<<"\n";
   }
+
+  // add some automatic hills width: not in case stride is defined  
+  // since when you start from zero the automatic size will be zero!
+  if(gmin.size()==0 || gmax.size()==0){
+	log<<"   \n"; 
+	log<<"  No boundaries defined: need to do a prescreening of hills \n"; 
+        std::vector<Value*> tmpvalues; 
+        for(unsigned i=0;i<getNumberOfArguments();i++)tmpvalues.push_back( getPntrToArgument(i) );
+        if(integratehills) {
+        	FilesHandler *hillsHandler;
+        	hillsHandler=new FilesHandler(hillsFiles,parallelread,*this, log);
+		vector<double> vmin,vmax;
+        	vector<unsigned> vbin;  
+        	hillsHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin);
+		log<<"  found boundaries from hillsfile: \n";
+		gmin.resize(vmin.size());
+		gmax.resize(vmax.size());
+                if(gbin.size()==0){
+			gbin=vbin;
+                }else{
+			log<<"  found nbins in input, this overrides the automatic choice \n"; 
+		}
+		for(unsigned i=0;i<getNumberOfArguments();i++){
+		 	Tools::convert(vmin[i],gmin[i]);
+		 	Tools::convert(vmax[i],gmax[i]);
+			log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
+		}
+        } 
+	// if at this stage bins are not there then do it with histo
+	if(gmin.size()==0){
+    	   	FilesHandler *histoHandler;
+	        histoHandler=new FilesHandler(histoFiles,parallelread,*this, log);
+		vector<double> vmin,vmax;
+        	vector<unsigned> vbin;  
+        	histoHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin,histoSigma);
+		log<<"  found boundaries from histofile: \n";
+		gmin.resize(vmin.size());
+		gmax.resize(vmax.size());
+                if(gbin.size()==0){
+			gbin=vbin;
+                }else{
+			log<<"  found nbins in input, this overrides the automatic choice \n"; 
+		}
+		for(unsigned i=0;i<getNumberOfArguments();i++){
+		 	Tools::convert(vmin[i],gmin[i]);
+		 	Tools::convert(vmax[i],gmax[i]);
+			log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
+		}
+        }
+	log<<"  done!\n"; 
+	log<<"   \n"; 
+  }
+
   // needs a projection? 
   proj.clear();
   parseVector("PROJ",proj);
@@ -244,9 +316,10 @@ negativebias(false)
 
   if( proj.size() != 0 || integratehisto==true  ) {
     parse("KT",beta);
+    for(unsigned i=0;i<proj.size();i++) log<<"  projection "<<i<<" : "<<proj[i]<<"\n";
     plumed_massert(beta>0.,"if you make a projection or a histogram correction then you need KT flag!"); 
     beta=1./beta; 
-    log<<"    beta is "<<beta<<"\n"; 
+    log<<"  beta is "<<beta<<"\n"; 
   }
   // is a cltool: then you start and then die
   parseFlag("ISCLTOOL",iscltool);
@@ -257,11 +330,13 @@ negativebias(false)
   // stride
   parse("INITSTRIDE",initstride);
   // output suffix or names
-  if(initstride<0){outhills="fes.dat";outhisto="correction.dat";}
-  else{outhills="fes_";outhisto="correction_";}
+  if(initstride<0){ log<<"  Doing only one integration: no stride \n";
+  	 outhills="fes.dat";outhisto="correction.dat";}
+  else{outhills="fes_";outhisto="correction_";
+	log<<"  Doing integration slices every "<<initstride<<" kernels\n";
+  }
 
   //what might it be this? 
-  checkRead();
   // here start 
   // want something right now?? do it and return
   // your argument is a set of cvs 
@@ -269,7 +344,7 @@ negativebias(false)
   // create a bias representation for this
   if(iscltool){
 
-    std::vector<Value*> tmpvalues; 
+     std::vector<Value*> tmpvalues; 
     for(unsigned i=0;i<getNumberOfArguments();i++){
         // allocate a new value from the old one: no deriv here
 	//tmpvalues.push_back(  Value( this, getPntrToArgument(i)->getName(), true ) );
@@ -290,7 +365,13 @@ negativebias(false)
 
     parse("OUTHILLS",outhills);
     parse("OUTHISTO",outhisto);
+    if(integratehills)log<<"  output file for fes/bias   is :  "<<outhills<<"\n";   
+    if(integratehisto)log<<"  output file for correction is :  "<<outhisto<<"\n";   
+    checkRead();
 
+    log<<"\n";
+    log<<"  Now calculating...\n";
+    log<<"\n";
 
     if(integratehisto){
          checkFilesAreExisting(histoFiles); 
@@ -314,14 +395,14 @@ negativebias(false)
     int nfiles=0;
     bool ibias=integratehills; bool ihisto=integratehisto;
     while(true){
-        if(  integratehills  && ibias  ){ ibias=hillsHandler->readBunch(biasrep,initstride) ; }   
-        if(  integratehisto  && ihisto ){ ihisto=histoHandler->readBunch(historep,initstride) ;}    
-	log<<"  read another bunch \n";
+        if(  integratehills  && ibias  ){ log<<"  reading hills: \n"; ibias=hillsHandler->readBunch(biasrep,initstride) ; log<<"\n"; }   
+        if(  integratehisto  && ihisto ){ log<<"  reading histogram: \n"; ihisto=histoHandler->readBunch(historep,initstride) ;  log<<"\n";  }    
 	// dump: need to project?	
         if(proj.size()!=0){
 
 		if(integratehills){
-    	      		log<<"      Projecting on subgrid... \n";
+
+    	      		log<<"  Projecting on subgrid... \n";
               		BiasWeight *Bw=new BiasWeight(beta); 
               		WeightBase *Wb=dynamic_cast<WeightBase*>(Bw); 
              		Grid biasGrid=*(biasrep->getGridPtr());
@@ -329,7 +410,7 @@ negativebias(false)
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
               		string myout; myout=outhills+ostr.str()+".dat" ;
-              		log<<"      Writing subgrid on file "<<myout<<" \n";
+              		log<<"  Writing subgrid on file "<<myout<<" \n";
               		gridfile.open(myout);	
          
    	      		smallGrid.writeToFile(gridfile);
@@ -346,7 +427,7 @@ negativebias(false)
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
               		string myout; myout=outhisto+ostr.str()+".dat" ;
-              		log<<"      Writing subgrid on file "<<myout<<" \n";
+              		log<<"  Writing subgrid on file "<<myout<<" \n";
               		gridfile.open(myout);	
          
    	      		smallGrid.writeToFile(gridfile);
@@ -358,6 +439,7 @@ negativebias(false)
 	}else{
 
 		if(integratehills){
+
 	                Grid biasGrid=*(biasrep->getGridPtr());
 			biasGrid.scaleAllValuesAndDerivatives(-1.);
 	
@@ -365,7 +447,7 @@ negativebias(false)
 			std::ostringstream ostr;ostr<<nfiles;
 			string myout;
 			if(initstride>0){ myout=outhills+ostr.str()+".dat" ;}else{myout=outhills;}
-	                log<<"      Writing full grid on file "<<myout<<" \n";
+	                log<<"  Writing full grid on file "<<myout<<" \n";
 	                gridfile.open(myout);	
 	
 	                biasGrid.writeToFile(gridfile);
@@ -383,7 +465,7 @@ negativebias(false)
 			std::ostringstream ostr;ostr<<nfiles;
 			string myout;
 			if(initstride>0){ myout=outhisto+ostr.str()+".dat" ;}else{myout=outhisto;}
-	                log<<"      Writing full grid on file "<<myout<<" \n";
+	                log<<"  Writing full grid on file "<<myout<<" \n";
 	                gridfile.open(myout);	
 	
 	                histoGrid.writeToFile(gridfile);
@@ -409,6 +491,7 @@ negativebias(false)
 void FuncSumHills::calculate(){
   // this should be connected only with a grid representation to metadynamics 
   // at regular time just dump it
+   plumed_merror("You should have never got here: this stuff is not yet implemented!"); 
 }
 
 FuncSumHills::~FuncSumHills(){
