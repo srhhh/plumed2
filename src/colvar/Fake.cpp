@@ -25,6 +25,7 @@
 #include <string>
 #include <cmath>
 #include <cassert>
+#include <iostream>
 
 using namespace std;
 
@@ -58,9 +59,10 @@ PLUMED_REGISTER_ACTION(ColvarFake,"FAKE")
 
 void ColvarFake::registerKeywords( Keywords& keys ){
   Colvar::registerKeywords( keys );
-  keys.add("atoms","ATOMS","the pair of atom that we are calculating the distance between");
-  keys.reserve("compulsory","PERIODIC","if the output of your function is periodic then you should specify the periodicity of the function.  If the output is not periodic you must state this using PERIODIC=NO");
+  keys.add("atoms","ATOMS","the fake atom index, a number is enough");
+  keys.reserve("compulsory","PERIODIC","if the output of your function is periodic then you should specify the periodicity of the function.  If the output is not periodic you must state this using PERIODIC=NO,NO (one for the lower and the other for the upper boundary). For multicomponents then it is PERIODIC=mincomp1,maxcomp1,mincomp2,maxcomp2  etc ");
   keys.use("PERIODIC");
+  keys.add("optional","COMPONENTS","additional componnets that this variable is supposed to have. Periodicity is ruled by PERIODIC keyword ");
 }
 
 ColvarFake::ColvarFake(const ActionOptions&ao):
@@ -68,27 +70,42 @@ PLUMED_COLVAR_INIT(ao)
 {
   vector<AtomNumber> atoms;
   parseAtomList("ATOMS",atoms);
-  //assert(atoms.size()==2);
-  addValueWithDerivatives(); 
+
+  vector<string> comps; 
+  // multiple components for this variable 
+  if( keywords.exists("COMPONENTS") ){
+	parseVector("COMPONENTS",comps);
+	for(unsigned i=0;i<comps.size();i++){
+        	addComponentWithDerivatives(comps[i]);
+	}
+        // periodicity
+  }else{
+  // only one component for this variable 
+  	addValueWithDerivatives(); 
+  }
+  
   if( keywords.exists("PERIODIC") ){
      std::vector<std::string> period;
      parseVector("PERIODIC",period);
-     if(period.size()==1 && period[0]=="NO"){
-        setNotPeriodic();
-        log.printf("  this variable is not periodic \n");
-     } else if(period.size()==2){
-        setPeriodic(period[0],period[1]);
-        log.printf("  this variable is periodic with period %s : %s \n",period[0].c_str(),period[1].c_str());
-     } else error("missing PERIODIC keyword");
+     for(unsigned i=0;i<getNumberOfComponents();i++){
+	if(comps.size()!=0){
+		if(period[i*2]!="none" && period[i*2+1]!="none" ){
+			componentIsPeriodic(comps[i],period[i*2],period[i*2+1]);
+		}else{
+			componentIsNotPeriodic(comps[i]);
+		}
+        }else{
+                if(period[i*2]!="none" && period[i*2+1]!="none" ){
+                        setPeriodic(period[i*2],period[i*2+1]);
+                }else{
+                        setNotPeriodic();
+                }
+	} 
+     }
   }
   checkRead();
-
-  //log.printf("  between atoms %d %d\n",atoms[0].serial(),atoms[1].serial());
-
-  //setNotPeriodic();
-  //void Value::setDomain(const std::string& pmin,const std::string& pmax)
-
   requestAtoms(atoms);
+
 }
 
 

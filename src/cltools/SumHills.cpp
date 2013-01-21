@@ -174,7 +174,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 
   plumed_massert(dohisto || dohills,"you should use --histo or/and --hills command");
 
-  vector<string> vcvs;
+  vector< vector<string> > vcvs;
   vector<string> vpmin;
   vector<string> vpmax;
   bool vmultivariate;
@@ -185,7 +185,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
        free(ifile);
   }
 
-  vector<string> hcvs;
+  vector< vector<string> > hcvs;
   vector<string> hpmin;
   vector<string> hpmax;
   bool hmultivariate;
@@ -208,7 +208,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 
   // now put into a neutral vector  
   
-  vector<string> cvs;
+  vector< vector<string> > cvs;
   vector<string> pmin;
   vector<string> pmax;
 
@@ -222,6 +222,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
     pmin=hpmin;
     pmax=hpmax;
   }
+
 
   // setup grids
   unsigned grid_check=0; 
@@ -244,7 +245,8 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   // allowed: no grids only bin
   // not allowed: partial grid definition 
   plumed_massert( gmin.size()==gmax.size() && (gmin.size()==0 ||  gmin.size()==cvs.size() ) ,"you should specify --min and --max together with same number of components");
-  //plumed_massert(( (grid_check==0 && grid_has_bin==false ) || (grid_check==2 && grid_has_bin==true) ),"you should define all the --min --max --bin keys");
+
+
 
   PlumedMain plumed;
   std::string ss;
@@ -253,33 +255,73 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   plumed.cmd(ss,&nn);  
   ss="init";
   plumed.cmd("init",&nn);  
+  vector <bool> isdone(cvs.size(),false);  
   for(int i=0;i<cvs.size();i++){
+     if(!isdone[i]){
+       isdone[i]=true;	
        std::vector<std::string> actioninput; 
+       std::vector <unsigned> inds;
        actioninput.push_back("FAKE");
        actioninput.push_back("ATOMS=1");
-       actioninput.push_back("LABEL="+cvs[i]);
-       // periodicity
-       if (pmax[i]==string("none")){
-       	actioninput.push_back("PERIODIC=NO "); 
-       }else{
-       	actioninput.push_back("PERIODIC="+pmin[i]+","+pmax[i]);
-               // check if min and max values are ok with grids
-               if(grid_check==2){  
-                   double gm; Tools::convert(gmin[i],gm);              
-                   double pm; Tools::convert(pmin[i],pm);              
-                   if(  gm<pm ){
-                        plumed_merror("Periodicity issue : GRID_MIN value ( "+gmin[i]+" ) is less than periodicity in HILLS file in "+cvs[i]+ " ( "+pmin[i]+" ) ");
-                   } 
-                   Tools::convert(gmax[i],gm);              
-                   Tools::convert(pmax[i],pm);              
-                   if(  gm>pm ){
-                        plumed_merror("Periodicity issue : GRID_MAX value ( "+gmax[i]+" ) is more than periodicity in HILLS file in "+cvs[i]+ " ( "+pmax[i]+" ) ");
-                   }
-               } 
+       actioninput.push_back("LABEL="+cvs[i][0]);
+       std::vector<std::string> comps, periods;
+       if(cvs[i].size()>1){comps.push_back(cvs[i][1]);inds.push_back(i);}
+       periods.push_back(pmin[i]);periods.push_back(pmax[i]); 
+       for(unsigned j=i+1;j<cvs.size();j++){
+		if(cvs[i][0]==cvs[j][0] && !isdone[j]){
+			if(cvs[i].size()==1 || cvs[j].size()==1  )plumed_merror("you cannot have twice the same label and no components ");
+       			if(cvs[j].size()>1){
+			 comps.push_back(cvs[j][1]);	
+			 periods.push_back(pmin[i]);periods.push_back(pmax[i]); 
+			 isdone[j]=true; inds.push_back(j);
+			}
+		}
+		
        } 
+       // drain all the components
+       std::string addme;
+       if(comps.size()>0){
+       	  addme="COMPONENTS="; 
+	  for(unsigned i=0;i<comps.size()-1;i++)addme+=comps[i]+",";
+	  addme+=comps.back();
+          actioninput.push_back(addme);		
+       }	
+       // periodicity (always explicit here)
+       addme="PERIODIC="; 
+       for(unsigned j=0;j<pmin.size()-1;j++){
+	addme+=pmin[j]+","+pmax[j]+",";
+       }
+       addme+=pmin.back()+","+pmax.back();
+       actioninput.push_back(addme);		
+       for(unsigned j=0;j<inds.size();j++){
+	       unsigned jj;jj=inds[j];
+               if(grid_check==2){  
+                 double gm; 
+                 double pm; 
+                 if(pmin[jj]!="none"){ 
+                   Tools::convert(gmin[jj],gm);              
+                   Tools::convert(pmin[jj],pm);              
+                   if(  gm<pm  ){
+                        plumed_merror("Periodicity issue : GRID_MIN value ( "+gmin[jj]+" ) is less than periodicity in HILLS file in "+cvs[jj][0]+ " ( "+pmin[jj]+" ) ");
+                   } 
+                 } 
+                 if(pmax[jj]!="none"){ 
+                   Tools::convert(gmax[jj],gm);              
+                   Tools::convert(pmax[jj],pm);              
+                   if(  gm>pm ){
+                        plumed_merror("Periodicity issue : GRID_MAX value ( "+gmax[jj]+" ) is more than periodicity in HILLS file in "+cvs[jj][0]+ " ( "+pmax[jj]+" ) ");
+                   }
+                 } 
+               } 
+       }
+
+  //for(unsigned i=0;i< actioninput.size();i++){
+  //  cerr<<"AA "<<actioninput[i]<<endl;	
+  //}
        plumed.readInputWords(actioninput);
+   }
+
   }
-  // define the metadynamics
   unsigned ncv=cvs.size();
   std::vector<std::string> actioninput;
   vector<std::string> idw;
@@ -288,7 +330,11 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
       for(unsigned i=0;i<idw.size();i++){
           bool found=false;
           for(unsigned j=0;j<cvs.size();j++){
-                if(idw[i]==cvs[j])found=true;
+		if(cvs[j].size()>1){
+      			if(idw[i]==cvs[j][0]+"."+cvs[j][1])found=true;
+                }else{
+       			if(idw[i]==cvs[j][0])found=true;
+		}
           }
           if(!found)plumed_merror("variable "+idw[i]+" is not found in the bunch of cvs: revise your --idw option" ); 
       } 
@@ -310,8 +356,23 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   std::string addme;
   actioninput.push_back("FUNCSUMHILLS");
   actioninput.push_back("ISCLTOOL");
-  addme="ARG="; for(unsigned i=0;i<(ncv-1);i++)addme+=std::string(cvs[i])+","; addme+=cvs[ncv-1];
+  addme="ARG=";
+  for(unsigned i=0;i<(ncv-1);i++){
+      if(cvs[i].size()==1){
+	addme+=std::string(cvs[i][0])+","; 
+      }else{  
+	addme+=std::string(cvs[i][0])+"."+std::string(cvs[i][1])+","; 
+      }
+  }
+  if(cvs[ncv-1].size()==1){
+        addme+=std::string(cvs[ncv-1][0]);
+  }else{
+        addme+=std::string(cvs[ncv-1][0])+"."+std::string(cvs[ncv-1][1]);
+  }
   actioninput.push_back(addme);
+  //for(unsigned i=0;i< actioninput.size();i++){
+  //  cerr<<"AA "<<actioninput[i]<<endl;	
+  //}
   if(dohills){
     addme="HILLSFILES="; for(unsigned i=0;i<hillsFiles.size()-1;i++)addme+=hillsFiles[i]+","; addme+=hillsFiles[hillsFiles.size()-1];
      actioninput.push_back(addme);
@@ -357,6 +418,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   }
 
   //cerr<<"FUNCSTRING:  "<<actioninput<<endl;
+  //for(unsigned i=0;i< actioninput.size();i++){
+  // cerr<<"AA "<<actioninput[i]<<endl;	
+  //}
   plumed.readInputWords(actioninput);
   // if not a grid, then set it up automatically
   return 0;

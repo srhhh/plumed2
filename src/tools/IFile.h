@@ -95,7 +95,7 @@ Typically used as
   void allowIgnoredFields();
 /// find a list of variables present, if they are periodic and which is the period
 /// return false if the file does not exist 
-  bool findCvsAndPeriodic(std::string filename, std::vector<std::string> &cvs,std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate);
+  bool findCvsAndPeriodic(std::string filename, std::vector< std::vector <std::string> > &cvs,std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate);
 };
 
 }

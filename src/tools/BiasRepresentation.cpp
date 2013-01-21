@@ -229,13 +229,14 @@ void BiasRepresentation::getMinMaxBin(vector<double> &vmin, vector<double> &vmax
 		};
 	}
 	for(unsigned j=0;j<ndim;j++){
-		double minv,maxv;
 		// reset to periodicity
-		values[j]->getDomain(minv,maxv);
-		if(minv>vmin[j])vmin[j]=minv;
-		if(maxv<vmax[j])vmax[j]=maxv;
+		if(values[j]->isPeriodic()){
+			double minv,maxv;
+			values[j]->getDomain(minv,maxv);
+			if(minv>vmin[j])vmin[j]=minv;
+			if(maxv<vmax[j])vmax[j]=maxv;
+		}
 		vbin[j]=static_cast<unsigned>(ceil((vmax[j]-vmin[j])/binsize[j]) );	
-		//cerr<<"MMM "<<vmin[j]<<" "<<vmax[j]<<" "<<vbin[j]<<endl;
 	}
 };
 

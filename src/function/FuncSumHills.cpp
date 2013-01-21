@@ -347,14 +347,13 @@ negativebias(false)
      std::vector<Value*> tmpvalues; 
     for(unsigned i=0;i<getNumberOfArguments();i++){
         // allocate a new value from the old one: no deriv here
-	//tmpvalues.push_back(  Value( this, getPntrToArgument(i)->getName(), true ) );
 	tmpvalues.push_back( getPntrToArgument(i) );
     }
 
     // check if the files exists 
     if(integratehills){
          checkFilesAreExisting(hillsFiles); 
-         biasrep=new BiasRepresentation(tmpvalues,comm, gmax,gmin,gbin);
+         biasrep=new BiasRepresentation(tmpvalues,comm, gmin, gmax, gbin);
 	 if(negativebias){
 		biasrep->setRescaledToBias(true);
 	        log<<"  required the -bias instead of the free energy \n";
@@ -375,7 +374,7 @@ negativebias(false)
 
     if(integratehisto){
          checkFilesAreExisting(histoFiles); 
-         historep=new BiasRepresentation(tmpvalues,comm,gmax,gmin,gbin,histoSigma);
+         historep=new BiasRepresentation(tmpvalues,comm,gmin,gmax,gbin,histoSigma);
     }
 
     // decide how to source hills ( serial/parallel )
