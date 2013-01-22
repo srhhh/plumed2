@@ -89,11 +89,11 @@ void Grid::Init(const std::string& funcl, const std::vector<std::string> &names,
       pbc_[i]=true; 
       str_min_[i]=pmin[i];
       str_max_[i]=pmax[i];
-      Tools::convert(str_min_[i],min_[i]); 
-      Tools::convert(str_max_[i],max_[i]); 
   } else {
       pbc_[i]=false;
   }
+  Tools::convert(str_min_[i],min_[i]); 
+  Tools::convert(str_max_[i],max_[i]); 
   funcname=funcl;
   plumed_massert(max_[i]>min_[i],"maximum in grid must be larger than minimum");
   plumed_massert(nbin[i]>0,"number of grid points must be greater than zero");
