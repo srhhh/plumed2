@@ -41,24 +41,60 @@ Grid::Grid(const std::string& funcl, std::vector<Value*> args, const vector<std:
  plumed_massert(args.size()==gmin.size(),"grid dimensions in input do not match number of arguments");
  plumed_massert(args.size()==nbin.size(),"grid dimensions in input do not match number of arguments");
  plumed_massert(args.size()==gmax.size(),"grid dimensions in input do not match number of arguments");
+ unsigned dim=gmax.size(); 
+ std::vector<std::string> names; 
+ std::vector<bool> isperiodic; 
+ std::vector<string> pmin,pmax; 
+ names.resize( dim );
+ isperiodic.resize( dim );
+ pmin.resize( dim );
+ pmax.resize( dim );
+ for(unsigned int i=0;i<dim;++i){
+  names[i]=args[i]->getName();
+  if( args[i]->isPeriodic() ){
+      isperiodic[i]=true; 
+      args[i]->getDomain( pmin[i], pmax[i] );
+  } else {
+      isperiodic[i]=false;
+      pmin[i]="0.";
+      pmax[i]="0.";
+  }
+ }
+ // this is a value-independent initializator
+ Init(funcl,names,gmin,gmax,nbin,dospline,usederiv,doclear,isperiodic,pmin,pmax);
+}
+
+Grid::Grid(const std::string& funcl, const std::vector<string> &names, const std::vector<std::string> & gmin, 
+           const vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, bool usederiv, bool doclear, const std::vector<bool> &isperiodic, const std::vector<std::string> &pmin, const std::vector<std::string> &pmax ){
+ // this calls the initializator
+ Init(funcl,names,gmin,gmax,nbin,dospline,usederiv,doclear,isperiodic,pmin,pmax);
+}
+
+void Grid::Init(const std::string& funcl, const std::vector<std::string> &names, const vector<std::string> & gmin, 
+           const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, bool usederiv, bool doclear, 
+     	   const std::vector<bool> &isperiodic, const std::vector<std::string> &pmin, const std::vector<std::string> &pmax ){
+// various checks
+ plumed_massert(names.size()==gmin.size(),"grid dimensions in input do not match number of arguments");
+ plumed_massert(names.size()==nbin.size(),"grid dimensions in input do not match number of arguments");
+ plumed_massert(names.size()==gmax.size(),"grid dimensions in input do not match number of arguments");
  dimension_=gmax.size(); 
- args_=args;
  str_min_=gmin; str_max_=gmax; 
  argnames.resize( dimension_ );
  min_.resize( dimension_ ); 
  max_.resize( dimension_ );
  pbc_.resize( dimension_ );
  for(unsigned int i=0;i<dimension_;++i){
-  argnames[i]=args[i]->getName();
-  if( args[i]->isPeriodic() ){
+  argnames[i]=names[i];
+  if( isperiodic[i] ){
       pbc_[i]=true; 
-      args[i]->getDomain( str_min_[i], str_max_[i] );
+      str_min_[i]=pmin[i];
+      str_max_[i]=pmax[i];
+      Tools::convert(str_min_[i],min_[i]); 
+      Tools::convert(str_max_[i],max_[i]); 
   } else {
       pbc_[i]=false;
   }
   funcname=funcl;
-  Tools::convert( str_min_[i], min_[i] );
-  Tools::convert( str_max_[i], max_[i] );
   plumed_massert(max_[i]>min_[i],"maximum in grid must be larger than minimum");
   plumed_massert(nbin[i]>0,"number of grid points must be greater than zero");
  }
@@ -116,13 +152,6 @@ vector<unsigned> Grid::getNbin() const {
 vector<string> Grid::getArgNames() const {
  return argnames;
 }
-
-vector<Value*> Grid::getPntrToArgs() const {
- return args_ ;
-}
-
-
-
 
 
 unsigned Grid::getSize() const {
@@ -468,7 +497,6 @@ void Grid::writeToFile(OFile& ofile){
  vector<double> der(dimension_);
  double f;
  writeHeader(ofile); 
- unsigned wstep=getSize()/10; 
  for(unsigned i=0;i<getSize();++i){
    xx=getPoint(i);
    if(usederiv_){f=getValueAndDerivatives(i,der);} 
@@ -686,8 +714,9 @@ Grid Grid::project(const std::vector<std::string> proj , WeightBase *ptr2obj ){
          // find extrema only for the projection
          vector<string>   smallMin,smallMax;
          vector<unsigned> smallBin;
-         vector<Value*>   smallVal;
          vector<unsigned> dimMapping;
+         vector<bool> smallIsPeriodic;
+         vector<string> smallName;
 
          // check if the two key methods are there
          WeightBase* pp = dynamic_cast<WeightBase*>(ptr2obj);
@@ -702,13 +731,14 @@ Grid Grid::project(const std::vector<std::string> proj , WeightBase *ptr2obj ){
                          smallMax.push_back(getMax()[i]);
                          smallMin.push_back(getMin()[i]);
                          smallBin.push_back(getNbin()[i]-offset);
-                         smallVal.push_back(getPntrToArgs()[i]);
+			 smallIsPeriodic.push_back(getIsPeriodic()[i]);
                          dimMapping.push_back(i);
+			 smallName.push_back(getArgNames()[i]);
                          break;
                     }
               }
          }
-         Grid smallgrid("projection",smallVal,smallMin,smallMax,smallBin,false,false,true);  
+         Grid smallgrid("projection",smallName,smallMin,smallMax,smallBin,false,false,true,smallIsPeriodic,smallMin,smallMax);  
          // check that the two grids are commensurate 
          for(unsigned i=0;i<dimMapping.size();i++){
               plumed_massert(  (smallgrid.getMax())[i] == (getMax())[dimMapping[i]],  "the two input grids are not compatible in max"   );  

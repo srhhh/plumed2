@@ -70,7 +70,6 @@ class Grid
  std::vector< std::vector<double> > der_;
 protected:
  std::string funcname;
- std::vector<Value*> args_;
  std::vector<std::string> argnames;
  std::vector<std::string> str_min_, str_max_;
  std::vector<double> min_,max_,dx_;  
@@ -86,9 +85,19 @@ protected:
  virtual void clear();
  
 public:
+ /// this constructor here is Value-aware  
  Grid(const std::string& funcl, std::vector<Value*> args, const std::vector<std::string> & gmin, 
       const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, 
       bool usederiv, bool doclear=true);
+ /// this constructor here is not Value-aware  
+ Grid(const std::string& funcl, const std::vector<std::string> &names, const std::vector<std::string> & gmin, 
+      const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, 
+      bool usederiv, bool doclear, const std::vector<bool> &isperiodic, const std::vector<std::string> &pmin, 
+      const std::vector<std::string> &pmax );
+ /// this is the real initializator  
+ void Init(const std::string & funcl, const std::vector<std::string> &names, const std::vector<std::string> & gmin,
+      const std::vector<std::string> & gmax, const std::vector<unsigned> & nbin, bool dospline, bool usederiv,
+      bool doclear, const std::vector<bool> &isperiodic, const std::vector<std::string> &pmin, const std::vector<std::string> &pmax);
 /// get lower boundary
  std::vector<std::string> getMin() const;
 /// get upper boundary
@@ -105,8 +114,6 @@ public:
  unsigned getDimension() const;
 /// get argument names  of this grid 
  std::vector<std::string> getArgNames() const;
-/// get the pointer to the arguments
- std::vector<Value*> getPntrToArgs() const;
  
 /// methods to handle grid indices 
  std::vector<unsigned> getIndices(unsigned index) const;
