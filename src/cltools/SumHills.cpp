@@ -272,7 +272,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
 			if(cvs[i].size()==1 || cvs[j].size()==1  )plumed_merror("you cannot have twice the same label and no components ");
        			if(cvs[j].size()>1){
 			 comps.push_back(cvs[j][1]);	
-			 periods.push_back(pmin[i]);periods.push_back(pmax[i]); 
+			 periods.push_back(pmin[j]);periods.push_back(pmax[j]); 
 			 isdone[j]=true; inds.push_back(j);
 			}
 		}
@@ -288,10 +288,10 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
        }	
        // periodicity (always explicit here)
        addme="PERIODIC="; 
-       for(unsigned j=0;j<pmin.size()-1;j++){
-	addme+=pmin[j]+","+pmax[j]+",";
+       for(unsigned j=0;j<periods.size()-1;j++){
+	addme+=periods[j]+",";
        }
-       addme+=pmin.back()+","+pmax.back();
+       addme+=periods.back();
        actioninput.push_back(addme);		
        for(unsigned j=0;j<inds.size();j++){
 	       unsigned jj;jj=inds[j];
@@ -315,9 +315,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
                } 
        }
 
-  //for(unsigned i=0;i< actioninput.size();i++){
-  //  cerr<<"AA "<<actioninput[i]<<endl;	
-  //}
+//  for(unsigned i=0;i< actioninput.size();i++){
+//    cerr<<"AA "<<actioninput[i]<<endl;	
+//  }
        plumed.readInputWords(actioninput);
    }
 
@@ -417,10 +417,9 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
  	actioninput.push_back("NEGBIAS");
   }
 
-  //cerr<<"FUNCSTRING:  "<<actioninput<<endl;
-  //for(unsigned i=0;i< actioninput.size();i++){
-  // cerr<<"AA "<<actioninput[i]<<endl;	
-  //}
+//  for(unsigned i=0;i< actioninput.size();i++){
+//   cerr<<"AA "<<actioninput[i]<<endl;	
+//  }
   plumed.readInputWords(actioninput);
   // if not a grid, then set it up automatically
   return 0;
