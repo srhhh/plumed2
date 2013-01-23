@@ -408,7 +408,8 @@ negativebias(false)
    	      		Grid smallGrid=biasGrid.project(proj,Wb);
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
-              		string myout; myout=outhills+ostr.str()+".dat" ;
+              		string myout; 
+                        if(initstride>0){ myout=outhills+ostr.str()+".dat" ;}else{myout=outhills;}
               		log<<"  Writing subgrid on file "<<myout<<" \n";
               		gridfile.open(myout);	
          
@@ -425,7 +426,8 @@ negativebias(false)
 
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
-              		string myout; myout=outhisto+ostr.str()+".dat" ;
+              		string myout; 
+                        if(initstride>0){ myout=outhisto+ostr.str()+".dat" ;}else{myout=outhisto;}
               		log<<"  Writing subgrid on file "<<myout<<" \n";
               		gridfile.open(myout);	
          
