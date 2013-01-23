@@ -389,7 +389,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   }
   std::string  stride; stride="";
   if(parse("--stride",stride)){
-    actioninput.push_back(" INITSTRIDE="+stride);
+    actioninput.push_back("INITSTRIDE="+stride);
   }
   if(idw.size()!=0){ 
      addme="PROJ=";
