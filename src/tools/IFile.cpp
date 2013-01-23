@@ -201,11 +201,13 @@ void IFile::allowIgnoredFields(){
 }
 
 bool IFile::findCvsAndPeriodic(std::string filename, std::vector< std::vector<std::string>  > &cvs, std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate){
+       IFile ifile;
+       ifile.allowIgnoredFields();
        std::vector<std::string> fields;
-       if(FileExist(filename)){
+       if(ifile.FileExist(filename)){
           cvs.clear(); pmin.clear(); pmax.clear(); 
-          open(filename);
-          scanFieldList(fields);
+          ifile.open(filename);
+          ifile.scanFieldList(fields);
           size_t founds,foundm,foundp;
           bool before_sigma=true;
           for(int i=0;i<fields.size();i++){
@@ -242,16 +244,16 @@ bool IFile::findCvsAndPeriodic(std::string filename, std::vector< std::vector<st
                    pmin.push_back("none");
                    pmax.push_back("none");
 		   std::string mm; if((cvs.back()).size()>1){mm=cvs.back()[0]+"."+cvs.back()[1];}else{mm=cvs.back()[0];}
-                   if(FieldExist("min_"+mm)){
+                   if(ifile.FieldExist("min_"+mm)){
               		std::string val;
-              		scanField("min_"+mm,val);
+              		ifile.scanField("min_"+mm,val);
                         pmin[pmin.size()-1]=val; 
                        // std::cerr<<"found min   :  "<<pmin.back()<<std::endl;
                    }
                    std::cerr<<"found min   :  "<<pmin.back()<<std::endl;
-     	           if(FieldExist("max_"+mm)){
+     	           if(ifile.FieldExist("max_"+mm)){
               		std::string val;
-              		scanField("max_"+mm,val);
+              		ifile.scanField("max_"+mm,val);
                         pmax[pmax.size()-1]=val; 
                        // std::cerr<<"found max   :  "<<pmax.back()<<std::endl;
                    }
@@ -261,12 +263,13 @@ bool IFile::findCvsAndPeriodic(std::string filename, std::vector< std::vector<st
           // is multivariate ???
           std::string sss;
           multivariate=false;
-          if(FieldExist("multivariate")){;
-         	 scanField("multivariate",sss);
+          if(ifile.FieldExist("multivariate")){;
+         	 ifile.scanField("multivariate",sss);
          	 if(sss=="true"){ multivariate=true;}
          	 else if(sss=="false"){ multivariate=false;}
           }
-          close();
+          ifile.scanField();
+          ifile.close();
 	  return true;
        }else { 
 	return false;
