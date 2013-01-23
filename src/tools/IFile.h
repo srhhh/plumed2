@@ -93,9 +93,6 @@ Typically used as
   IFile& scanField(Value* val);
 /// Allow some of the fields in the input to be ignored
   void allowIgnoredFields();
-/// find a list of variables present, if they are periodic and which is the period
-/// return false if the file does not exist 
-  static bool findCvsAndPeriodic(std::string filename, std::vector< std::vector <std::string> > &cvs,std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate);
 };
 
 }

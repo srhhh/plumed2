@@ -134,6 +134,9 @@ public:
   CLToolSumHills(const CLToolOptions& co );
   int main(FILE* in,FILE*out,Communicator& pc);
   string description()const;
+/// find a list of variables present, if they are periodic and which is the period
+/// return false if the file does not exist 
+  static bool findCvsAndPeriodic(std::string filename, std::vector< std::vector <std::string> > &cvs,std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate);
 };
 
 void CLToolSumHills::registerKeywords( Keywords& keys ){
@@ -180,9 +183,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   bool vmultivariate;
   if(dohills){
        // parse it as it was a restart
-       IFile *ifile=new IFile();
-       ifile->findCvsAndPeriodic(hillsFiles[0], vcvs, vpmin, vpmax, vmultivariate);
-       free(ifile);
+       findCvsAndPeriodic(hillsFiles[0], vcvs, vpmin, vpmax, vmultivariate);
   }
 
   vector< vector<string> > hcvs;
@@ -192,9 +193,7 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
  
   vector<std::string> sigma; 
   if(dohisto){
-       IFile *ifile=new IFile();
-       ifile->findCvsAndPeriodic(histoFiles[0], hcvs, hpmin, hpmax, hmultivariate);
-       free(ifile);
+       findCvsAndPeriodic(histoFiles[0], hcvs, hpmin, hpmax, hmultivariate);
        // here need also the vector of sigmas
        parseVector("--sigma",sigma);
        if(sigma.size()!=hcvs.size())plumed_merror("you should define --sigma vector when using histogram");
@@ -424,6 +423,83 @@ int CLToolSumHills::main(FILE* in,FILE*out,Communicator& pc){
   // if not a grid, then set it up automatically
   return 0;
 }
+
+bool CLToolSumHills::findCvsAndPeriodic(std::string filename, std::vector< std::vector<std::string>  > &cvs, std::vector<std::string> &pmin,std::vector<std::string> &pmax, bool &multivariate){
+       IFile ifile;
+       ifile.allowIgnoredFields();
+       std::vector<std::string> fields;
+       if(ifile.FileExist(filename)){
+          cvs.clear(); pmin.clear(); pmax.clear(); 
+          ifile.open(filename);
+          ifile.scanFieldList(fields);
+          size_t founds,foundm,foundp;
+          bool before_sigma=true;
+          for(int i=0;i<fields.size();i++){
+              size_t pos = 0;
+              //found=(fields[i].find("sigma_", pos) || fields[i].find("min_", pos) || fields[i].find("max_", pos) ) ;
+              founds=fields[i].find("sigma_", pos)  ;
+              foundm=fields[i].find("min_", pos)  ;
+              foundp=fields[i].find("max_", pos)  ;
+              if (founds!=std::string::npos || foundm!=std::string::npos ||  foundp!=std::string::npos )before_sigma=false;
+              // cvs are after time and before sigmas 
+              size_t  found; 
+              found=fields[i].find("time", pos); 
+              if( found==std::string::npos && before_sigma){
+		   // separate the components 
+		   size_t dot=fields[i].find_first_of('.');		 	 
+		   std::vector<std::string> ss;		
+		   // this loop does not take into account repetitions  
+		   if(dot!=std::string::npos){	
+			   std::string a=fields[i].substr(0,dot);
+     			   std::string name=fields[i].substr(dot+1);
+	            	   ss.push_back(a);
+                   	   ss.push_back(name);
+		   	   cvs.push_back(ss);	
+       		   }else{
+	                   std::vector<std::string> ss; 
+                           ss.push_back(fields[i]);
+		   	   cvs.push_back(ss);	
+		   }
+                   std::cerr<<"found variable number  "<<cvs.size()<<" :  "<<cvs.back()[0]<<std::endl;
+		   if((cvs.back()).size()!=1){
+                   	std::cerr<<"component    "<<(cvs.back()).back()<<std::endl;
+	  	   }
+                   // get periodicity
+                   pmin.push_back("none");
+                   pmax.push_back("none");
+		   std::string mm; if((cvs.back()).size()>1){mm=cvs.back()[0]+"."+cvs.back()[1];}else{mm=cvs.back()[0];}
+                   if(ifile.FieldExist("min_"+mm)){
+              		std::string val;
+              		ifile.scanField("min_"+mm,val);
+                        pmin[pmin.size()-1]=val; 
+                       // std::cerr<<"found min   :  "<<pmin.back()<<std::endl;
+                   }
+                   std::cerr<<"found min   :  "<<pmin.back()<<std::endl;
+     	           if(ifile.FieldExist("max_"+mm)){
+              		std::string val;
+              		ifile.scanField("max_"+mm,val);
+                        pmax[pmax.size()-1]=val; 
+                       // std::cerr<<"found max   :  "<<pmax.back()<<std::endl;
+                   }
+                   std::cerr<<"found max   :  "<<pmax.back()<<std::endl;
+              }
+          }
+          // is multivariate ???
+          std::string sss;
+          multivariate=false;
+          if(ifile.FieldExist("multivariate")){;
+         	 ifile.scanField("multivariate",sss);
+         	 if(sss=="true"){ multivariate=true;}
+         	 else if(sss=="false"){ multivariate=false;}
+          }
+          ifile.scanField();
+          ifile.close();
+	  return true;
+       }else { 
+	return false;
+       }
+}
+
 
 PLUMED_REGISTER_CLTOOL(CLToolSumHills,"sum_hills")
 
