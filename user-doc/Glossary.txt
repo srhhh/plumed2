@@ -2,7 +2,7 @@
 
 @page glossary Glossary of Actions 
 
-The following page contains alphabetically ordered list of all the Actions and command line tools 
+The following page contains an alphabetically ordered list of all the Actions and command line tools 
 that are available in plumed 2.0. For lists of Actions classified in accordance with the 
 particular tasks that are being performed see:
 
