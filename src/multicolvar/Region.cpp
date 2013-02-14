@@ -33,6 +33,8 @@ namespace multicolvar {
 
 //+PLUMEDOC INTERNAL region 
 /*
+An action that is used to ascribe particular significance to a particular part of the simulation box.  
+Normally this is used to calculate the average value of the colvars in that part of the box.
 
 Imagine we have a collection of collective variables that can all be assigned to a particular point in three 
 dimensional space. For example, we could have the values of the coordination numbers for all the atoms in the
