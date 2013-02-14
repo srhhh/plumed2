@@ -3,6 +3,7 @@
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="user" visible="yes" url="@ref glossary" title="Glossary"/>
+    <tab type="user" visible="yes" url="@ref tutorials" title="Tutorials"/>
     <tab type="pages" visible="no" title="" intro=""/>
     <tab type="modules" visible="yes" title="" intro=""/>
     <tab type="namespaces" visible="yes" title="">
