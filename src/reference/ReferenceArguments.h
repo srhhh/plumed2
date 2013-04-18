@@ -44,8 +44,6 @@ class ReferenceArguments :
   virtual public ReferenceConfiguration
 {
 private:
-/// Are we calculating a Malanobius distance 
-  bool hasmetric;
 /// The N X N matrix we are using to calculate our Malanobius distance
   Matrix<double> metric;
 /// The values of the colvars in the reference configuration
@@ -55,12 +53,12 @@ private:
 /// The indices for setting derivatives
   std::vector<unsigned> der_index;
 protected:
+/// Are we calculating a Malanobius distance 
+  bool hasmetric;
 /// Read in the atoms from the pdb file
   void readArgumentsFromPDB( const PDB& pdb );
 /// Set the values of the colvars based on their current instantanous values (used in Analysis)
   void setReferenceArguments();
-/// Set the N X N matrix that is being used to calculate the Malanobius distance
-  void setMetric( const std::vector<double>& thissigma );
 /// Calculate the euclidean/malanobius distance the atoms have moved from the reference
 /// configuration in CV space
   double calculateArgumentDistance( const std::vector<Value*> vals, const bool& squared );

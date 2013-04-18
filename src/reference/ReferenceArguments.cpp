@@ -37,6 +37,16 @@ void ReferenceArguments::readArgumentsFromPDB( const PDB& pdb ){
   reference_args.resize( arg_names.size() );
   metric.resize( arg_names.size(), arg_names.size() );
   for(unsigned i=0;i<arg_names.size();++i) parse( arg_names[i], reference_args[i] );
+
+  if( hasmetric ){
+      double thissig;
+      for(unsigned i=0;i<reference_args.size();++i){
+          for(unsigned j=i;j<reference_args.size();++j){
+              parse( "sigma_" + arg_names[i] + "_" + arg_names[j], thissig );
+              metric(i,j)=metric(j,i)=thissig;
+          }
+      }
+  }
 }
 
 void ReferenceArguments::getArgumentRequests( std::vector<std::string>& argout, bool disable_checks ){
@@ -67,16 +77,6 @@ void ReferenceArguments::getArgumentRequests( std::vector<std::string>& argout, 
          }
       }
   }
-}
-
-void ReferenceArguments::setMetric( const std::vector<double>& thissigma ){
-  hasmetric=true; unsigned k=0;
-  for(unsigned i=0;i<reference_args.size();++i){
-      for(unsigned j=i;j<reference_args.size();++j){
-          metric(i,j)=metric(j,i)=thissigma[k]; k++;
-      }
-  }
-  plumed_massert( thissigma.size()==k, "error metric size does not match what is expected");
 }
 
 double ReferenceArguments::calculateArgumentDistance( const std::vector<Value*> vals, const bool& squared ){
