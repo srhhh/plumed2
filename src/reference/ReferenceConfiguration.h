@@ -34,6 +34,7 @@ namespace PLMD{
 class Value;
 class Pbc;
 class Log;
+class OFile;
 class PDB;
 
 /// \ingroup TOOLBOX
@@ -116,6 +117,14 @@ public:
   void checkRead();
 /// Copy derivatives from one frame to this frame
   void copyDerivatives( const ReferenceConfiguration* );
+/// Set the atom numbers and the argument names
+  void setNamesAndAtomNumbers( const std::vector<AtomNumber>& numbers, const std::vector<Value*>& arg );
+/// Set the reference structure (perhaps should also pass the pbc and align and displace )
+  void setReference( const std::vector<Vector>& pos, const std::vector<Value*>& arg, const std::vector<double>& metric );
+/// Print a pdb file containing the reference configuration
+  void print( OFile& ofile, const double& time, const double& weight, const double& old_norm );
+/// Get one of the referene arguments
+  virtual double getReferenceArgument( const unsigned& i ){ plumed_error(); return 0.0; }
 };
 
 inline

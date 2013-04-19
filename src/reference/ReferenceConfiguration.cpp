@@ -20,6 +20,9 @@
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "ReferenceConfiguration.h"
+#include "ReferenceArguments.h"
+#include "ReferenceAtoms.h"
+#include "tools/OFile.h"
 #include "tools/PDB.h"
 
 namespace PLMD{
@@ -76,6 +79,45 @@ void ReferenceConfiguration::error(const std::string& msg){
   plumed_merror("error reading reference configuration of type " + name + " : " + msg );
 }
 
+void ReferenceConfiguration::setNamesAndAtomNumbers( const std::vector<AtomNumber>& numbers, const std::vector<Value*>& arg ){
+   ReferenceAtoms* atoms=dynamic_cast<ReferenceAtoms*>( this );
+  if(!atoms){
+     plumed_massert( numbers.size()==0, "expecting no atomic positions");
+     setNumberOfAtoms( 0 );
+  } else { 
+     atoms->setAtomNumbers( numbers );
+     setNumberOfAtoms( numbers.size() );
+  }
+  // Copy the arguments to the reference
+  ReferenceArguments* args=dynamic_cast<ReferenceArguments*>( this );
+  if(!args){
+     plumed_massert( arg.size()==0, "expecting no arguments");
+     setNumberOfArguments(0);
+  } else {
+     args->setArgumentNames( arg );
+     setNumberOfArguments( arg.size() );
+  }
+}
+
+void ReferenceConfiguration::setReference( const std::vector<Vector>& pos, const std::vector<Value*>& arg, const std::vector<double>& metric ){
+  plumed_dbg_assert( pos.size()==atomm_ders.size() && arg.size()==arg_ders.size() );
+  // Copy the atomic positions to the reference
+  ReferenceAtoms* atoms=dynamic_cast<ReferenceAtoms*>( this );
+  if(!atoms){
+     plumed_massert( pos.size()==0, "expecting no atomic positions");
+  } else { 
+     std::vector<double> align_in( pos.size(), 1.0 ), displace_in( pos.size(), 1.0 );
+     atoms->setReferenceAtoms( pos, align_in, displace_in );
+  }
+  // Copy the arguments to the reference
+  ReferenceArguments* args=dynamic_cast<ReferenceArguments*>( this );
+  if(!args){
+     plumed_massert( arg.size()==0 && metric.size()==0, "expecting no arguments");
+  } else {
+     args->setReferenceArguments( arg, metric );
+  }
+}
+
 void ReferenceConfiguration::checkRead(){
   if(!line.empty()){
     std::string msg="cannot understand the following words from the input line : ";
@@ -100,6 +142,15 @@ void ReferenceConfiguration::copyDerivatives( const ReferenceConfiguration* ref 
   for(unsigned i=0;i<atom_ders.size();++i) atom_ders[i]=ref->atom_ders[i];
   for(unsigned i=0;i<arg_ders.size();++i) arg_ders[i]=ref->arg_ders[i];
   virialWasSet=ref->virialWasSet; virial=ref->virial;
+}
+
+void ReferenceConfiguration::print( OFile& ofile, const double& time, const double& weight, const double& old_norm ){
+  ofile.printf("REMARK: TIME=%f LOG_WEIGHT=%f OLD_NORM=%f\n",time, weight, old_norm );
+  ReferenceArguments* args=dynamic_cast<ReferenceArguments*>(this);
+  if(args) args->printArguments( ofile );
+  ReferenceAtoms* atoms=dynamic_cast<ReferenceAtoms*>(this);
+  if(atoms) atoms->printAtoms( ofile );
+  ofile.printf("END\n");
 }
 
 }

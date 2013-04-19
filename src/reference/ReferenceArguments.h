@@ -66,7 +66,21 @@ public:
   ReferenceArguments( const ReferenceConfigurationOptions& ro );
 /// Get the arguments required 
   void getArgumentRequests( std::vector<std::string>&, bool disable_checks=false );
+/// Set the names of the arguments
+  void setArgumentNames( const std::vector<Value*>& arg_vals );
+/// Set the positions of the refernce arguments
+  void setReferenceArguments( const std::vector<Value*>& arg_vals, const std::vector<double>& sigma );
+/// Get the value of the ith reference argument
+  double getReferenceArgument( const unsigned& i );
+/// Print the arguments out
+  void printArguments( OFile& ofile ) const ;
 };
+
+inline
+double ReferenceArguments::getReferenceArgument( const unsigned& i ){
+  plumed_dbg_assert( i<reference_args.size() );
+  return reference_args[i];
+}
 
 }
 #endif

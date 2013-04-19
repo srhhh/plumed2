@@ -20,6 +20,7 @@
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "ReferenceAtoms.h"
+#include "tools/OFile.h"
 #include "tools/PDB.h"
 
 namespace PLMD {
@@ -33,6 +34,32 @@ void ReferenceAtoms::readAtomsFromPDB( const PDB& pdb ){
   for(unsigned i=0;i<pdb.size();++i){
      indices.push_back( pdb.getAtomNumbers()[i] ); reference_atoms.push_back( pdb.getPositions()[i] );
      align.push_back( pdb.getOccupancy()[i] ); displace.push_back( pdb.getBeta()[i] );
+  }
+}
+
+void ReferenceAtoms::setAtomNumbers( const std::vector<AtomNumber>& numbers ){
+  reference_atoms.resize( numbers.size() ); align.resize( numbers.size() );
+  displace.resize( numbers.size() ); der_index.resize( numbers.size() );
+  indices.resize( numbers.size() );
+  for(unsigned i=0;i<numbers.size();++i){
+     indices[i]=numbers[i]; der_index[i]=i; 
+  }
+}
+
+void ReferenceAtoms::setReferenceAtoms( const std::vector<Vector>& conf, const std::vector<double>& align_in, const std::vector<double>& displace_in ){
+  plumed_dbg_assert( conf.size()==numbers.size() && align_in.size()==numbers.size() && displace_in.size()==numbers.size() );
+  for(unsigned i=0;i<conf.size();++i){
+     reference_atoms[i]=conf[i]; align[i]=align_in[i];
+     displace[i]=displace_in[i]; 
+  }
+}
+
+void ReferenceAtoms::printAtoms( OFile& ofile ) const {
+  for(unsigned i=0;i<reference_atoms.size();++i){
+      ofile.printf("ATOM  %4d X    RES   %4d %8.3f %8.3f %8.3f %6.2f %6.2f\n",
+        indices[i].serial(), i, 
+        reference_atoms[i][0], reference_atoms[i][1], reference_atoms[i][2],
+        align[i], displace[i] );
   }
 }
 

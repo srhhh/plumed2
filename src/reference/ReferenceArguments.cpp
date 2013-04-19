@@ -21,6 +21,7 @@
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "ReferenceArguments.h"
 #include "ReferenceAtoms.h"
+#include "tools/OFile.h"
 #include "core/Value.h"
 
 namespace PLMD {
@@ -47,6 +48,33 @@ void ReferenceArguments::readArgumentsFromPDB( const PDB& pdb ){
           }
       }
   }
+}
+
+void ReferenceArguments::setArgumentNames( const std::vector<Value*>& arg_vals ){
+  reference_args.resize( arg_vals.size() ); 
+  arg_names.resize( arg_vals.size() ); 
+  der_index.resize( arg_vals.size() );
+  for(unsigned i=0;i<arg_vals.size();++i){
+     arg_names[i]=arg_vals[i]->getName(); der_index[i]=i; 
+  }
+  if( hasmetric ) metric.resize( arg_vals.size(), arg_vals.size() );
+}
+
+void ReferenceArguments::setReferenceArguments( const std::vector<Value*>& arg_vals, const std::vector<double>& sigma ){
+  plumed_dbg_assert( reference_args.size()==arg_vals.size() );
+  for(unsigned i=0;i<arg_vals.size();++i) reference_args[i]=arg_vals[i]->get();
+  
+  if( hasmetric ){
+     unsigned k=0;
+     for(unsigned i=0;i<reference_args.size();++i){ 
+          for(unsigned j=i;j<reference_args.size();++j){
+              metric(i,j)=metric(j,i)=sigma[k]; k++;
+          }
+     }
+     plumed_assert( k==sigma.size() ); 
+  } else {
+     plumed_assert( sigma.size()==0 );
+  } 
 }
 
 void ReferenceArguments::getArgumentRequests( std::vector<std::string>& argout, bool disable_checks ){
@@ -77,6 +105,15 @@ void ReferenceArguments::getArgumentRequests( std::vector<std::string>& argout, 
          }
       }
   }
+}
+
+void ReferenceArguments::printArguments( OFile& ofile ) const {
+  ofile.printf("REMARK: ARG=%s", arg_names[0].c_str() );
+  for(unsigned i=1;i<arg_names.size();++i) ofile.printf(",%s", arg_names[i].c_str() );
+  ofile.printf("\n");
+  ofile.printf("REMARK: ");
+  for(unsigned i=0;i<arg_names.size();++i) ofile.printf("%s=%f ",arg_names[i].c_str(), reference_args[i] );
+  ofile.printf("\n");
 }
 
 double ReferenceArguments::calculateArgumentDistance( const std::vector<Value*> vals, const bool& squared ){

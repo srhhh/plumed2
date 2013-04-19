@@ -92,6 +92,12 @@ public:
   ReferenceAtoms( const ReferenceConfigurationOptions& ro );
 /// Get the atoms required (additional checks are required when we have multiple domains)
   virtual void getAtomRequests( std::vector<AtomNumber>&, bool disable_checks=false );
+/// Set the indices of the reference atoms
+  void setAtomNumbers( const std::vector<AtomNumber>& numbers );
+/// Set the positions of the reference atoms
+  void setReferenceAtoms( const std::vector<Vector>& conf, const std::vector<double>& align_in, const std::vector<double>& displace_in );
+/// Print the atomic positions
+  void printAtoms( OFile& ofile ) const ;
 };
 
 inline
