@@ -75,17 +75,16 @@ private:
   std::vector<Value*> biases;
 /// The piece of data we are inserting
   unsigned idata;
-/// Tempory vector to store values of arguments
-  std::vector<double> args;
-/// The data we are going to analyze
-  std::vector<ReferenceConfiguration*> data;
-//  std::vector<std::vector<double> > data;
 /// The weights of all the data points
   std::vector<double> logweights, weights;
 /// Have we analyzed the data for the first time
   bool firstAnalysisDone;
 /// The value of the old normalization constant
   double norm, old_norm;
+/// Tempory vector to store values of arguments
+  std::vector<double> current_args;
+/// List of argument names 
+  std::vector<std::string> argument_names;
 /// The type of metric we are using to measure distances
   std::string metricname;
 /// The checkpoint file
@@ -100,10 +99,16 @@ private:
 /// Get the metric if we are using malonobius distance and flexible hill
   std::vector<double> getMetric() const ;
 protected:
+/// The data we are going to analyze
+  std::vector<ReferenceConfiguration*> data;
+/// Get the name of the metric we are using to measure distances
+  std::string getMetricName() const ;
 /// Return the number of arguments (this overwrites the one in ActionWithArguments)
   unsigned getNumberOfArguments() const;
 /// Return the number of data points
   unsigned getNumberOfDataPoints() const;
+/// Return the weight of the ith point
+  double getWeight( const unsigned& idata ) const ;
 /// Retrieve the ith point
   void getDataPoint( const unsigned& idata, std::vector<double>& point, double& weight ) const ;
 /// Returns true if argument i is periodic together with the domain 
@@ -136,6 +141,11 @@ public:
   bool isPeriodic(){ plumed_error(); return false; }
   unsigned getNumberOfDerivatives(){ plumed_error(); return 0; }
 };
+
+inline
+std::string Analysis::getMetricName() const {
+  return metricname;
+}
 
 inline 
 void Analysis::lockRequests(){
@@ -184,6 +194,16 @@ std::vector<Value*> Analysis::getArguments(){
   std::vector<Value*> arg_vals( ActionWithArguments::getArguments() );
   for(unsigned i=0;i<biases.size();++i) arg_vals.erase(arg_vals.end()-1);
   return arg_vals;
+}
+
+inline
+double Analysis::getWeight( const unsigned& idata ) const {
+  if( !reusing_data ){
+     plumed_dbg_assert( idata<data.size() );
+     return weights[idata];
+  } else {
+     return mydatastash->getWeight(idata);
+  }
 }
 
 }
