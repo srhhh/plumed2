@@ -26,6 +26,7 @@
 #include <set>
 #include <cmath>
 #include "Exception.h"
+#include "Communicator.h"
 #include "MatrixSquareBracketsAccess.h"
 #include "Log.h"
 
@@ -159,6 +160,10 @@ public:
      unsigned sym=1; 
      for(unsigned i=1;i<rw;++i) for(unsigned j=0;j<i;++j) if( std::fabs(data[i+j*cl]-data[j+i*cl])>1.e-10 ){ sym=0; break; }  
      return sym;
+  }
+  /// Sum over nodes
+  void MPISum( Communicator& comm ){
+     comm.Sum( &data[0],data.size() );
   }
 };
 
