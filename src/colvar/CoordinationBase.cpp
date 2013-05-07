@@ -138,6 +138,8 @@ void CoordinationBase::calculate()
    rank=comm.Get_rank();
  }
 
+  fprintf(stderr,"Step %d atoms %d nl %d\n",getStep(),getNumberOfAtoms(),nl->size());
+
  for(unsigned int i=rank;i<nl->size();i+=stride) {                   // sum over close pairs
  
   Vector distance;
