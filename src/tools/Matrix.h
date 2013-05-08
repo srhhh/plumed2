@@ -69,6 +69,8 @@ template <typename T>
 class Matrix:
   public MatrixSquareBracketsAccess<Matrix<T>,T>
   {
+   /// Multiply matrix by scalar
+   template <typename U> friend Matrix<U> operator*(U&, const Matrix<U>& );
    /// Matrix matrix multiply
    template <typename U> friend void mult( const Matrix<U>& , const Matrix<U>& , Matrix<U>& );
    /// Matrix times a std::vector 
@@ -137,6 +139,11 @@ public:
      for(unsigned i=0;i<sz;++i){ data[i]+=v; }
      return *this; 
    }
+   /// Multiply all elements by v
+   Matrix<T> operator*=(const T& v){
+     for(unsigned i=0;i<sz;++i){ data[i]*=v; }
+     return *this; 
+   }
    /// Matrix addition
    Matrix<T>& operator+=(const Matrix<T>& m){ 
     plumed_dbg_assert( m.rw==rw && m.cl==cl );
@@ -166,6 +173,13 @@ public:
      comm.Sum( &data[0],data.size() );
   }
 };
+
+/// Multiply matrix by scalar
+template <typename T> Matrix<T> operator*(T& v, const Matrix<T>& m ){
+  Matrix<T> new_m(m);
+  new_m*=v;
+  return new_m; 
+}
 
 template <typename T> void mult( const Matrix<T>& A , const Matrix<T>& B , Matrix<T>& C ){
   plumed_assert(A.cl==B.rw);
