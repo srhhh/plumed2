@@ -39,6 +39,7 @@ MultiReferenceBase::~MultiReferenceBase(){
 void MultiReferenceBase::clearFrames(){
   for(unsigned i=0;i<frames.size();++i) delete frames[i];
   frames.resize(0); weights.resize(0);
+  clearRestOfData();
 }
 
 void MultiReferenceBase::readFrame( PDB& mypdb ){
@@ -71,13 +72,13 @@ void MultiReferenceBase::copyFrame( ReferenceConfiguration* frameToCopy, const d
   resizeRestOfFrame();
 }
 
-void MultiReferenceBase::calculateAllDistances( const Pbc& pbc, const std::vector<Value*> vals, Communicator& comm, Matrix<double>& distances ){
+void MultiReferenceBase::calculateAllDistances( const Pbc& pbc, const std::vector<Value*> vals, Communicator& comm, Matrix<double>& distances, const bool& squared ){
   distances=0.0;
   unsigned k=0, size=comm.Get_size(), rank=comm.Get_rank(); 
   for(unsigned i=1;i<frames.size();++i){
       for(unsigned j=0;j<i;++j){
           if( (k++)%size!=rank ) continue;         
-          distances(i,j) = distances(j,i) = distance( pbc, vals, frames[i], frames[j], false );
+          distances(i,j) = distances(j,i) = distance( pbc, vals, frames[i], frames[j], squared );
       }
   }
   distances.MPISum( comm );

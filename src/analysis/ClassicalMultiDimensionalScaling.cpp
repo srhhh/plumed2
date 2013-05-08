@@ -20,6 +20,7 @@
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "AnalysisWithLandmarks.h"
+#include "ClassicalScaling.h"
 #include "reference/PointWiseMapping.h"
 #include "core/ActionRegister.h"
 
@@ -73,7 +74,25 @@ ClassicalMultiDimensionalScaling::~ClassicalMultiDimensionalScaling(){
 }
 
 void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
-  printf("RUNNING ANALYSIS AT STEP %f\n",getStep() );
+  // Calculate all pairwise diatances
+  myembedding->calculateAllDistances( getPbc(), getArguments(), comm, myembedding->modifyDmat(), true );
+
+  // Run multidimensional scaling
+  ClassicalScaling::run( myembedding );
+
+  // Output the embedding as long lists of data
+  std::string gfname=saveResultsFromPreviousAnalyses( ofilename );
+  OFile gfile; gfile.link(*this); gfile.open( ofilename.c_str(), "w" );
+  
+  // Print embedding coordinates
+  for(unsigned i=0;i<myembedding->getNumberOfReferenceFrames();++i){
+      for(unsigned j=0;j<nlow;++j){
+          std::string num; Tools::convert(j+1,num);
+          gfile.printField( getLabel() + "." + num , myembedding->getProjectionCoordinate(i,j) );
+      }
+      gfile.printField();
+  }  
+  gfile.close();
 
   // Output the embedding in plumed format
   if( efilename!="dont output"){

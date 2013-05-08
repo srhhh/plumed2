@@ -47,6 +47,10 @@ void PointWiseMapping::readRestOfFrame(){
   }
   low_dim.push_back( labelvals ); 
   plumed_dbg_assert( low_dim.size()==getNumberOfReferenceFrames() );
+}
+
+void PointWiseMapping::clearRestOfData(){
+  low_dim.resize(0);
 } 
 
 void PointWiseMapping::resizeRestOfFrame(){

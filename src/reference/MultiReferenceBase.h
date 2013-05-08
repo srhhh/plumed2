@@ -49,6 +49,7 @@ public:
   virtual ~MultiReferenceBase();
 /// Delete all the data in the reference object
   void clearFrames();
+  virtual void clearRestOfData(){};
 /// Read a frame from the input
   void readFrame( PDB& pdb ); 
 /// Do additional reading required by derived class
@@ -67,7 +68,7 @@ public:
 /// Set the weight of the ith frame
   void setWeight( const unsigned& iframe, const double& w );
 /// Calculate the distances between all the frames and store in a matrix
-  void calculateAllDistances( const Pbc& pbc, const std::vector<Value*> vals, Communicator& comm, Matrix<double>& distances );
+  void calculateAllDistances( const Pbc& pbc, const std::vector<Value*> vals, Communicator& comm, Matrix<double>& distances, const bool& squared );
 };
 
 template <class T>
