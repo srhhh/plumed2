@@ -30,7 +30,7 @@
 namespace PLMD {
 namespace analysis {
 
-//+PLUMEDOC INTERNAL reweighting
+//+PLUMEDOC GENERIC reweighting
 /*
 Calculate free energies from a biassed/higher temperature trajectory. 
 

@@ -26,6 +26,7 @@
 #include "KernelFunctions.h"
 #include "File.h"
 #include "Grid.h"
+#include "Grid2.h"
 #include <iostream>
 
 using namespace std;
@@ -75,7 +76,7 @@ class BiasRepresentation {
           /// get a pointer to a specific value
 	  Value* 	getPtrToValue(unsigned i);
           /// get the pointer to the grid
-	  Grid* 	getGridPtr();
+	  Grid2* 	getGridPtr();
           /// get a new histogram point from a file 
           KernelFunctions* readFromPoint(IFile *ifile); 
           /// get an automatic min/max from the set so to know how to configure the grid
@@ -92,6 +93,7 @@ class BiasRepresentation {
     vector<double> biasf;
     vector<double> histosigma;	
     Grid* BiasGrid_;
+    Grid2* BiasGrid2_;
     Communicator& mycomm;
 };
 

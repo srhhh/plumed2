@@ -122,8 +122,9 @@ bool FilesHandler::readBunch(BiasRepresentation *br , int stride = -1){
                         // if you are in the middle of a file and you are here
 			// then means that you read what you need to read
                         if(!fileisover ){break;} 
-                } 
+                }
         }        
+	//plumed_merror("CIAOCIAO");
 	return morefiles;
 }
 void FilesHandler::getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin){
@@ -132,14 +133,14 @@ void FilesHandler::getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<do
         // read all the kernels
         readBunch(&br);
         // loop over the kernels and get the support 
- 	br.getMinMaxBin(vmin,vmax,vbin);
+        br.getMinMaxBin(vmin,vmax,vbin);
 }
 void FilesHandler::getMinMaxBin(vector<Value*> vals, Communicator &cc, vector<double> &vmin, vector<double> &vmax, vector<unsigned> &vbin, vector<double> &histosigma){
      	BiasRepresentation br(vals,cc,histosigma);
         // read all the kernels
         readBunch(&br);
         // loop over the kernels and get the support 
- 	br.getMinMaxBin(vmin,vmax,vbin);
+        br.getMinMaxBin(vmin,vmax,vbin);
         //for(unsigned i=0;i<vals.size();i++){cerr<<"XXX "<<vmin[i]<<" "<<vmax[i]<<" "<<vbin[i]<<"\n";}	
 }
 bool FilesHandler::scanOneHill(BiasRepresentation *br, IFile *ifile ){
@@ -273,54 +274,70 @@ fmt("%14.9f")
 
   // add some automatic hills width: not in case stride is defined  
   // since when you start from zero the automatic size will be zero!
-  if(gmin.size()==0 || gmax.size()==0){
-	log<<"   \n"; 
-	log<<"  No boundaries defined: need to do a prescreening of hills \n"; 
-        std::vector<Value*> tmpvalues; 
-        for(unsigned i=0;i<getNumberOfArguments();i++)tmpvalues.push_back( getPntrToArgument(i) );
-        if(integratehills) {
-        	FilesHandler *hillsHandler;
-        	hillsHandler=new FilesHandler(hillsFiles,parallelread,*this, log);
-		vector<double> vmin,vmax;
-        	vector<unsigned> vbin;  
-        	hillsHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin);
-		log<<"  found boundaries from hillsfile: \n";
-		gmin.resize(vmin.size());
-		gmax.resize(vmax.size());
-                if(gbin.size()==0){
-			gbin=vbin;
-                }else{
-			log<<"  found nbins in input, this overrides the automatic choice \n"; 
-		}
-		for(unsigned i=0;i<getNumberOfArguments();i++){
-		 	Tools::convert(vmin[i],gmin[i]);
-		 	Tools::convert(vmax[i],gmax[i]);
-			log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
-		}
-        } 
-	// if at this stage bins are not there then do it with histo
-	if(gmin.size()==0){
-    	   	FilesHandler *histoHandler;
-	        histoHandler=new FilesHandler(histoFiles,parallelread,*this, log);
-		vector<double> vmin,vmax;
-        	vector<unsigned> vbin;  
-        	histoHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin,histoSigma);
-		log<<"  found boundaries from histofile: \n";
-		gmin.resize(vmin.size());
-		gmax.resize(vmax.size());
-                if(gbin.size()==0){
-			gbin=vbin;
-                }else{
-			log<<"  found nbins in input, this overrides the automatic choice \n"; 
-		}
-		for(unsigned i=0;i<getNumberOfArguments();i++){
-		 	Tools::convert(vmin[i],gmin[i]);
-		 	Tools::convert(vmax[i],gmax[i]);
-			log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
-		}
-        }
-	log<<"  done!\n"; 
-	log<<"   \n"; 
+  if(gmin.size()==0 || gmax.size()==0 || gbin.size()==0 ){
+	  log<<"   \n";
+	  log<<"  No boundaries defined: need to do a prescreening of hills \n";
+	  std::vector<Value*> tmpvalues;
+	  for(unsigned i=0;i<getNumberOfArguments();i++)tmpvalues.push_back( getPntrToArgument(i) );
+	  if(integratehills) {
+		  FilesHandler *hillsHandler;
+		  hillsHandler=new FilesHandler(hillsFiles,parallelread,*this, log);
+		  vector<double> vmin,vmax;
+		  vector<unsigned> vbin;
+		  hillsHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin);
+		  log<<"  found boundaries from hillsfile: \n";
+
+		  if(gbin.size()==0){
+			  gbin=vbin;
+		  }else{
+			  log<<"  found nbins in input, this overrides the automatic choice \n";
+		  }
+//		  cerr<<"GMIN ";for(unsigned i=0;i<getNumberOfArguments();i++)cerr<<gmin[i];cerr<<endl;
+//		  cerr<<"GMAX ";for(unsigned i=0;i<getNumberOfArguments();i++)cerr<<gmin[i];cerr<<endl;
+		  if(gmin.size()==0 || gmax.size()==0){
+			  gmin.resize(vmax.size());
+			  gmax.resize(vmax.size());
+			  for(unsigned i=0;i<getNumberOfArguments();i++){
+				  Tools::convert(vmin[i],gmin[i]);
+				  Tools::convert(vmax[i],gmax[i]);
+			  }
+		  }
+		  for(unsigned i=0;i<getNumberOfArguments();i++){
+
+			  log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
+		  }
+	  }
+	  // if at this stage bins are not there then do it with histo
+	  if(gmin.size()==0){
+		  FilesHandler *histoHandler;
+		  histoHandler=new FilesHandler(histoFiles,parallelread,*this, log);
+		  vector<double> vmin,vmax;
+		  vector<unsigned> vbin;
+		  histoHandler->getMinMaxBin(tmpvalues,comm,vmin,vmax,vbin,histoSigma);
+		  log<<"  found boundaries from histofile: \n";
+//		  gmin.resize(vmin.size());
+//		  gmax.resize(vmax.size());
+		  if(gbin.size()==0){
+			  gbin=vbin;
+		  }else{
+			  log<<"  found nbins in input, this overrides the automatic choice \n";
+		  }
+//		  cerr<<"GMIN SIZE "<<gmin.size()<<" : ";for(unsigned i=0;i<getNumberOfArguments();i++)cerr<<gmin[i];cerr<<endl;
+//		  cerr<<"GMAX SIZE "<<gmax.size()<<" : ";for(unsigned i=0;i<getNumberOfArguments();i++)cerr<<gmin[i];cerr<<endl;
+		  if(gmin.size()==0 || gmax.size()==0){
+		  			  gmin.resize(vmax.size());
+		  			  gmax.resize(vmax.size());
+		  			  for(unsigned i=0;i<getNumberOfArguments();i++){
+		  				  Tools::convert(vmin[i],gmin[i]);
+		  				  Tools::convert(vmax[i],gmax[i]);
+		  			  }
+		  }
+		  for(unsigned i=0;i<getNumberOfArguments();i++){
+			  log<<"  variable "<< getPntrToArgument(i)->getName()<<" min: "<<gmin[i]<<" max: "<<gmax[i]<<" nbin: "<<gbin[i]<<"\n";
+		  }
+	  }
+	  log<<"  done!\n";
+	  log<<"   \n";
   }
 
   // needs a projection? 
@@ -370,6 +387,7 @@ fmt("%14.9f")
     if(integratehills){
          checkFilesAreExisting(hillsFiles); 
          biasrep=new BiasRepresentation(tmpvalues,comm, gmin, gmax, gbin);
+
 	 if(negativebias){
 		biasrep->setRescaledToBias(true);
 	        log<<"  required the -bias instead of the free energy \n";
@@ -429,8 +447,8 @@ fmt("%14.9f")
 
     	      		log<<"  Bias: Projecting on subgrid... \n";
               		BiasWeight *Bw=new BiasWeight(beta); 
-             		Grid biasGrid=*(biasrep->getGridPtr());
-   	      		Grid smallGrid=biasGrid.project(proj,Bw);
+             		Grid2 biasGrid=*(biasrep->getGridPtr());
+   	      		    Grid2 smallGrid=biasGrid.project(proj,Bw);
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
               		string myout; 
@@ -447,8 +465,8 @@ fmt("%14.9f")
 
     	      		log<<"  Histo: Projecting on subgrid... \n";
                         ProbWeight *Pw=new ProbWeight(beta);
-             		Grid histoGrid=*(historep->getGridPtr());
-   	      		Grid smallGrid=histoGrid.project(proj,Pw);
+             		Grid2 histoGrid=*(historep->getGridPtr());
+   	      		Grid2 smallGrid=histoGrid.project(proj,Pw);
 
               		OFile gridfile; gridfile.link(*this);
 	      		std::ostringstream ostr;ostr<<nfiles;
@@ -467,8 +485,7 @@ fmt("%14.9f")
 	}else{
 
 		if(integratehills){
-
-	                Grid biasGrid=*(biasrep->getGridPtr());
+	                Grid2 biasGrid=*(biasrep->getGridPtr());
 			biasGrid.scaleAllValuesAndDerivatives(-1.);
 	
 	                OFile gridfile; gridfile.link(*this);
@@ -483,10 +500,11 @@ fmt("%14.9f")
 	                gridfile.close();
 			// rescale back prior to accumulate
                         if(!ibias)integratehills=false;// once you get to the final bunch just give up 
+
 		}
 		if(integratehisto){
 
-	                Grid histoGrid=*(historep->getGridPtr());
+	                Grid2 histoGrid=*(historep->getGridPtr());
                         histoGrid.applyFunctionAllValuesAndDerivatives(&mylog,&mylogder);
                         histoGrid.scaleAllValuesAndDerivatives(-1./beta);	
 

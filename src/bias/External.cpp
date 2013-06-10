@@ -22,6 +22,7 @@
 #include "Bias.h"
 #include "ActionRegister.h"
 #include "tools/Grid.h"
+#include "tools/Grid2.h"
 #include "tools/Exception.h"
 #include "tools/File.h"
 
@@ -97,6 +98,8 @@ class External : public Bias{
 
 private:
   Grid* BiasGrid_;
+  Grid2* BiasGrid2_;
+
   
 public:
   External(const ActionOptions&);
@@ -117,11 +120,13 @@ void External::registerKeywords(Keywords& keys){
 
 External::~External(){
   delete BiasGrid_;
+  delete BiasGrid2_;
 }
 
 External::External(const ActionOptions& ao):
 PLUMED_BIAS_INIT(ao),
-BiasGrid_(NULL)
+BiasGrid_(NULL),
+BiasGrid2_(NULL)
 {
   string filename;
   parse("FILE",filename);
@@ -143,11 +148,14 @@ BiasGrid_(NULL)
 // read grid
   IFile gridfile; gridfile.open(filename);
   std::string funcl=getLabel() + ".bias";  
-  BiasGrid_=Grid::create(funcl,getArguments(),gridfile,sparsegrid,spline,true);
+ // BiasGrid_=Grid::create(funcl,getArguments(),gridfile,sparsegrid,spline,true);
+  BiasGrid2_=Grid2::create(funcl,getArguments(),gridfile,sparsegrid,spline,true);
   gridfile.close();
-  if(BiasGrid_->getDimension()!=getNumberOfArguments()) error("mismatch between dimensionality of input grid and number of arguments");
+  //if(BiasGrid_->getDimension()!=getNumberOfArguments()) error("mismatch between dimensionality of input grid and number of arguments");
+  if(BiasGrid2_->getDimension()!=getNumberOfArguments()) error("mismatch between dimensionality of input grid and number of arguments");
   for(unsigned i=0;i<getNumberOfArguments();++i){
-    if( getPntrToArgument(i)->isPeriodic()!=BiasGrid_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias"); 
+    //if( getPntrToArgument(i)->isPeriodic()!=BiasGrid_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias");
+    if( getPntrToArgument(i)->isPeriodic()!=BiasGrid2_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias");
   } 
 }
 
@@ -158,7 +166,13 @@ void External::calculate()
 
   for(unsigned i=0;i<ncv;++i){cv[i]=getArgument(i);}
 
-  double ene=BiasGrid_->getValueAndDerivatives(cv,der);
+//  double ene=BiasGrid_->getValueAndDerivatives(cv,der);
+  double ene;
+   if(!BiasGrid2_->getValueAndDerivatives(cv,ene,der)){
+	   ene=0;
+	   fill(der.begin(), der.end(), 0);
+   };
+
 
   getPntrToComponent("bias")->set(ene);
 

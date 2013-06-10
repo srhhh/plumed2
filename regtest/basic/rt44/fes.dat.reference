@@ -3,10 +3,14 @@
 #! SET max_t1 pi
 #! SET nbins_t1  99
 #! SET periodic_t1 true
+#! SET pmin_t1 -pi
+#! SET pmax_t1 pi
 #! SET min_t2 -pi
 #! SET max_t2 pi
 #! SET nbins_t2  99
 #! SET periodic_t2 true
+#! SET pmin_t2 -pi
+#! SET pmax_t2 pi
    -3.141592654   -3.141592654   -0.000000000   -0.000000000   -0.000000000
    -3.078126135   -3.141592654   -0.000000000   -0.000000000   -0.000000000
    -3.014659617   -3.141592654   -0.000000000   -0.000000000   -0.000000000

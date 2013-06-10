@@ -26,38 +26,9 @@
 #include <string>
 #include <map>
 #include <cmath>
+#include "WeightBase.h"
 
 namespace PLMD{ 
-
-
-// simple function to enable various weighting
-
-class WeightBase{
-    public:
-        virtual double projectInnerLoop(double &input, double &v)=0;
-        virtual double projectOuterLoop(double &v)=0;
-        virtual ~WeightBase(){}
-};
-
-class BiasWeight:public WeightBase{
-    public:
-      double beta,invbeta;
-      BiasWeight(double v){beta=v;invbeta=1./beta;}
-      double projectInnerLoop(double &input, double &v){return  input+exp(beta*v);}
-      double projectOuterLoop(double &v){return -invbeta*std::log(v);}
-};
-
-class ProbWeight:public WeightBase{
-    public:
-      double beta,invbeta;
-      ProbWeight(double v){beta=v;invbeta=1./beta;}
-      double projectInnerLoop(double &input, double &v){return  input+v;}
-      double projectOuterLoop(double &v){return -invbeta*std::log(v);}
-};
-
-
-
-
 
 
 class Value;

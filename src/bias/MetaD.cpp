@@ -22,6 +22,7 @@
 #include "Bias.h"
 #include "ActionRegister.h"
 #include "tools/Grid.h"
+#include "tools/Grid2.h"
 #include "core/PlumedMain.h"
 #include "core/Atoms.h"
 #include "tools/Exception.h"
@@ -187,8 +188,8 @@ private:
   vector<double> sigma0_;
   vector<Gaussian> hills_;
   OFile hillsOfile_;
-  Grid* BiasGrid_;
-  Grid* ExtGrid_;
+  Grid2* BiasGrid2_;
+  Grid2* ExtGrid2_;
   bool storeOldGrids_;
   std::string gridfilename_,gridreadfilename_;
   int wgridstride_; 
@@ -264,7 +265,9 @@ void MetaD::registerKeywords(Keywords& keys){
 
 MetaD::~MetaD(){
   if(flexbin) delete flexbin;
-  if(BiasGrid_) delete BiasGrid_;
+  if(BiasGrid2_) delete BiasGrid2_;
+  if(ExtGrid2_) delete ExtGrid2_;
+
   hillsOfile_.close();
   delete [] dp_;
   // close files
@@ -277,7 +280,7 @@ MetaD::~MetaD(){
 MetaD::MetaD(const ActionOptions& ao):
 PLUMED_BIAS_INIT(ao),
 // Grid stuff initialization
-BiasGrid_(NULL),ExtGrid_(NULL), wgridstride_(0), grid_(false), hasextgrid_(false),
+BiasGrid2_(NULL),ExtGrid2_(NULL), wgridstride_(0), grid_(false), hasextgrid_(false),
 // Metadynamics basic parameters
 height0_(0.0), biasf_(1.0), temp_(0.0),
 stride_(0), welltemp_(false),
@@ -429,8 +432,12 @@ isFirstStep(true)
 // initializing grid
   if(grid_){
    std::string funcl=getLabel() + ".bias";
-   if(!sparsegrid){BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
-   else{BiasGrid_=new SparseGrid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
+   if(!sparsegrid){
+	   BiasGrid2_=new Grid2(funcl,getArguments(),gmin,gmax,gbin,spline,true);
+   }
+   else{
+	   BiasGrid2_=new SparseGrid2(funcl,getArguments(),gmin,gmax,gbin,spline,true);
+   }
   }
 
 // initializing external grid
@@ -439,11 +446,12 @@ isFirstStep(true)
    // read the grid in input, find the keys
    IFile gridfile; gridfile.open(gridreadfilename_);
    std::string funcl=getLabel() + ".bias";
-   ExtGrid_=Grid::create(funcl,getArguments(),gridfile,false,false,true);
+   ExtGrid2_=Grid2::create(funcl,getArguments(),gridfile,false,false,true);
    gridfile.close();
-   if(ExtGrid_->getDimension()!=getNumberOfArguments()) error("mismatch between dimensionality of input grid and number of arguments");
+   if(ExtGrid2_->getDimension()!=getNumberOfArguments()) error("mismatch between dimensionality of input grid and number of arguments");
    for(unsigned i=0;i<getNumberOfArguments();++i){
-     if( getPntrToArgument(i)->isPeriodic()!=ExtGrid_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias");
+     if( getPntrToArgument(i)->isPeriodic()!=ExtGrid2_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias");
+
    }
   }
 
@@ -587,20 +595,20 @@ void MetaD::writeGaussian(const Gaussian& hill, OFile&file){
 
 void MetaD::addGaussian(const Gaussian& hill)
 {
- if(!grid_){hills_.push_back(hill);} 
- else{
+ hills_.push_back(hill);// always keep this array with full representation
+ if(grid_){
   unsigned ncv=getNumberOfArguments();
   vector<unsigned> nneighb=getGaussianSupport(hill);
-  vector<unsigned> neighbors=BiasGrid_->getNeighbors(hill.center,nneighb);
+  vector<unsigned> neighbors=BiasGrid2_->getNeighbors(hill.center,nneighb);
   vector<double> der(ncv);
   vector<double> xx(ncv);
   if(comm.Get_size()==1){
     for(unsigned i=0;i<neighbors.size();++i){
      unsigned ineigh=neighbors[i];
      for(unsigned j=0;j<ncv;++j){der[j]=0.0;}
-     BiasGrid_->getPoint(ineigh,xx);
+     BiasGrid2_->getPoint(ineigh,xx);
      double bias=evaluateGaussian(xx,hill,&der[0]);
-     BiasGrid_->addValueAndDerivatives(ineigh,bias,der);
+     BiasGrid2_->addValueAndDerivatives(ineigh,bias,der);
     } 
   } else {
     unsigned stride=comm.Get_size();
@@ -609,7 +617,7 @@ void MetaD::addGaussian(const Gaussian& hill)
     vector<double> allbias(neighbors.size(),0.0);
     for(unsigned i=rank;i<neighbors.size();i+=stride){
      unsigned ineigh=neighbors[i];
-     BiasGrid_->getPoint(ineigh,xx);
+     BiasGrid2_->getPoint(ineigh,xx);
      allbias[i]=evaluateGaussian(xx,hill,&allder[ncv*i]);
     }
     comm.Sum(&allbias[0],allbias.size());
@@ -617,7 +625,7 @@ void MetaD::addGaussian(const Gaussian& hill)
     for(unsigned i=0;i<neighbors.size();++i){
      unsigned ineigh=neighbors[i];
      for(unsigned j=0;j<ncv;++j){der[j]=allder[ncv*i+j];}
-     BiasGrid_->addValueAndDerivatives(ineigh,allbias[i],der);
+     BiasGrid2_->addValueAndDerivatives(ineigh,allbias[i],der);
     }
   }
  }
@@ -657,18 +665,20 @@ vector<unsigned> MetaD::getGaussianSupport(const Gaussian& hill)
 	for (unsigned i=0;i<ncv;i++){
 		double cutoff=sqrt(2.0*DP2CUTOFF)*abs(sqrt(maxautoval)*myautovec(i,ind_maxautoval));
 		//log<<"AUTOVAL "<<myautoval[0]<<" COMP "<<abs(myautoval[0]*myautovec(i,0)) <<" CUTOFF "<<cutoff<<"\n";
-	  	nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
+	  	nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid2_->getDx()[i])) );
         }
  }else{
 	 for(unsigned i=0;i<getNumberOfArguments();++i){
 	  double cutoff=sqrt(2.0*DP2CUTOFF)*hill.sigma[i];
-	  nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid_->getDx()[i])) );
+	  nneigh.push_back( static_cast<unsigned>(ceil(cutoff/BiasGrid2_->getDx()[i])) );
+
  	}
  }
 	//log<<"------- END GET GAUSSIAN SUPPORT --------\n"; 
  return nneigh;
 }
-
+// note: der here is the derivative vector: is already correctly sized in case
+// of metadynamics with derivates or set to NULL otherwise
 double MetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
 {
  double bias=0.0;
@@ -685,24 +695,53 @@ double MetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
  }else{
   if(der){
    vector<double> vder(getNumberOfArguments());
-   bias=BiasGrid_->getValueAndDerivatives(cv,vder);
 
-   if( ( doInt_ && cv[0] > lowI_ && cv[0] < uppI_) || (!doInt_) ) { // because interval can be used only with monodimensional metaD
-     for(unsigned i=0;i<getNumberOfArguments();++i) {der[i]=vder[i];}
+   if(BiasGrid2_->getValueAndDerivatives(cv,bias,vder)){
+	   if( ( doInt_ && cv[0] > lowI_ && cv[0] < uppI_) || (!doInt_) ) { // because interval can be used only with monodimensional metaD
+			   for(unsigned i=0;i<getNumberOfArguments();++i) {der[i]=vder[i];}
+	   }
+   }else{
+	   unsigned stride=comm.Get_size();
+	   unsigned rank=comm.Get_rank();
+	   double bias=0.0;
+
+	   for(unsigned i=rank;i<hills_.size();i+=stride){
+	    bias+=evaluateGaussian(cv,hills_[i],der);
+	   }
+	   comm.Sum(&bias,1);
+	   if( ( doInt_ && cv[0] > lowI_ && cv[0] < uppI_) || (!doInt_) ) {
+		   comm.Sum(&der[0],getNumberOfArguments());
+	   }else{
+		   for(unsigned i=0;i<getNumberOfArguments();i++)der[i]=0.;
+	   }
+
    }
+
   }else{
-   bias=BiasGrid_->getValue(cv);
+	  if(!BiasGrid2_->getValue(cv,bias)){
+		   unsigned stride=comm.Get_size();
+		   unsigned rank=comm.Get_rank();
+		   double bias=0.0;
+		   for(unsigned i=rank;i<hills_.size();i+=stride){
+		    bias+=evaluateGaussian(cv,hills_[i],der);
+		   }
+		   comm.Sum(&bias,1);
+	  };
   }
  }
+
  if(hasextgrid_){
 	  if(der){
 	   vector<double> vder(getNumberOfArguments());
-	   bias+=ExtGrid_->getValueAndDerivatives(cv,vder);
+	   double thisbias;ExtGrid2_->getValueAndDerivatives(cv,thisbias,vder);
+	   bias+=thisbias;
 	   if( ( doInt_ && cv[0] > lowI_ && cv[0] < uppI_) || (!doInt_) ) { // because interval can be used only with monodimensional metaD
 	     for(unsigned i=0;i<getNumberOfArguments();++i) {der[i]+=vder[i];}
 	   }
 	  }else{
-	   bias+=ExtGrid_->getValue(cv);
+	   double thisbias;
+	   ExtGrid2_->getValue(cv,thisbias);
+	   bias+=thisbias;
 	  }
  }
  return bias;
@@ -793,6 +832,7 @@ void MetaD::calculate()
   getPntrToComponent("bias")->set(ene);
 
 // set Forces 
+
   for(unsigned i=0;i<ncv;++i){
    const double f=-der[i];
    setOutputForce(i,f);
@@ -840,7 +880,7 @@ void MetaD::update(){
     OFile gridfile; gridfile.link(*this);
     if(!storeOldGrids_) remove( gridfilename_.c_str() );
     gridfile.open(gridfilename_);
-    BiasGrid_->writeToFile(gridfile); 
+    BiasGrid2_->writeToFile(gridfile);
     gridfile.close();
   }
 

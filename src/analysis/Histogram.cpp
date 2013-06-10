@@ -22,10 +22,11 @@
 #include "Analysis.h"
 #include "core/ActionRegister.h"
 #include "tools/Grid.h"
+#include "tools/Grid2.h"
 #include "tools/KernelFunctions.h"
 #include "tools/IFile.h"
 #include "tools/OFile.h"
-
+#include <iostream>
 namespace PLMD{
 namespace analysis{
 
@@ -148,20 +149,15 @@ void Histogram::performAnalysis(){
   // Back up old histogram files
 //  std::string oldfname=saveResultsFromPreviousAnalyses( gridfname );
 
-  // Get pbc stuff for grid
-  std::vector<bool> pbc; std::string dmin,dmax;
-  for(unsigned i=0;i<getNumberOfArguments();++i){
-     pbc.push_back( getPeriodicityInformation(i,dmin,dmax) );
-     if(pbc[i]){ Tools::convert(dmin,gmin[i]); Tools::convert(dmax,gmax[i]); }
-  }
 
-  Grid* gg; IFile oldf; oldf.link(*this); 
+  Grid2* gg; IFile oldf; oldf.link(*this);
+
   if( usingMemory() && oldf.FileExist(gridfname) ){
       oldf.open(gridfname);
-      gg = Grid::create( "probs", getArguments(), oldf, gmin, gmax, gbin, false, false, false );
+      gg = Grid2::create( "probs", getArguments(), oldf, gmin, gmax, gbin, false, false, false );
       oldf.close();
   } else {
-      gg = new Grid( "probs", getArguments(), gmin, gmax, gbin,false,false);
+      gg = new Grid2( "probs", getArguments(), gmin, gmax, gbin,false,false);
   }
   // Set output format for grid
   gg->setOutputFmt( getOutputFormat() );
@@ -171,9 +167,9 @@ void Histogram::performAnalysis(){
   for(unsigned i=0;i<getNumberOfDataPoints();++i){
       getDataPoint( i, point, weight );
       KernelFunctions kernel( point, bw, kerneltype, false, weight, true);
-      gg->addKernel( kernel ); 
-       
+      gg->addKernel( kernel );
   }
+
   // Normalize the histogram
   gg->scaleAllValuesAndDerivatives( 1.0 / getNormalization() );
 
