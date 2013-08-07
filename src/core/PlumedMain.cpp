@@ -318,6 +318,10 @@ void PlumedMain::cmd(const std::string & word,void*val){
        CHECK_NULL(val,word);
        if(atoms.isEnergyNeeded()) *(static_cast<int*>(val))=1;
        else                       *(static_cast<int*>(val))=0;
+  } else if(word=="getBias"){
+       CHECK_INIT(initialized,word);
+       CHECK_NULL(val,word);
+       *(static_cast<double*>(val))=getBias(); 
   } else {
 // multi word commands
 
@@ -359,15 +363,11 @@ void PlumedMain::init(){
   if(!log.isOpen()) log.link(stdout);
   log<<"PLUMED is starting\n";
   log<<"PLUMED compiled on " __DATE__ " at " __TIME__ "\n";
-  log<<"****  THIS IS AN EXPERIMENTAL VERSION ****\n";
-  log<<"More info on Google group 'plumed2-git'\n";
   log<<"There is not yet a published paper describing this software.\n";
   log<<"If you use it in a publication please explicitly state\n";
-  log<<"which version you are using and cite the previous paper:\n";
-  log<<"  M. Bonomi, D. Branduardi, G. Bussi, C. Camilloni, D. Provasi, P. Raiteri,\n";
-  log<<"  D. Donadio, F. Marinelli, F. Pietrucci, R. A. Broglia and M. Parrinello\n";
-  log<<"  PLUMED: a portable plugin for free-energy calculations with molecular dynamics\n";
-  log<<"  Comp. Phys. Comm. 180, 1961 (2009)\n";
+  log<<"which version you are using and cite the previous paper ";
+  log<<cite("Bonomi, Branduardi, Bussi, Camilloni, Provasi, Raiteri, Donadio, Marinelli, Pietrucci,\n      Broglia and Parrinello, Comp. Phys. Comm. 180, 1961 (2009)");
+  log<<"\n";
   log<<"For further information see the PLUMED web page at www.plumed-code.org\n";
   log.printf("Molecular dynamics engine: %s\n",MDEngine.c_str());
   log.printf("Precision of reals: %d\n",atoms.getRealPrecision());
@@ -409,11 +409,6 @@ void PlumedMain::readInputWords(const std::vector<std::string> & words){
   else if(words[0]=="_SET_SUFFIX"){
     plumed_assert(words.size()==2);
     setSuffix(words[1]);
-  }
-  else if(words[0]=="RANDOM_EXCHANGES"){
-    exchangePatterns.setFlag(exchangePatterns.RANDOM);
-    // I convert the seed to -seed because I think it is more general to use a positive seed in input
-    if(words.size()>2&&words[1]=="SEED") {int seed; Tools::convert(words[2],seed); exchangePatterns.setSeed(-seed); }
   } else {
     std::vector<std::string> interpreted(words);
     Tools::interpretLabel(interpreted);
