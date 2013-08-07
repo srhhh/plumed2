@@ -65,8 +65,8 @@ AnalysisWithLandmarks(ao)
   }
   myembedding->setPropertyNames( propnames, false );
 
-  parse("EMBEDDING_OFILE",efilename);
-  parse("OUTPUT_FILE",ofilename);
+  parseOutputFile("EMBEDDING_OFILE",efilename);
+  parseOutputFile("OUTPUT_FILE",ofilename);
 }
 
 ClassicalMultiDimensionalScaling::~ClassicalMultiDimensionalScaling(){
@@ -81,8 +81,9 @@ void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
   ClassicalScaling::run( myembedding );
 
   // Output the embedding as long lists of data
-  std::string gfname=saveResultsFromPreviousAnalyses( ofilename );
-  OFile gfile; gfile.link(*this); gfile.open( ofilename.c_str(), "w" );
+//  std::string gfname=saveResultsFromPreviousAnalyses( ofilename );
+  OFile gfile; gfile.link(*this); gfile.setBackupString("analysis");
+  gfile.open( ofilename.c_str() );
   
   // Print embedding coordinates
   for(unsigned i=0;i<myembedding->getNumberOfReferenceFrames();++i){
@@ -96,9 +97,9 @@ void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
 
   // Output the embedding in plumed format
   if( efilename!="dont output"){
-     std::string ifname=saveResultsFromPreviousAnalyses( efilename );
-     OFile afile; afile.link(*this);
-     afile.open( efilename.c_str(), "w" );
+     // std::string ifname=saveResultsFromPreviousAnalyses( efilename );
+     OFile afile; afile.link(*this); afile.setBackupString("analysis");
+     afile.open( efilename.c_str() );
      myembedding->print( "classical mds", getTime(), afile );
      afile.close();
   }

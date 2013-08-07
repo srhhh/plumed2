@@ -231,6 +231,8 @@ void Analysis::readDataFromFile( const std::string& filename ){
 
 void Analysis::parseOutputFile( const std::string& key, std::string& filename ){
   parse(key,filename);
+  if(filename=="dont output") return;
+
   if( !plumed.getRestart() ){
       OFile ofile; ofile.link(*this);
       ofile.setBackupString("analysis");
