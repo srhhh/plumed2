@@ -703,12 +703,12 @@ double MetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
    }else{
 	   unsigned stride=comm.Get_size();
 	   unsigned rank=comm.Get_rank();
-	   double bias=0.0;
-
+	   bias=0.0;
 	   for(unsigned i=rank;i<hills_.size();i+=stride){
 	    bias+=evaluateGaussian(cv,hills_[i],der);
 	   }
 	   comm.Sum(&bias,1);
+
 	   if( ( doInt_ && cv[0] > lowI_ && cv[0] < uppI_) || (!doInt_) ) {
 		   comm.Sum(&der[0],getNumberOfArguments());
 	   }else{
@@ -717,11 +717,12 @@ double MetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
 
    }
 
-  }else{
+  }else{ // for example used to calculate the height in welltempered  
+		   
 	  if(!BiasGrid2_->getValue(cv,bias)){
 		   unsigned stride=comm.Get_size();
 		   unsigned rank=comm.Get_rank();
-		   double bias=0.0;
+		   bias=0.0;
 		   for(unsigned i=rank;i<hills_.size();i+=stride){
 		    bias+=evaluateGaussian(cv,hills_[i],der);
 		   }
