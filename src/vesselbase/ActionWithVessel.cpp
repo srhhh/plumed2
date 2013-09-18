@@ -70,8 +70,6 @@ ActionWithVessel::ActionWithVessel(const ActionOptions&ao):
      if( nl_tolerance>epsilon ) log.printf(" and ignoring quantities less than %lf inbetween neighbor list update steps\n",nl_tolerance);
      else log.printf("\n");
   }
-  // Setup stuff for communicating what tasks have been deactivated across all nodes
-  taskList.setupMPICommunication( comm );
 }
 
 ActionWithVessel::~ActionWithVessel(){
@@ -96,6 +94,14 @@ BridgeVessel* ActionWithVessel::addBridgingVessel( ActionWithVessel* tome ){
   functions.push_back( dynamic_cast<Vessel*>(bv) );
   resizeFunctions();
   return bv; 
+}
+
+void ActionWithVessel::addTaskToList( const unsigned& taskCode ){
+  plumed_assert( functions.size()==0 );  // We cannot add more tasks after vessels added
+  indexOfTaskInFullList.push_back( fullTaskList.size() );
+  fullTaskList.push_back( taskCode ); partialTaskList.push_back( taskCode ); 
+  taskFlags.push_back(0); nactive_tasks = fullTaskList.size();
+  plumed_assert( partialTaskList.size()==nactive_tasks && indexOfTaskInFullList.size()==nactive_tasks && taskFlags.size()==nactive_tasks );
 }
 
 void ActionWithVessel::readVesselKeywords(){
@@ -150,17 +156,60 @@ void ActionWithVessel::resizeFunctions(){
   tmpforces.resize( getNumberOfDerivatives() );
 }
 
-void ActionWithVessel::deactivate_task(){
-  plumed_dbg_assert( contributorsAreUnlocked );
-  taskList.deactivate( current );
+void ActionWithVessel::unlockContributors(){
+  if( contributorsAreUnlocked ) return;
+  nactive_tasks = fullTaskList.size();
+  for(unsigned i=0;i<fullTaskList.size();++i){ 
+     partialTaskList[i] = fullTaskList[i]; taskFlags[i]=0; 
+     indexOfTaskInFullList[i]=i;
+  }
+  finishTaskListUpdate();
+  contributorsAreUnlocked=true;
+  resizeFunctions();
 }
 
-void ActionWithVessel::activateTheseTasks( const std::vector<bool>& additionalTasks ){
-  plumed_dbg_assert( additionalTasks.size()==taskList.fullSize() );
-  for(unsigned i=0;i<additionalTasks.size();++i){
-      if( additionalTasks[i] ) taskList.activate(i);
+void ActionWithVessel::lockContributors(){
+  if( !serial ) comm.Sum( taskFlags );
+  nactive_tasks = 0;
+  for(unsigned i=0;i<fullTaskList.size();++i){
+      // Deactivate sets inactive tasks to number not equal to zero
+      if( taskFlags[i]==0 ){
+          partialTaskList[nactive_tasks] = fullTaskList[i]; 
+          indexOfTaskInFullList[nactive_tasks]=i;
+          nactive_tasks++; 
+      } 
   }
-  taskList.updateActiveMembers();
+  finishTaskListUpdate();
+  contributorsAreUnlocked=false;
+  resizeFunctions();
+}
+
+void ActionWithVessel::deactivateAllTasks(){
+  plumed_assert( contributorsAreUnlocked );
+  nactive_tasks = 0;
+}
+
+void ActionWithVessel::activateTheseTasks( std::vector<bool>& additionalTasks ){
+  plumed_dbg_assert( additionalTasks.size()==fullTaskList.size() );
+  // Activate tasks that are already active locally
+  for(unsigned i=0;i<nactive_tasks;++i) additionalTasks[ indexOfTaskInFullList[i] ] = true;
+
+  nactive_tasks = 0;
+  for(unsigned i=0;i<fullTaskList.size();++i){
+      // Deactivate sets inactive tasks to number not equal to zero
+      if( additionalTasks[i] ){
+          partialTaskList[nactive_tasks] = fullTaskList[i]; 
+          indexOfTaskInFullList[nactive_tasks]=i;
+          nactive_tasks++;
+      } else {
+          taskFlags[i]=1;
+      }
+  }
+}
+
+void ActionWithVessel::deactivate_task(){
+  plumed_dbg_assert( contributorsAreUnlocked );
+  taskFlags[task_index]=1;
 }
 
 void ActionWithVessel::doJobsRequiredBeforeTaskList(){
@@ -180,9 +229,11 @@ void ActionWithVessel::runAllTasks(){
   // Make sure jobs are done
   doJobsRequiredBeforeTaskList();
 
-  for(unsigned i=rank;i<taskList.getNumberActive();i+=stride){
+  for(unsigned i=rank;i<nactive_tasks;i+=stride){
+      // The index of the task in the full list
+      task_index=indexOfTaskInFullList[i];
       // Store the task we are currently working on
-      current=taskList[i];
+      current=partialTaskList[i];
       // Calculate the stuff in the loop for this action
       performTask();
       // Weight should be between zero and one
@@ -241,7 +292,7 @@ bool ActionWithVessel::calculateAllVessels(){
 
 void ActionWithVessel::finishComputations(){
   // MPI Gather everything
-  if(!serial && buffer.size()>0) comm.Sum( buffer);
+  if(!serial && buffer.size()>0) comm.Sum( buffer );
 
   // Set the final value of the function
   for(unsigned j=0;j<functions.size();++j) functions[j]->finish(); 

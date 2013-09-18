@@ -100,7 +100,7 @@ PLUMED_MULTICOLVAR_INIT(ao)
   // Read in the atoms
   int natoms=4; readAtoms( natoms );
   // Resize target
-  target.resize( taskList.fullSize() );
+  target.resize( getFullNumberOfTasks() );
 
   // Read in reference values
   unsigned ntarget=0;
