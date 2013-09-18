@@ -48,7 +48,7 @@ private:
   bool usepbc;
 /// Everything for controlling the updating of neighbor lists
   int updateFreq;
-  unsigned lastUpdate;
+  bool firsttime;
 /// The list of all the atoms involved in the colvar
   DynamicList<AtomNumber> all_atoms;
 /// Variables used for central atoms

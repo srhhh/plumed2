@@ -327,7 +327,6 @@ void MultiColvar::readSpeciesKeyword( int& natoms ){
 void MultiColvar::resizeDynamicArrays(){
   all_atoms.deactivateAll();
   for(unsigned i=0;i<taskList.getNumberActive();++i){
-      lindex=taskList.linkIndex(i);
       current=taskList[i]; 
       bool check=setupCurrentAtomList();
       plumed_dbg_assert( check );

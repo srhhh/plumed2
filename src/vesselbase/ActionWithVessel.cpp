@@ -152,9 +152,7 @@ void ActionWithVessel::resizeFunctions(){
 
 void ActionWithVessel::deactivate_task(){
   plumed_dbg_assert( contributorsAreUnlocked );
-  for(unsigned i=0;i<taskList.fullSize();++i){
-     if( taskList(i)==current ) taskList.deactivate(i);
-  }
+  taskList.deactivate( current );
 }
 
 void ActionWithVessel::activateTheseTasks( const std::vector<bool>& additionalTasks ){
@@ -173,6 +171,7 @@ void ActionWithVessel::doJobsRequiredBeforeTaskList(){
 }
 
 void ActionWithVessel::runAllTasks(){
+  if( getExchangeStep() && !contributorsAreUnlocked ) error("contributors must be unlocked during exchange steps");
   plumed_massert( functions.size()>0, "you must have a call to readVesselKeywords somewhere" );
   unsigned stride=comm.Get_size();
   unsigned rank=comm.Get_rank();
@@ -182,8 +181,6 @@ void ActionWithVessel::runAllTasks(){
   doJobsRequiredBeforeTaskList();
 
   for(unsigned i=rank;i<taskList.getNumberActive();i+=stride){
-      // This is the position of the task in the dynamic list
-      lindex=taskList.linkIndex(i);
       // Store the task we are currently working on
       current=taskList[i];
       // Calculate the stuff in the loop for this action

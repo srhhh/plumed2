@@ -78,8 +78,6 @@ protected:
   bool contributorsAreUnlocked;
 /// Does the weight have derivatives
   bool weightHasDerivatives;
-/// The position of the current task in the taskList
-  unsigned lindex;
 /// The numerical index of the task we are curently performing
   unsigned current;
 /// This is used for numerical derivatives of bridge variables
@@ -118,10 +116,14 @@ protected:
   void accumulateDerivative( const unsigned& ider, const double& df );
 /// Clear tempory data that is calculated for each task
   void clearAfterTask();
+/// Is the calculation being done in serial
+  bool serialCalculation() const;
 /// Are we using low memory
   bool usingLowMem() const ;
 /// Set that we are using low memory
   void setLowMemOption(const bool& );
+/// Get the current task's position in the task list
+  unsigned getCurrentPositionInTaskList() const ;
 public:
   static void registerKeywords(Keywords& keys);
   ActionWithVessel(const ActionOptions&ao);
@@ -273,6 +275,11 @@ unsigned ActionWithVessel::getIndexForTask( const unsigned& itask ) const {
 }
 
 inline
+bool ActionWithVessel::serialCalculation() const {
+  return serial;
+}
+
+inline
 bool ActionWithVessel::usingLowMem() const {
   return lowmem;
 }
@@ -280,6 +287,11 @@ bool ActionWithVessel::usingLowMem() const {
 inline
 void ActionWithVessel::setLowMemOption(const bool& l){
   lowmem=l;
+}
+
+inline
+unsigned ActionWithVessel::getCurrentPositionInTaskList() const {
+  return taskList.getIndexOfElement(current);
 }
 
 } 

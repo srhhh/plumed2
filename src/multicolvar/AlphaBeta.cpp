@@ -136,8 +136,9 @@ double AlphaBeta::compute(){
   Vector dd0,dd1,dd2;
   PLMD::Torsion t;
   double value  = t.compute(d0,d1,d2,dd0,dd1,dd2);
-  double svalue = -0.5*sin(value-target[lindex]);
-  double cvalue = 1.+cos(value-target[lindex]);
+  unsigned tindex = getCurrentPositionInTaskList();
+  double svalue = -0.5*sin(value-target[tindex]);
+  double cvalue = 1.+cos(value-target[tindex]);
 
   dd0 *= svalue;
   dd1 *= svalue;

@@ -70,7 +70,6 @@ void StoreDataVessel::recompute( const unsigned& ivec, const unsigned& jstore ){
 
   // Set the task we want to reperform
   act->current = act->taskList(ivec);
-  act->lindex = act->taskList.linkIndex(ivec);
   // Reperform the task
   performTask( jstore );
   // Store the derivatives
@@ -123,7 +122,7 @@ void StoreDataVessel::storeDerivativesLowMem( const unsigned& jstore ){
 }
 
 bool StoreDataVessel::calculate(){
-  unsigned myelem = getAction()->lindex;
+  unsigned myelem = getAction()->getCurrentPositionInTaskList();
   // Normalize vector if it is required
   finishTask( myelem );
 
@@ -247,7 +246,7 @@ void StoreDataVessel::chainRule( const unsigned& ival, const std::vector<double>
 void StoreDataVessel::transformComponents( const unsigned& jstore, const double& weight, double& wdf, const std::vector<double>& dfvec ){
   plumed_dbg_assert( dfvec.size()==vecsize );
   ActionWithVessel* act = getAction();
-  unsigned myelem = act->lindex;
+  unsigned myelem = act->getCurrentPositionInTaskList();
 
   unsigned ibuf = myelem * vecsize * nspace;
   for(unsigned icomp=0;icomp<vecsize;++icomp){

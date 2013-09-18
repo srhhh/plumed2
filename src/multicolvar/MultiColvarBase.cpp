@@ -48,7 +48,6 @@ ActionWithValue(ao),
 ActionWithVessel(ao),
 usepbc(false),
 updateFreq(0),
-lastUpdate(0),
 usespecies(false)
 {
   if( keywords.exists("NOPBC") ){ 
@@ -57,8 +56,13 @@ usespecies(false)
   } 
   if( keywords.exists("SPECIES") ) usespecies=true;
   if( keywords.exists("NL_STRIDE") ) parse("NL_STRIDE",updateFreq);
-  if(updateFreq>0) log.printf("  Updating contributors every %d steps.\n",updateFreq);
-  else log.printf("  Updating contributors every step.\n");
+  if(updateFreq>0){
+     firsttime=true;
+     log.printf("  Updating contributors every %d steps.\n",updateFreq);
+  } else {
+     firsttime=false;
+     log.printf("  Updating contributors every step.\n");
+  }
 }
 
 void MultiColvarBase::copyAtomListToFunction( MultiColvarBase* myfunction ){
@@ -113,12 +117,14 @@ void MultiColvarBase::prepare(){
       if( usespecies ) mpi_gatherActiveMembers( comm, csphere_atoms ); 
       lockContributors(); updatetime=true;
   }
-  if( updateFreq>0 && (getStep()-lastUpdate)>=updateFreq ){
-      taskList.activateAll(); 
-      if(usespecies){ 
-         for(unsigned i=0;i<taskList.getNumberActive();++i) csphere_atoms[i].activateAll();
+  if( updateFreq>0 ){
+      if( firsttime || getStep()%updateFreq==0 ){
+         firsttime=false; taskList.activateAll(); 
+         if(usespecies){ 
+            for(unsigned i=0;i<taskList.getNumberActive();++i) csphere_atoms[i].activateAll();
+         }
+         unlockContributors(); updatetime=true;
       }
-      unlockContributors(); updatetime=true; lastUpdate=getStep();
   }
   if(updatetime){
      // Resize stuff in derived classes

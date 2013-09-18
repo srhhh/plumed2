@@ -92,7 +92,8 @@ private:
 public:
   static void registerKeywords( Keywords& keys );
   Angles(const ActionOptions&);
-// active methods:
+/// Updates neighbor list
+  virtual void doJobsRequiredBeforeTaskList();
   virtual double compute();
 /// Returns the number of coordinates of the field
   void calculateWeight();
@@ -157,6 +158,42 @@ use_sf(false)
   // And check everything has been read in correctly
   checkRead();
 }
+
+// This should give big speed ups during neighbor list update steps
+void Angles::doJobsRequiredBeforeTaskList(){
+  // Do jobs required by action with vessel
+  ActionWithVessel::doJobsRequiredBeforeTaskList();
+  if( !contributorsAreUnlocked ) return;
+  if( !use_sf || taskList.fullSize()==ablocks[0].size() ) return ;
+  plumed_dbg_assert( taskList.fullSize()==ablocks[0].size()*ablocks[1].size()*ablocks[2].size() );
+
+  unsigned stride=comm.Get_size();
+  unsigned rank=comm.Get_rank();
+  if( serialCalculation() ){ stride=1; rank=0; }  
+
+  unsigned ik=0; double w, dw; taskList.activateAll(); 
+  for(unsigned i=0;i<ablocks[0].size();++i){
+      for(unsigned j=0;j<ablocks[1].size();++j){
+
+          if( (ik++)%stride!=rank ) continue; 
+
+          dij=getSeparation( ActionAtomistic::getPosition(ablocks[0][i]), ActionAtomistic::getPosition(ablocks[1][j]) );
+          w = sf1.calculate( dij.modulo(), dw );
+          if( w<getNLTolerance() ){
+              // Deactivate all tasks involving i and j
+              for(unsigned k=0;k<taskList.fullSize();++k){
+                  unsigned ind=std::floor( taskList(k) / decoder[0] );
+                  if( ind!=i ) continue;
+                  unsigned ind2=std::floor( (taskList(k) - ind*decoder[0]) / decoder[1] );
+                  if( ind2!=j ) continue;
+                  taskList.deactivate( taskList(k) );
+              }
+          }
+      }
+  }
+  if( serialCalculation() ) taskList.updateActiveMembers();
+  else taskList.mpi_gatherActiveMembers( comm );
+} 
 
 void Angles::calculateWeight(){
   dij=getSeparation( getPosition(0), getPosition(2) );
