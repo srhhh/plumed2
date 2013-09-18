@@ -63,13 +63,14 @@ void StoreDataVessel::getIndexList( const unsigned& ntotal, const unsigned& jsto
   getAction()->getIndexList( ntotal, jstore, maxder, indices );
 }
 
+void StoreDataVessel::setTaskToRecompute( const unsigned& ivec ){
+ getAction()->current = getAction()->fullTaskList[ivec];
+}
+
 void StoreDataVessel::recompute( const unsigned& ivec, const unsigned& jstore ){
   plumed_dbg_assert( getAction()->lowmem && jstore<max_lowmem_stash );
-  // Get the underlying action with value
-  ActionWithVessel* act = getAction();
-
   // Set the task we want to reperform
-  act->current = act->fullTaskList[ivec];
+  setTaskToRecompute( ivec );
   // Reperform the task
   performTask( jstore );
   // Store the derivatives

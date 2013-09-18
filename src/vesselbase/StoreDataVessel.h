@@ -74,6 +74,8 @@ protected:
   unsigned getNumberOfDerivatives( const unsigned& );
 /// Retrieve the values from the underlying ActionWithVessel
   void storeValues( const unsigned& );
+/// Set the Task that needs redoing
+  void setTaskToRecompute( const unsigned& ivec );
 /// Get a component of the stored vector
   double getComponent( const unsigned& , const unsigned& );
 /// Chain rule the vector and output derivatives to a value
