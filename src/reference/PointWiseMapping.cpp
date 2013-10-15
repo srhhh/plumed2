@@ -90,13 +90,15 @@ unsigned PointWiseMapping::getPropertyIndex( const std::string& name ) const {
   return 0;
 }
 
-void PointWiseMapping::print( const std::string& method, const unsigned& time, OFile& afile ){
-  afile.printf("DESCRIPTION: results from %s analysis performed at time %f\n", method.c_str(), time );
+void PointWiseMapping::print( const std::string& method, const unsigned& time, OFile& afile, const std::string& fmt ){
+  std::string descr2, descr="DESCRIPTION: results from %s analysis performed at time " + fmt +"\n";
+  afile.printf(descr.c_str(), method.c_str(), time );
   for(unsigned i=0;i<frames.size();++i){
-      afile.printf("REMARK: WEIGHT=%f %s=%f ", weights[i], property[0].c_str(), low_dim[i][0] );
-      for(unsigned j=1;j<property.size();++j) afile.printf("%s=%f ", property[j].c_str(), low_dim[i][j]);
+      descr="REMARK: WEIGHT=" + fmt + " %s=" + fmt + " "; descr2="%s=" + fmt;
+      afile.printf(descr.c_str(), weights[i], property[0].c_str(), low_dim[i][0] );
+      for(unsigned j=1;j<property.size();++j) afile.printf(descr2.c_str(), property[j].c_str(), low_dim[i][j]);
       afile.printf("\n"); 
-      frames[i]->print( afile );
+      frames[i]->print( afile, fmt );
   }
 } 
 

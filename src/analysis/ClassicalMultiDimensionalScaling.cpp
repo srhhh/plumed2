@@ -82,7 +82,9 @@ void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
 
   // Output the embedding as long lists of data
 //  std::string gfname=saveResultsFromPreviousAnalyses( ofilename );
-  OFile gfile; gfile.link(*this); gfile.setBackupString("analysis");
+  OFile gfile; gfile.link(*this); 
+  gfile.setBackupString("analysis");
+  gfile.fmtField(getOutputFormat()+" ");
   gfile.open( ofilename.c_str() );
   
   // Print embedding coordinates
@@ -100,7 +102,7 @@ void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
      // std::string ifname=saveResultsFromPreviousAnalyses( efilename );
      OFile afile; afile.link(*this); afile.setBackupString("analysis");
      afile.open( efilename.c_str() );
-     myembedding->print( "classical mds", getTime(), afile );
+     myembedding->print( "classical mds", getTime(), afile, getOutputFormat() );
      afile.close();
   }
 }

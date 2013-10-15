@@ -147,12 +147,12 @@ void ReferenceConfiguration::copyDerivatives( const ReferenceConfiguration* ref 
 
 void ReferenceConfiguration::print( OFile& ofile, const double& time, const double& weight, const double& old_norm ){
   ofile.printf("REMARK: TIME=%f LOG_WEIGHT=%f OLD_NORM=%f\n",time, weight, old_norm );
-  print( ofile );
+  print( ofile, "%f" );  // HARD CODED FORMAT HERE AS THIS IS FOR CHECKPOINT FILE
 }
 
-void ReferenceConfiguration::print( OFile& ofile ){
+void ReferenceConfiguration::print( OFile& ofile, const std::string& fmt ){
   ReferenceArguments* args=dynamic_cast<ReferenceArguments*>(this);
-  if(args) args->printArguments( ofile );
+  if(args) args->printArguments( ofile, fmt );
   ReferenceAtoms* atoms=dynamic_cast<ReferenceAtoms*>(this);
   if(atoms) atoms->printAtoms( ofile );
   ofile.printf("END\n");

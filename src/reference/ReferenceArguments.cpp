@@ -106,12 +106,12 @@ void ReferenceArguments::getArgumentRequests( std::vector<std::string>& argout, 
   }
 }
 
-void ReferenceArguments::printArguments( OFile& ofile ) const {
+void ReferenceArguments::printArguments( OFile& ofile, const std::string& fmt ) const {
   ofile.printf("REMARK: ARG=%s", arg_names[0].c_str() );
   for(unsigned i=1;i<arg_names.size();++i) ofile.printf(",%s", arg_names[i].c_str() );
   ofile.printf("\n");
-  ofile.printf("REMARK: ");
-  for(unsigned i=0;i<arg_names.size();++i) ofile.printf("%s=%f ",arg_names[i].c_str(), reference_args[i] );
+  ofile.printf("REMARK: "); std::string descr2="%s=" + fmt + " ";
+  for(unsigned i=0;i<arg_names.size();++i) ofile.printf( descr2.c_str(),arg_names[i].c_str(), reference_args[i] );
   ofile.printf("\n");
 }
 
