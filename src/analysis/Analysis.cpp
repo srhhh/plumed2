@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -66,6 +66,7 @@ void Analysis::registerKeywords( Keywords& keys ){
   keys.add("compulsory","STRIDE","1","the frequency with which data should be stored for analysis");
   keys.addFlag("USE_ALL_DATA",false,"use the data from the entire trajectory to perform the analysis");
   keys.add("compulsory","RUN","the frequency with which to run the analysis algorithm. This is not required if you specify USE_ALL_DATA");
+  keys.add("optional","FMT","the format that should be used in analysis output files");
   keys.addFlag("REWEIGHT_BIAS",false,"reweight the data using all the biases acting on the dynamics. For more information see \\ref reweighting.");
   keys.add("optional","TEMP","the system temperature.  This is required if you are reweighting.");
   keys.add("optional","REWEIGHT_TEMP","reweight data from a trajectory at one temperature and output the probability "
@@ -93,9 +94,11 @@ needeng(false),
 idata(0),
 firstAnalysisDone(false),
 old_norm(0.0),
+ofmt("%f"),
 current_args(getNumberOfArguments()),
 argument_names(getNumberOfArguments())
 {
+  parse("FMT",ofmt);
   // Make a vector containing all the argument names
   for(unsigned i=0;i<getNumberOfArguments();++i) argument_names[i]=getPntrToArgument(i)->getName();
   // Read in the metric style

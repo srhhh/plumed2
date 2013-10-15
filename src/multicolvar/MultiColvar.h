@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -23,6 +23,7 @@
 #define __PLUMED_multicolvar_MultiColvar_h
 
 #include "MultiColvarBase.h"
+#include "tools/SwitchingFunction.h"
 #include <vector>
 
 #define PLUMED_MULTICOLVAR_INIT(ao) Action(ao),MultiColvar(ao)
@@ -49,6 +50,12 @@ protected:
   void readAtoms( int& natoms );
 /// Read in ATOMS keyword
   void readAtomsLikeKeyword( const std::string & key, int& natoms );
+/// Read two group keywords
+  void readTwoGroups( const std::string& key1, const std::string& key2 );
+/// Read three groups
+  void readThreeGroups( const std::string& key1, const std::string& key2, const std::string& key3, const bool& allow2 );
+/// This is used to make neighbor list update fast when three atoms are involved in the colvar (e.g. ANGLES, WATERBRIDGE)
+  void threeBodyNeighborList( const SwitchingFunction& sf );
 /// Add a collective variable
   void addColvar( const std::vector<unsigned>& newatoms );
 /// Add some derivatives for an atom 
@@ -64,18 +71,18 @@ public:
   ~MultiColvar(){}
   static void registerKeywords( Keywords& keys );
 /// Resize all the dynamic arrays (used at neighbor list update time and during setup)
-  virtual void resizeDynamicArrays();
+//  virtual void resizeDynamicArrays();
 /// Get the position of atom iatom
   const Vector & getPosition(unsigned) const;
 /// This is used in VectorMultiColvar.  In there we use a MultiColvar as if it is 
 /// a MultiColvarFunction so we can calculate functions of vectors that output functions
   virtual void calculationsRequiredBeforeNumericalDerivatives(){}
+/// Finish the update of the task list
+  void finishTaskListUpdate();
 /// Calculate the multicolvar
   virtual void calculate();
-/// Do the calculation
-  double doCalculation( const unsigned& j );
-/// Actually compute the colvar
-  virtual double compute( const unsigned& j )=0;
+/// Update the atoms that have derivatives
+  void updateActiveAtoms();
 /// Calculate the position of the central atom
   Vector calculateCentralAtomPosition();
 /// Get the position of the central atom
@@ -86,12 +93,27 @@ public:
   double getCharge(unsigned) const ;
 /// Get the absolute index of atom iatom
   AtomNumber getAbsoluteIndex(unsigned) const ;
+/// Get base quantity index
+  unsigned getBaseQuantityIndex( const unsigned& code );
+/// Return true if two indexes are the same
+  bool same_index( const unsigned&, const unsigned& );
 };
 
 inline
+unsigned MultiColvar::getBaseQuantityIndex( const unsigned& code ){
+  return all_atoms.linkIndex( code );
+}
+
+inline
+bool MultiColvar::same_index( const unsigned& code1, const unsigned& code2 ){
+  return ( all_atoms(code1)==all_atoms(code2) );
+}
+
+inline
 unsigned MultiColvar::getAtomIndex( const unsigned& iatom ) const {
-  plumed_dbg_assert( iatom<colvar_atoms[current].getNumberActive() );
-  return all_atoms.linkIndex( colvar_atoms[current][iatom] );
+  plumed_dbg_assert( iatom<natomsper );
+  return current_atoms[iatom];
+//  return all_atoms.linkIndex( colvar_atoms[current][iatom] );
 }
 
 inline
@@ -116,12 +138,12 @@ AtomNumber MultiColvar::getAbsoluteIndex(unsigned iatom) const {
 
 inline
 void MultiColvar::addAtomsDerivatives(const int& iatom, const Vector& der){
-  MultiColvarBase::addAtomsDerivatives( getAtomIndex(iatom), der );
+  MultiColvarBase::addAtomsDerivatives( 0, getAtomIndex(iatom), der );
 }
 
 inline
 void MultiColvar::addAtomsDerivativeOfWeight( const unsigned& iatom, const Vector& wder ){
-  MultiColvarBase::addAtomsDerivativeOfWeight( getAtomIndex(iatom), wder );
+  MultiColvarBase::addAtomsDerivatives( 1, getAtomIndex(iatom), wder );
 }
 
 inline

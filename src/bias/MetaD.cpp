@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -96,7 +96,7 @@ gaussian potential is denoted by one value only that is a Cartesian space (ADAPT
 should be used in this case. Check the documentation for utility sum_hills.
 
 With the keyword INTERVAL one changes the metadynamics algorithm setting the bias force equal to zero 
-outside boundary \cite . If, for example, metadynamics is performed on a CV s and one is interested only 
+outside boundary \cite baftizadeh2012protein. If, for example, metadynamics is performed on a CV s and one is interested only 
 to the free energy for s > sw, the history dependent potential is still updated according to the above
 equations but the metadynamics force is set to zero for s < sw. Notice that Gaussians are added also 
 if s < sw, as the tails of these Gaussians influence VG in the relevant region s > sw. In this way, the 
@@ -127,7 +127,8 @@ PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
 
 \par
 If you use adaptive Gaussians, with diffusion scheme where you use
-a Gaussian that should cover the space of 20 timesteps in collective variables
+a Gaussian that should cover the space of 20 timesteps in collective variables.
+Note that in this case the histogram correction is needed when summing up hills. 
 \verbatim
 DISTANCE ATOMS=3,5 LABEL=d1
 DISTANCE ATOMS=2,4 LABEL=d2
@@ -137,13 +138,31 @@ PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
 
 \par
 If you use adaptive Gaussians, with geometrical scheme where you use
-a Gaussian that should cover the space of 0.05 nm in Cartesian space
+a Gaussian that should cover the space of 0.05 nm in Cartesian space.
+Note that in this case the histogram correction is needed when summing up hills. 
 \verbatim
 DISTANCE ATOMS=3,5 LABEL=d1
 DISTANCE ATOMS=2,4 LABEL=d2
 METAD ARG=d1,d2 SIGMA=0.05 HEIGHT=0.3 PACE=500 LABEL=restraint ADAPTIVE=GEOM
 PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
 \endverbatim
+
+\par
+When using adaptive Gaussians you might want to limit how the hills width can change. 
+You can use SIGMA_MIN and SIGMA_MAX keywords.
+The sigmas should specified in terms of CV so you should use the CV units. 
+Note that if you use a negative number, this means that the limit is not set.
+Note also that in this case the histogram correction is needed when summing up hills. 
+\verbatim
+DISTANCE ATOMS=3,5 LABEL=d1
+DISTANCE ATOMS=2,4 LABEL=d2
+METAD ...
+  ARG=d1,d2 SIGMA=0.05 HEIGHT=0.3 PACE=500 LABEL=restraint ADAPTIVE=GEOM
+  SIGMA_MIN=0.2,0.1 SIGMA_MAX=0.5,1.0	
+... METAD 
+PRINT ARG=d1,d2,restraint.bias STRIDE=100  FILE=COLVAR
+\endverbatim
+
 
 \par
 Multiple walkers can be also use as in  \cite multiplewalkers 
@@ -185,8 +204,11 @@ private:
      }
   };
   vector<double> sigma0_;
+  vector<double> sigma0min_;
+  vector<double> sigma0max_;
   vector<Gaussian> hills_;
   OFile hillsOfile_;
+  OFile gridfile_;
   Grid* BiasGrid_;
   Grid* ExtGrid_;
   bool storeOldGrids_;
@@ -260,12 +282,15 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","WALKERS_RSTRIDE","stride for reading hills files");
   keys.add("optional","INTERVAL","monodimensional lower and upper limits, outside the limits the system will not fell the bias (when used together with grid SPLINES are automatically deactivated)");
   keys.add("optional","GRID_RFILE","a grid file from which the bias should be read at the initial step of the simulation");
+  keys.add("optional","SIGMA_MAX","the upper bounds for the sigmas (in CV units) when using adaptive hills. Negative number means no bounds ");
+  keys.add("optional","SIGMA_MIN","the lower bounds for the sigmas (in CV units) when using adaptive hills. Negative number means no bounds ");
 }
 
 MetaD::~MetaD(){
   if(flexbin) delete flexbin;
   if(BiasGrid_) delete BiasGrid_;
   hillsOfile_.close();
+  if(wgridstride_>0) gridfile_.close();
   delete [] dp_;
   // close files
   for(int i=0;i<mw_n_;++i){
@@ -318,7 +343,23 @@ isFirstStep(true)
          if(sigma0_.size()!=1){
         	 error("If you choose ADAPTIVE you need only one sigma according to your choice of type (GEOM/DIFF)");
          } 
-         flexbin=new FlexibleBin(adaptive_,this,sigma0_[0]);
+	 // if adaptive then the number must be an integer
+ 	 if(adaptive_==FlexibleBin::diffusion){
+		if(int(sigma0_[0])-sigma0_[0]>1.e-9 || int(sigma0_[0])-sigma0_[0] <-1.e-9 || int(sigma0_[0])<1 ){
+		 	plumed_merror("In case of adaptive hills with diffusion, the sigma must be an integer which is the number of timesteps\n");	
+		} 
+	 } 
+	 // here evtl parse the sigma min and max values
+	 
+	 parseVector("SIGMA_MIN",sigma0min_);
+	 if(sigma0min_.size()>0 && sigma0min_.size()<getNumberOfArguments()){error("the number of SIGMA_MIN values be at least the number of the arguments"); }
+	 else if(sigma0min_.size()==0) { sigma0min_.resize(getNumberOfArguments());for(unsigned i=0;i<getNumberOfArguments();i++){sigma0min_[i]=-1.;}	} 
+
+	 parseVector("SIGMA_MAX",sigma0max_);
+	 if(sigma0max_.size()>0 && sigma0max_.size()<getNumberOfArguments()){error("the number of SIGMA_MAX values be at least the number of the arguments"); }
+	 else if(sigma0max_.size()==0) { sigma0max_.resize(getNumberOfArguments());for(unsigned i=0;i<getNumberOfArguments();i++){sigma0max_[i]=-1.;}	} 
+
+         flexbin=new FlexibleBin(adaptive_,this,sigma0_[0],sigma0min_,sigma0max_);
   }
   parse("HEIGHT",height0_);
   if( height0_<=0.0 ) error("error cannot add zero height or negative height hills");
@@ -433,6 +474,11 @@ isFirstStep(true)
    else{BiasGrid_=new SparseGrid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
   }
 
+  if(wgridstride_>0){
+    gridfile_.link(*this);
+    gridfile_.open(gridfilename_);
+  }
+
 // initializing external grid
   if(gridreadfilename_.length()>0){
    hasextgrid_=true;
@@ -486,10 +532,11 @@ isFirstStep(true)
   if(welltemp_) log<<plumed.cite(
     "Barducci, Bussi, and Parrinello, Phys. Rev. Lett. 100, 020603 (2008)");
   if(mw_n_>1) log<<plumed.cite(
-    "Raiteri, Laio, Gervasio, Micheletti, Parrinello, J. Phys. Chem. B 110, 3533 (2006)");
+    "Raiteri, Laio, Gervasio, Micheletti, and Parrinello, J. Phys. Chem. B 110, 3533 (2006)");
   if(adaptive_!=FlexibleBin::none) log<<plumed.cite(
     "Branduardi, Bussi, and Parrinello, J. Chem. Theory Comput. 8, 2247 (2012)");
- 
+  if(doInt_) log<<plumed.cite(
+     "Baftizadeh, Cossio, Pietrucci, and Laio, Curr. Phys. Chem. 2, 79 (2012)");
   log<<"\n";
 
 }
@@ -612,8 +659,8 @@ void MetaD::addGaussian(const Gaussian& hill)
      BiasGrid_->getPoint(ineigh,xx);
      allbias[i]=evaluateGaussian(xx,hill,&allder[ncv*i]);
     }
-    comm.Sum(&allbias[0],allbias.size());
-    comm.Sum(&allder[0],allder.size());
+    comm.Sum(allbias);
+    comm.Sum(allder);
     for(unsigned i=0;i<neighbors.size();++i){
      unsigned ineigh=neighbors[i];
      for(unsigned j=0;j<ncv;++j){der[j]=allder[ncv*i+j];}
@@ -680,8 +727,8 @@ double MetaD::getBiasAndDerivatives(const vector<double>& cv, double* der)
    //finite difference test 
    //finiteDifferenceGaussian(cv,hills_[i]);
   }
-  comm.Sum(&bias,1);
-  if(der) comm.Sum(&der[0],getNumberOfArguments());
+  comm.Sum(bias);
+  if(der) comm.Sum(der,getNumberOfArguments());
  }else{
   if(der){
    vector<double> vder(getNumberOfArguments());
@@ -783,6 +830,11 @@ double MetaD::getHeight(const vector<double>& cv)
 
 void MetaD::calculate()
 {
+
+// this is because presently there is no way to properly pass information
+// on adaptive hills (diff) after exchanges:
+  if(adaptive_==FlexibleBin::diffusion && getExchangeStep()) error("ADAPTIVE=DIFF is not compatible with replica exchange");
+
   unsigned ncv=getNumberOfArguments();
   vector<double> cv(ncv);
   for(unsigned i=0;i<ncv;++i){cv[i]=getArgument(i);}
@@ -837,11 +889,20 @@ void MetaD::update(){
   }
 // dump grid on file
   if(wgridstride_>0&&getStep()%wgridstride_==0){
-    OFile gridfile; gridfile.link(*this);
-    if(!storeOldGrids_) remove( gridfilename_.c_str() );
-    gridfile.open(gridfilename_);
-    BiasGrid_->writeToFile(gridfile); 
-    gridfile.close();
+// in case old grids are stored, a sequence of grids should appear
+// this call results in a repetition of the header:
+    if(storeOldGrids_) gridfile_.clearFields();
+// in case only latest grid is stored, file should be rewound
+// this will overwrite previously written grids
+    else gridfile_.rewind();
+    BiasGrid_->writeToFile(gridfile_); 
+// if a single grid is stored, it is necessary to flush it, otherwise
+// the file might stay empty forever (when a single grid is not large enough to
+// trigger flushing from the operating system).
+// on the other hand, if grids are stored one after the other this is
+// no necessary, and we leave the flushing control to the user as usual
+// (with FLUSH keyword)
+    if(!storeOldGrids_) gridfile_.flush();
   }
 
 // if multiple walkers and time to read Gaussians

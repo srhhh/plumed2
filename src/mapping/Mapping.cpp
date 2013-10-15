@@ -174,22 +174,23 @@ void Mapping::calculateNumericalDerivatives( ActionWithValue* a ){
 }
 
 void Mapping::mergeDerivatives( const unsigned& ider, const double& df ){
-  unsigned frameno=ider*getNumberOfReferencePoints() + current;
+  unsigned mycurrent=getCurrentTask();
+  unsigned frameno=ider*getNumberOfReferencePoints() + mycurrent;
   for(unsigned i=0;i<getNumberOfArguments();++i){
-      accumulateDerivative( i, df*mymap->getArgumentDerivative(current,i) );
+      accumulateDerivative( i, df*mymap->getArgumentDerivative(mycurrent,i) );
   }
   if( getNumberOfAtoms()>0 ){
       Vector ader; Tensor tmpvir; tmpvir.zero();
       unsigned n=getNumberOfArguments(); 
       for(unsigned i=0;i<getNumberOfAtoms();++i){
-          ader=mymap->getAtomDerivatives( current, i );            
+          ader=mymap->getAtomDerivatives( mycurrent, i );            
           accumulateDerivative( n, df*dfframes[frameno]*ader[0] ); n++;
           accumulateDerivative( n, df*dfframes[frameno]*ader[1] ); n++;
           accumulateDerivative( n, df*dfframes[frameno]*ader[2] ); n++;
           tmpvir += -1.0*Tensor( getPosition(i), ader );
       }
       Tensor vir; 
-      if( !mymap->getVirial( current, vir ) ) vir=tmpvir;
+      if( !mymap->getVirial( mycurrent, vir ) ) vir=tmpvir;
       accumulateDerivative( n, df*dfframes[frameno]*vir(0,0) ); n++;
       accumulateDerivative( n, df*dfframes[frameno]*vir(0,1) ); n++;
       accumulateDerivative( n, df*dfframes[frameno]*vir(0,2) ); n++;

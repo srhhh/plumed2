@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -81,6 +81,8 @@ private:
   bool firstAnalysisDone;
 /// The value of the old normalization constant
   double norm, old_norm;
+/// The format to use in output files
+  std::string ofmt;
 /// Tempory vector to store values of arguments
   std::vector<double> current_args;
 /// List of argument names 
@@ -126,6 +128,8 @@ protected:
 /// Overwrite ActionWithArguments getArguments() so that we don't return
 /// the bias
   std::vector<Value*> getArguments();
+/// Return the format to use for numbers in output files
+  std::string getOutputFormat() const ;
 public:
   static void registerKeywords( Keywords& keys );
   Analysis(const ActionOptions&);
@@ -206,6 +210,11 @@ double Analysis::getWeight( const unsigned& idata ) const {
   } else {
      return mydatastash->getWeight(idata);
   }
+}
+
+inline
+std::string Analysis::getOutputFormat() const {
+  return ofmt;
 }
 
 }

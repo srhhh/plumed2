@@ -100,7 +100,7 @@ void ReferenceConfiguration::setNamesAndAtomNumbers( const std::vector<AtomNumbe
 }
 
 void ReferenceConfiguration::setReference( const std::vector<Vector>& pos, const std::vector<double>& arg, const std::vector<double>& metric ){
-  plumed_dbg_assert( pos.size()==atomm_ders.size() && arg.size()==arg_ders.size() );
+  plumed_dbg_assert( pos.size()==atom_ders.size() && arg.size()==arg_ders.size() );
   // Copy the atomic positions to the reference
   ReferenceAtoms* atoms=dynamic_cast<ReferenceAtoms*>( this );
   if(!atoms){
@@ -162,7 +162,7 @@ double distance( const Pbc& pbc, const std::vector<Value*> vals, ReferenceConfig
   double dist1=ref1->calc( ref2->getReferencePositions(), pbc, vals, ref2->getReferenceArguments(), squared );
 #ifndef NDEBUG
   // Check that A - B = B - A
-  double dist2=ref2->calc( ref1->getReferencePositions(), pbc, vals, ref1->getReferenceArguments(), square );
+  double dist2=ref2->calc( ref1->getReferencePositions(), pbc, vals, ref1->getReferenceArguments(), squared );
   plumed_dbg_assert( fabs(dist1-dist2)<epsilon );
 #endif 
   return dist1;

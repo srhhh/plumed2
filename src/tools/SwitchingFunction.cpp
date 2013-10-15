@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -178,23 +178,25 @@ double SwitchingFunction::calculate(double distance,double&dfunc)const{
       result=pow( 1.0 + sx, d ); 
       dfunc=-b*sx/rdist*result/(1.0+sx); 
     } else if(type==spline){
-      if(rdist>(1.-100.0*epsilon) && rdist<(1+100.0*epsilon)){
-         result=nn/mm;
-         dfunc=0.5*nn*(nn-mm)/mm;
-      }else{
-         double rNdist=rdist;
-         double rMdist=rdist;
-    // this is a naive optimization
-    // we probably have to implement some generic, fast pow(double,int)
-        if(nn>2) for(int i=0;i<nn-2;i++) rNdist*=rdist;
-        else rNdist = pow(rdist, nn-1);
-        if(mm>2) for(int i=0;i<mm-2;i++) rMdist*=rdist;
-        else rMdist = pow(rdist, mm-1);
-         double num = 1.-rNdist*rdist;
-         double iden = 1./(1.-rMdist*rdist);
-         double func = num*iden;
-         result = func;
-         dfunc = ((-nn*rNdist*iden)+(func*(iden*mm)*rMdist));
+      if(2*nn==mm){
+// if 2*N==M, then (1.0-rdist^N)/(1.0-rdist^M) = 1.0/(1.0+rdist^N)
+        double rNdist=Tools::fastpow(rdist,nn-1);
+        double iden=1.0/(1+rNdist*rdist);
+        dfunc = -nn*rNdist*iden*iden;
+        result = iden;
+      } else {
+        if(rdist>(1.-100.0*epsilon) && rdist<(1+100.0*epsilon)){
+           result=nn/mm;
+           dfunc=0.5*nn*(nn-mm)/mm;
+        }else{
+           double rNdist=Tools::fastpow(rdist,nn-1);
+           double rMdist=Tools::fastpow(rdist,mm-1);
+           double num = 1.-rNdist*rdist;
+           double iden = 1./(1.-rMdist*rdist);
+           double func = num*iden;
+           result = func;
+           dfunc = ((-nn*rNdist*iden)+(func*(iden*mm)*rMdist));
+        }
       }
     }else if(type==exponential){
       result=exp(-rdist);

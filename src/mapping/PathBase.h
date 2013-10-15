@@ -35,7 +35,7 @@ public:
   PathBase(const ActionOptions&);
   double getLambda();
   void calculate();
-  void performTask( const unsigned& j );
+  void performTask();
   double transformHD( const double& dist, double& df );
 };
 

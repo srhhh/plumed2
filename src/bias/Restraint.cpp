@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -62,6 +62,8 @@ class Restraint : public Bias{
   std::vector<double> at;
   std::vector<double> kappa;
   std::vector<double> slope;
+  Value* valueBias;
+  Value* valueForce2;
 public:
   Restraint(const ActionOptions&);
   void calculate();
@@ -101,6 +103,8 @@ slope(getNumberOfArguments(),0.0)
 
   addComponent("bias"); componentIsNotPeriodic("bias");
   addComponent("force2"); componentIsNotPeriodic("force2");
+  valueBias=getPntrToComponent("bias");
+  valueForce2=getPntrToComponent("force2");
 }
 
 
@@ -116,8 +120,8 @@ void Restraint::calculate(){
     setOutputForce(i,f);
     totf2+=f*f;
   };
-  getPntrToComponent("bias")->set(ene);
-  getPntrToComponent("force2")->set(totf2);
+  valueBias->set(ene);
+  valueForce2->set(totf2);
 }
 
 }

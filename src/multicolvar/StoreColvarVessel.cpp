@@ -19,122 +19,37 @@
    You should have received a copy of the GNU Lesser General Public License
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-#include "vesselbase/ActionWithVessel.h"
 #include "StoreColvarVessel.h"
-#include "MultiColvarBase.h"
-#include "tools/DynamicList.h"
-
-#define MAXATOMS 300
+#include "MultiColvarFunction.h"
 
 namespace PLMD {
-namespace multicolvar{
+namespace multicolvar {
 
 void StoreColvarVessel::registerKeywords( Keywords& keys ){
-  Vessel::registerKeywords( keys );
-  plumed_assert( keys.size()==0 );
+  StoreDataVessel::registerKeywords( keys );
 }
 
-StoreColvarVessel::StoreColvarVessel( const vesselbase::VesselOptions& da ):
-Vessel(da)
+StoreColvarVessel::StoreColvarVessel( const vesselbase::VesselOptions& da):
+StoreDataVessel(da)
 {
-  mycolv=dynamic_cast<MultiColvarBase*>( getAction() );
-  plumed_assert( mycolv );
-  diffweight=mycolv->weightHasDerivatives;
-  // Resize the active derivative lists
-  active_atoms.resize( mycolv->colvar_atoms.size() + mycolv->colvar_atoms.size()*MAXATOMS );
+  if( weightHasDerivatives() ) error("this quantity cannot be calculated if weights have derivatives");
+  completeSetup( 0, 1 );
 }
 
-void StoreColvarVessel::resize(){
-  unsigned nfunc=mycolv->colvar_atoms.size();
-  bufsize=0; start.resize( nfunc +1 );
-  for(unsigned i=0;i<nfunc;++i){
-      start[i] = bufsize;
-      bufsize += 1 + 3*MAXATOMS + 9; 
-  }
-  start[nfunc]=bufsize;
-  resizeBuffer( 2*bufsize ); local_resizing();
-}
-
-void StoreColvarVessel::prepare(){
-  active_atoms.assign( active_atoms.size(),0 );
-}
-
-bool StoreColvarVessel::calculate(){
-  plumed_massert( mycolv->atoms_with_derivatives.getNumberActive()<=MAXATOMS,
-        "Error increase MAXATOMS in StoreColvarVessel");
-
-  unsigned ibuf=start[mycolv->current]; 
-  setBufferElement( ibuf, mycolv->getElementValue(0) ); ibuf++;
-  unsigned atom_der_index=0; unsigned atom_der_index_start = mycolv->colvar_atoms.size() + mycolv->current*MAXATOMS;
-  for(unsigned j=0;j<mycolv->atoms_with_derivatives.getNumberActive();++j){
-     unsigned iatom=mycolv->atoms_with_derivatives[j]; 
-     active_atoms[ atom_der_index_start + atom_der_index ] = iatom; atom_der_index++;
-     unsigned ider=3*iatom;
-     setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ider++; ibuf++; 
-     setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ider++; ibuf++;
-     setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ibuf++;
-  } 
-  active_atoms[mycolv->current] = atom_der_index;
-  unsigned ivir=3*mycolv->getNumberOfAtoms();
-  for(unsigned j=0;j<9;++j){
-     setBufferElement( ibuf, mycolv->getElementDerivative(ivir) ); ivir++; ibuf++;
-  }
-  ibuf=bufsize+start[mycolv->current]; 
-  setBufferElement( ibuf, mycolv->getElementValue(1) ); ibuf++;
-  if(diffweight){
-    unsigned nder=mycolv->getNumberOfDerivatives();
-    for(unsigned j=0;j<mycolv->atoms_with_derivatives.getNumberActive();++j){ 
-       unsigned ider=nder+3*mycolv->atoms_with_derivatives[j];
-       setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ider++; ibuf++; 
-       setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ider++; ibuf++;
-       setBufferElement( ibuf, mycolv->getElementDerivative(ider) ); ibuf++;
-    }
-    unsigned ivir=nder + 3*mycolv->getNumberOfAtoms();
-    for(unsigned j=0;j<9;++j){
-       setBufferElement( ibuf, mycolv->getElementDerivative(ivir) ); ivir++; ibuf++;
-    }
-  }
-  return true;
-}
-
-void StoreColvarVessel::finish(){
-  comm.Sum( &active_atoms[0], active_atoms.size() );
-  performCalculationUsingAllValues();
-}
-
-void StoreColvarVessel::addDerivatives( const unsigned& ival, double& pref, Value* value_out ){
-  unsigned atom_der_index_start = mycolv->colvar_atoms.size() + ival*MAXATOMS;
-  for(unsigned i=0;i<active_atoms[ival];++i){
-      unsigned jbuf=start[ival] + 1 + 3*i; unsigned aind=3*active_atoms[ atom_der_index_start + i ];
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); jbuf++; aind++;
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); jbuf++; aind++;
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); 
-  }
-  unsigned jbuf=start[ival] + 1 + 3*active_atoms[ival];
-  unsigned nder=3*mycolv->getNumberOfAtoms();
-  for(unsigned i=0;i<9;++i){
-     value_out->addDerivative( nder, pref*getBufferElement(jbuf) ); nder++; jbuf++;
+void StoreColvarVessel::chainRuleForComponent( const unsigned& icolv, const unsigned& jout, const unsigned& base_cv_no, 
+                                               const double& weight, MultiColvarFunction* funcout ){
+  if( usingLowMem() ){
+     unsigned ibuf = icolv*getAction()->getNumberOfDerivatives();
+     for(unsigned ider=0;ider<getNumberOfDerivatives(icolv);++ider){
+         funcout->addStoredDerivative( jout, base_cv_no, getStoredIndex( icolv, ider ), weight*getLocalDerivative(ibuf+ider) );
+     } 
+  } else {
+     unsigned ibuf = icolv*getNumberOfDerivativeSpacesPerComponent() + 1;
+     for(unsigned ider=0;ider<getNumberOfDerivatives(icolv);++ider){
+         funcout->addStoredDerivative( jout, base_cv_no, getStoredIndex( icolv, ider ), weight*getBufferElement(ibuf+ider) );
+     } 
   }
 }
 
-void StoreColvarVessel::addWeightDerivatives( const unsigned& ival, double& pref, Value* value_out ){
-  if(!diffweight) return;
-
-  unsigned atom_der_index_start = mycolv->colvar_atoms.size() + ival*MAXATOMS;
-  for(unsigned i=0;i<active_atoms[ival];++i){
-      unsigned jbuf=bufsize+start[ival] + 1 +3*i; unsigned aind=3*active_atoms[ atom_der_index_start + i ];
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); jbuf++; aind++;
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); jbuf++; aind++;
-      value_out->addDerivative( aind, pref*getBufferElement(jbuf) ); 
-  }
-  unsigned jbuf=bufsize+start[ival] + 1 + 3*active_atoms[ival];
-  unsigned nder=3*mycolv->getNumberOfAtoms();
-  for(unsigned i=0;i<9;++i){ 
-     value_out->addDerivative( nder, pref*getBufferElement(jbuf) ); nder++; jbuf++;
-  }
-}
-
-
 }
 }
-

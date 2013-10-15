@@ -19,6 +19,7 @@
    You should have received a copy of the GNU Lesser General Public License
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
+#include "tools/Communicator.h"
 #include "MultiReferenceBase.h"
 #include "MetricRegister.h"
 
@@ -67,7 +68,7 @@ void MultiReferenceBase::copyFrame( ReferenceConfiguration* frameToCopy, const d
   mymsd->setReference( frameToCopy->getReferencePositions(), frameToCopy->getReferenceArguments(), frameToCopy->getReferenceMetric() );
   // Easy bit - copy the weight and store the frame
   frames.push_back( mymsd ); weights.push_back( weight );
-  plumed_dbg_assert( weight.size()==frames.size() );
+  plumed_dbg_assert( weights.size()==frames.size() );
   // This resizes the low dim array
   resizeRestOfFrame();
 }
@@ -81,7 +82,7 @@ void MultiReferenceBase::calculateAllDistances( const Pbc& pbc, const std::vecto
           distances(i,j) = distances(j,i) = distance( pbc, vals, frames[i], frames[j], squared );
       }
   }
-  distances.MPISum( comm );
+  comm.Sum( distances );
 }
 
 }

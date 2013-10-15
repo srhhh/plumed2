@@ -62,7 +62,7 @@ void AnalysisWithLandmarks::performAnalysis(){
   analyzeLandmarks();
 }
 
-void AnalysisWithLandmarks::performTask( const unsigned& idata ){
+void AnalysisWithLandmarks::performTask(){
   plumed_merror("Should not be here");
 }
 

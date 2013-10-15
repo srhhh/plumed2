@@ -35,15 +35,15 @@ PathBase::PathBase(const ActionOptions& ao):
 Action(ao),
 Mapping(ao)
 {
+  // Create the list of tasks
+  for(unsigned i=0;i<getNumberOfReferencePoints();++i) addTaskToList( i );
+//  taskList.activateAll();
+
   bool noz; parseFlag("NOZPATH",noz);
   parse("LAMBDA",lambda);
 
   std::string empty;
   if(!noz) addVessel("ZPATH",empty,0,"zzz");
-
-  // Create the list of tasks
-  for(unsigned i=0;i<getNumberOfReferencePoints();++i) taskList.addIndexToList( i );
-  taskList.activateAll();
 }
 
 double PathBase::getLambda(){
@@ -55,9 +55,9 @@ void PathBase::calculate(){
   runAllTasks();
 }
 
-void PathBase::performTask( const unsigned& j ){
+void PathBase::performTask(){
   // Calculate the distance from the frame
-  double val=calculateDistanceFunction( current, true );
+  double val=calculateDistanceFunction( getCurrentTask(), true );
   // Put the element value in element zero
   setElementValue( 0, val ); setElementValue( 1, 1.0 );
   return;

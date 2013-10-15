@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -142,9 +142,18 @@ int ActionWithValue::getComponent( const std::string& name ) const {
 
 std::string ActionWithValue::getComponentsList( ) const {
   std::string complist;
-  plumed_massert( !exists( getLabel() ), "You should not be calling this routine if you are using a value");
+  //plumed_massert( !exists( getLabel() ), "You should not be calling this routine if you are using a value");
   for(unsigned i=0;i<values.size();++i){
      complist+=values[i]->name+" ";
+  }
+  return complist;
+}
+
+std::vector<std::string> ActionWithValue::getComponentsVector( ) const {
+  std::vector<std::string> complist;
+  //plumed_massert( !exists( getLabel() ), "You should not be calling this routine if you are using a value");
+  for(unsigned i=0;i<values.size();++i){
+     complist.push_back(values[i]->name);
   }
   return complist;
 }

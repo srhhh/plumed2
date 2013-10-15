@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -273,8 +273,8 @@ vector<unsigned> Grid::getNeighbors
    int i0=small_indices[i]-nneigh[i]+indices[i];
    if(!pbc_[i] && i0<0)         continue;
    if(!pbc_[i] && i0>=nbin_[i]) continue;
-   if( pbc_[i] && i0<0)         i0+=nbin_[i];
-   if( pbc_[i] && i0>=nbin_[i]) i0-=nbin_[i];
+   if( pbc_[i] && i0<0)         i0=nbin_[i]-(-i0)%nbin_[i];
+   if( pbc_[i] && i0>=nbin_[i]) i0%=nbin_[i];
    tmp_indices[ll]=((unsigned)i0);
    ll++;
   }

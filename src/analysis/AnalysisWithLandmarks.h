@@ -52,7 +52,7 @@ public:
   void performAnalysis();
   virtual void analyzeLandmarks()=0;
 /// This does nothing
-  void performTask( const unsigned& );
+  void performTask();
 };
 
 }

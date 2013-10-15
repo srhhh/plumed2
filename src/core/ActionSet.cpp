@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -47,6 +47,16 @@ std::string ActionSet::getLabelList() const{
   };
   return  outlist;
 }
+
+std::vector<std::string> ActionSet::getLabelVector() const{
+  std::vector<std::string> outlist;
+  for(const_iterator p=begin();p!=end();++p){
+    outlist.push_back(dynamic_cast<Action*>(*p)->getLabel());
+  };
+  return  outlist;
+}
+
+
 
 
 }

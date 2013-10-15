@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -97,7 +97,7 @@ public:
   static void registerKeywords( Keywords& keys );
   Histogram(const ActionOptions&ao);
   void performAnalysis();
-  void performTask( const unsigned& );
+  void performTask();
 };
 
 PLUMED_REGISTER_ACTION(Histogram,"HISTOGRAM")
@@ -145,7 +145,7 @@ gbin(getNumberOfArguments())
   log.printf("\n");
 }
 
-void Histogram::performTask( const unsigned& j ){ plumed_error(); }
+void Histogram::performTask(){ plumed_error(); }
 
 void Histogram::performAnalysis(){
   // Back up old histogram files
@@ -166,6 +166,8 @@ void Histogram::performAnalysis(){
   } else {
       gg = new Grid( "probs", getArguments(), gmin, gmax, gbin,false,false);
   }
+  // Set output format for grid
+  gg->setOutputFmt( getOutputFormat() );
 
   // Now build the histogram
   double weight; std::vector<double> point( getNumberOfArguments() );

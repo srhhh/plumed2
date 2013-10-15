@@ -129,13 +129,13 @@ std::string Mapping::getPropertyName( const unsigned& iprop ) const {
 
 inline
 double Mapping::getPropertyValue( const unsigned& iprop ) const {
-  return mymap->getPropertyValue( current, iprop ); 
+  return mymap->getPropertyValue( getCurrentTask(), iprop ); 
 }
 
 inline 
 double Mapping::getCurrentHighDimFunctionValue( const unsigned& ider ) const {
   plumed_dbg_assert( ider<2 );
-  return fframes[ider*getNumberOfReferencePoints() + current];
+  return fframes[ider*getNumberOfReferencePoints() + getCurrentTask()];
 }
 
 inline

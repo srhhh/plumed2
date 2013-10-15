@@ -4,7 +4,7 @@
 
    See http://www.plumed-code.org for more information.
 
-   This file is part of plumed, version 2.0.
+   This file is part of plumed, version 2.
 
    plumed is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -45,6 +45,8 @@ ActionAtomistic::ActionAtomistic(const ActionOptions&ao):
 Action(ao),
 pbc(*new(Pbc)),
 lockRequestAtoms(false),
+donotretrieve(false),
+donotforce(false),
 atoms(plumed.getAtoms())
 {
   atoms.add(this);
@@ -82,6 +84,10 @@ Vector ActionAtomistic::pbcDistance(const Vector &v1,const Vector &v2)const{
 
 void ActionAtomistic::calculateNumericalDerivatives( ActionWithValue* a ){
   calculateAtomicNumericalDerivatives( a, 0 );
+}
+
+void ActionAtomistic::changeBox( const Tensor& newbox ){
+  pbc.setBox( newbox );
 }
 
 void ActionAtomistic::calculateAtomicNumericalDerivatives( ActionWithValue* a, const unsigned& startnum ){
@@ -186,6 +192,9 @@ void ActionAtomistic::parseAtomList(const std::string&key,const int num, std::ve
 void ActionAtomistic::retrieveAtoms(){
   box=atoms.box;
   pbc=atoms.pbc;
+  Colvar*cc=dynamic_cast<Colvar*>(this);
+  if(cc && cc->checkIsEnergy()) energy=atoms.getEnergy();
+  if(donotretrieve) return;
   chargesWereSet=atoms.chargesWereSet();
   const vector<Vector> & p(atoms.positions);
   const vector<double> & c(atoms.charges);
@@ -193,11 +202,10 @@ void ActionAtomistic::retrieveAtoms(){
   for(unsigned j=0;j<indexes.size();j++) positions[j]=p[indexes[j].index()];
   for(unsigned j=0;j<indexes.size();j++) charges[j]=c[indexes[j].index()];
   for(unsigned j=0;j<indexes.size();j++) masses[j]=m[indexes[j].index()];
-  Colvar*cc=dynamic_cast<Colvar*>(this);
-  if(cc && cc->checkIsEnergy()) energy=atoms.getEnergy();
 }
 
 void ActionAtomistic::setForcesOnAtoms( const std::vector<double>& forcesToApply, unsigned ind ){
+  if(donotforce) return;
   for(unsigned i=0;i<indexes.size();++i){ 
     forces[i][0]=forcesToApply[ind]; ind++; 
     forces[i][1]=forcesToApply[ind]; ind++;
@@ -216,12 +224,20 @@ void ActionAtomistic::setForcesOnAtoms( const std::vector<double>& forcesToApply
 }
 
 void ActionAtomistic::applyForces(){
+  if(donotforce) return;
   vector<Vector>   & f(atoms.forces);
   Tensor           & v(atoms.virial);
   for(unsigned j=0;j<indexes.size();j++) f[indexes[j].index()]+=forces[j];
   v+=virial;
   atoms.forceOnEnergy+=forceOnEnergy;
 }
+
+void ActionAtomistic::clearOutputForces(){
+  if(donotforce) return;
+  for(unsigned i=0;i<forces.size();++i)forces[i].zero();
+  forceOnEnergy=0.0;
+}
+
 
 void ActionAtomistic::readAtomsFromPDB( const PDB& pdb ){
   Colvar*cc=dynamic_cast<Colvar*>(this);

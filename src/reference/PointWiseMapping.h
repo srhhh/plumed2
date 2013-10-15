@@ -139,13 +139,13 @@ Matrix<double>& PointWiseMapping::modifyDmat(){
 
 inline
 double PointWiseMapping::getProjectionCoordinate( const unsigned& iframe, const unsigned& jcoord ) const {
-  plumed_dbg_assert( iframes<frames.size() && jcoord<property.size() );
+  plumed_dbg_assert( iframe<frames.size() && jcoord<property.size() );
   return low_dim[iframe][jcoord];
 }
 
 inline
 void PointWiseMapping::setProjectionCoordinate( const unsigned& iframe, const unsigned& jcoord, const double& coord ){
-  plumed_dbg_assert( iframes<frames.size() && jcoord<property.size() );
+  plumed_dbg_assert( iframe<frames.size() && jcoord<property.size() );
   low_dim[iframe][jcoord]=coord;
 } 
 
