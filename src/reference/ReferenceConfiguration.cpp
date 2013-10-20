@@ -146,7 +146,7 @@ void ReferenceConfiguration::copyDerivatives( const ReferenceConfiguration* ref 
 }
 
 void ReferenceConfiguration::print( OFile& ofile, const double& time, const double& weight, const double& old_norm ){
-  ofile.printf("REMARK: TIME=%f LOG_WEIGHT=%f OLD_NORM=%f\n",time, weight, old_norm );
+  ofile.printf("REMARK TIME=%f LOG_WEIGHT=%f OLD_NORM=%f\n",time, weight, old_norm );
   print( ofile, "%f" );  // HARD CODED FORMAT HERE AS THIS IS FOR CHECKPOINT FILE
 }
 

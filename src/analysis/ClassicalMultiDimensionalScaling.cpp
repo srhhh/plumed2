@@ -60,8 +60,9 @@ AnalysisWithLandmarks(ao)
   if( nlow<1 ) error("dimensionality of low dimensional space must be at least one");
   std::vector<std::string> propnames( nlow ); std::string num;
   for(unsigned i=0;i<propnames.size();++i){
-     Tools::convert(i+1,num);
-     propnames[i]=getLabel() + "." + num;
+     Tools::convert(i+1,num); std::string lab=getLabel();
+     if(lab.find("@")!=std::string::npos) propnames[i]=getName() + "." + num;
+     else propnames[i]=getLabel() + "." + num;
   }
   myembedding->setPropertyNames( propnames, false );
 
