@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=latex 2013.9.24)  23 OCT 2013 22:54
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=latex 2013.9.24)  24 OCT 2013 21:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1510,6 +1510,12 @@ Non-PDF special ignored!]
 
 LaTeX Warning: Citation `bussi_noneq' on page 46 undefined on input line 1161.
 
+
+Underfull \hbox (badness 10000) in paragraph at lines 1177--1177
+\OT1/cmtt/m/n/8 plumed sum[]hills --hills HILLS --outfile fes.dat --idw cv1 cv2
+ --kt 0.6 --bin 100 100
+ []
+
 [46
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -1518,17 +1524,17 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-LaTeX Font Info:    Try loading font information for OMS+cmtt on input line 121
-1.
-LaTeX Font Info:    No file OMScmtt.fd. on input line 1211.
+LaTeX Font Info:    Try loading font information for OMS+cmtt on input line 120
+7.
+LaTeX Font Info:    No file OMScmtt.fd. on input line 1207.
 
 
 LaTeX Font Warning: Font shape `OMS/cmtt/m/n' undefined
 (Font)              using `OMS/cmsy/m/n' instead
-(Font)              for symbol `textbraceleft' on input line 1211.
+(Font)              for symbol `textbraceleft' on input line 1207.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1211--1211
+Underfull \hbox (badness 10000) in paragraph at lines 1207--1207
 \OT1/cmtt/m/n/8 F=`awk 'BEGIN\OMS/cmtt/m/n/8 f\OT1/cmtt/m/n/8 tot=0\OMS/cmtt/m/
 n/8 gf\OT1/cmtt/m/n/8 if(NF==2 && $1>2.0)tot=tot+exp(-$2/0.6)\OMS/cmtt/m/n/8 g\
 OT1/cmtt/m/n/8 END\OMS/cmtt/m/n/8 f\OT1/cmtt/m/n/8 print -0.6*log(tot)\OMS/cmtt
@@ -1536,18 +1542,18 @@ OT1/cmtt/m/n/8 END\OMS/cmtt/m/n/8 f\OT1/cmtt/m/n/8 print -0.6*log(tot)\OMS/cmtt
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1211--1211
+Underfull \hbox (badness 10000) in paragraph at lines 1207--1207
 \OT1/cmtt/m/n/8 U=`awk 'BEGIN\OMS/cmtt/m/n/8 f\OT1/cmtt/m/n/8 tot=0\OMS/cmtt/m/
 n/8 gf\OT1/cmtt/m/n/8 if(NF==2 && $1<=2.0)tot=tot+exp(-$2/0.6)\OMS/cmtt/m/n/8 g
 \OT1/cmtt/m/n/8 END\OMS/cmtt/m/n/8 f\OT1/cmtt/m/n/8 print -0.6*log(tot)\OMS/cmt
 t/m/n/8 g\OT1/cmtt/m/n/8 '
  []
 
-<figures/convergence.pdf, id=219, 792.9625pt x 482.80376pt>
+<figures/convergence.pdf, id=218, 792.9625pt x 482.80376pt>
 File: figures/convergence.pdf Graphic file (type pdf)
 
 <use figures/convergence.pdf>
-Package pdftex.def Info: figures/convergence.pdf used on input line 1215.
+Package pdftex.def Info: figures/convergence.pdf used on input line 1211.
 (pdftex.def)             Requested size: 390.0pt x 237.45995pt.
 
 
@@ -1583,31 +1589,31 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 1284--1284
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 1280--1280
 []     \OT1/cmtt/m/n/14.4 1.000     -2.617548716      0.350000000      0.428571
 429   15.000[] 
  []
 
 
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 1284--1284
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 1280--1280
 []     \OT1/cmtt/m/n/14.4 2.000     -2.718742869      0.350000000      0.423889
 087   15.000[] 
  []
 
 
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 1284--1284
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 1280--1280
 []     \OT1/cmtt/m/n/14.4 3.000     -2.662247736      0.350000000      0.419017
 741   15.000[] 
  []
 
 
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 1284--1284
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 1280--1280
 []     \OT1/cmtt/m/n/14.4 4.000     -2.380845469      0.350000000      0.418270
 876   15.000[] 
  []
 
 
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 1284--1284
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 1280--1280
 []     \OT1/cmtt/m/n/14.4 5.000     -2.119639700      0.350000000      0.420668
 977   15.000[] 
  []
@@ -1631,17 +1637,17 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 1333--1333
+Underfull \hbox (badness 10000) in paragraph at lines 1329--1329
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1343--1343
+Underfull \hbox (badness 10000) in paragraph at lines 1339--1339
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1343--1343
+Underfull \hbox (badness 10000) in paragraph at lines 1339--1339
 
  []
 
@@ -1652,10 +1658,10 @@ Non-PDF special ignored!
 Non-PDF special ignored!]
 
 LaTeX Warning: Citation `multiplewalkers' on page 53 undefined on input line 13
-56.
+52.
 
 
-LaTeX Warning: Citation `bussi_noneq' on page 53 undefined on input line 1362.
+LaTeX Warning: Citation `bussi_noneq' on page 53 undefined on input line 1358.
 
 [53
 Non-PDF special ignored!
@@ -1665,75 +1671,70 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (28.94434pt too wide) in paragraph at lines 1370--1382
+Overfull \hbox (28.94434pt too wide) in paragraph at lines 1366--1378
 []\OT1/cmr/m/n/14.4 As a first test, run the \OT1/cmtt/m/n/14.4 ala3 \OT1/cmr/m
 /n/14.4 sys-tem with the fol-low-ing \OT1/cmtt/m/n/14.4 plumed.dat\OT1/cmr/m/n/
 14.4 :
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 4193) in paragraph at lines 1382--1382
+Underfull \hbox (badness 4193) in paragraph at lines 1378--1378
 \OT1/phv/m/n/8 mtd: METAD ARG=phi,psi SIGMA=0.35,0.35 HEIGHT=0.25 PACE=100 TEMP
 =300 BI-AS-FAC-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1382--1382
+Underfull \hbox (badness 10000) in paragraph at lines 1378--1378
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1400--1400
+Underfull \hbox (badness 10000) in paragraph at lines 1403--1403
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1400--1400
+Underfull \hbox (badness 10000) in paragraph at lines 1403--1403
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1400--1400
+Underfull \hbox (badness 10000) in paragraph at lines 1403--1403
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1400--1400
+Underfull \hbox (badness 10000) in paragraph at lines 1403--1403
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1400--1400
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1410--1410
+Underfull \hbox (badness 10000) in paragraph at lines 1413--1413
 
  []
 
@@ -1742,13 +1743,13 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (4.65536pt too wide) in paragraph at lines 1412--1425
+Overfull \hbox (19.47534pt too wide) in paragraph at lines 1415--1428
 \OT1/cmr/m/n/14.4 num-ber. The file will be placed in the up-per di-rec-tory (\
-OT1/cmtt/m/n/14.4 HILLS[]DIR
+OT1/cmtt/m/n/14.4 WALKERS[]DIR
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1434--1434
+Underfull \hbox (badness 10000) in paragraph at lines 1437--1437
 
  []
 
@@ -1757,27 +1758,27 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
+Underfull \hbox (badness 10000) in paragraph at lines 1475--1475
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
+Underfull \hbox (badness 10000) in paragraph at lines 1475--1475
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
+Underfull \hbox (badness 10000) in paragraph at lines 1475--1475
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
+Underfull \hbox (badness 10000) in paragraph at lines 1475--1475
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
+Underfull \hbox (badness 10000) in paragraph at lines 1475--1475
 
  []
 
@@ -1785,7 +1786,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 1473--1473
 File: ./figures/metae2e.pdf Graphic file (type pdf)
 
 <use ./figures/metae2e.pdf>
-Package pdftex.def Info: ./figures/metae2e.pdf used on input line 1477.
+Package pdftex.def Info: ./figures/metae2e.pdf used on input line 1479.
 (pdftex.def)             Requested size: 341.43306pt x 263.84175pt.
  [56
 Non-PDF special ignored!
@@ -1808,17 +1809,17 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/metae2e.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 1523--1523
+Underfull \hbox (badness 10000) in paragraph at lines 1525--1525
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1523--1523
+Underfull \hbox (badness 10000) in paragraph at lines 1525--1525
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1533--1533
+Underfull \hbox (badness 10000) in paragraph at lines 1535--1535
 
  []
 
@@ -1828,10 +1829,10 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 
-LaTeX Warning: Citation `bussi_xc' on page 59 undefined on input line 1546.
+LaTeX Warning: Citation `bussi_xc' on page 59 undefined on input line 1548.
 
 
-Overfull \hbox (23.3859pt too wide) detected at line 1557
+Overfull \hbox (23.3859pt too wide) detected at line 1559
 $ []\OML/cmm/m/it/14.4 P \OT1/cmr/m/n/14.4 = [] [][][]$ []
  []
 
@@ -1850,34 +1851,33 @@ Non-PDF special ignored!]
 File: ./figures/ptmetae2e.pdf Graphic file (type pdf)
 
 <use ./figures/ptmetae2e.pdf>
-Package pdftex.def Info: ./figures/ptmetae2e.pdf used on input line 1576.
+Package pdftex.def Info: ./figures/ptmetae2e.pdf used on input line 1578.
 (pdftex.def)             Requested size: 341.43306pt x 263.84175pt.
 
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[60
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!]
 
-LaTeX Warning: Citation `piana' on page 61 undefined on input line 1599.
+LaTeX Warning: Citation `piana' on page 60 undefined on input line 1601.
 
 
-LaTeX Warning: Citation `cossio10jpcb' on page 61 undefined on input line 1599.
+LaTeX Warning: Citation `cossio10jpcb' on page 60 undefined on input line 1601.
 
 
-<./figures/be-scheme.pdf, id=281, 329.5773pt x 186.12837pt>
+<./figures/be-scheme.pdf, id=277, 329.5773pt x 186.12837pt>
 File: ./figures/be-scheme.pdf Graphic file (type pdf)
 
 <use ./figures/be-scheme.pdf>
-Package pdftex.def Info: ./figures/be-scheme.pdf used on input line 1607.
+Package pdftex.def Info: ./figures/be-scheme.pdf used on input line 1609.
 (pdftex.def)             Requested size: 256.0748pt x 144.62286pt.
- [61
+ [60
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] [61
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -1885,7 +1885,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/ptmetae2e.pdf>]
-Overfull \hbox (26.40877pt too wide) in alignment at lines 1617--1619
+Overfull \hbox (26.40877pt too wide) in alignment at lines 1619--1621
  [][][] []
  []
 
@@ -1893,7 +1893,7 @@ Overfull \hbox (26.40877pt too wide) in alignment at lines 1617--1619
 File: ./figures/ala3-dihedrals.pdf Graphic file (type pdf)
 
 <use ./figures/ala3-dihedrals.pdf>
-Package pdftex.def Info: ./figures/ala3-dihedrals.pdf used on input line 1639.
+Package pdftex.def Info: ./figures/ala3-dihedrals.pdf used on input line 1641.
 (pdftex.def)             Requested size: 256.0748pt x 168.04253pt.
  [62
 Non-PDF special ignored!
@@ -1909,22 +1909,22 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/be-scheme.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 1671--1671
+Underfull \hbox (badness 10000) in paragraph at lines 1665--1665
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1671--1671
+Underfull \hbox (badness 10000) in paragraph at lines 1665--1665
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1671--1671
+Underfull \hbox (badness 10000) in paragraph at lines 1674--1674
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1671--1671
+Underfull \hbox (badness 10000) in paragraph at lines 1674--1674
 
  []
 
@@ -1939,42 +1939,32 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/ala3-dihedrals.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 1695--1695
+Underfull \hbox (badness 10000) in paragraph at lines 1683--1683
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1695--1695
+Underfull \hbox (badness 10000) in paragraph at lines 1683--1683
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1695--1695
+Underfull \hbox (badness 10000) in paragraph at lines 1692--1692
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1695--1695
+Underfull \hbox (badness 10000) in paragraph at lines 1692--1692
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1719--1719
+Underfull \hbox (badness 10000) in paragraph at lines 1701--1701
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1719--1719
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1719--1719
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1719--1719
+Underfull \hbox (badness 10000) in paragraph at lines 1701--1701
 
  []
 
@@ -1983,22 +1973,24 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
 
+LaTeX Warning: Citation `cossio10jpcb' on page 65 undefined on input line 1718.
+
+
+
+Overfull \hbox (16.32256pt too wide) in paragraph at lines 1713--1719
+\OT1/cmr/m/n/14.4 where \OT1/cmtt/m/n/14.4 -replex 5000 \OT1/cmr/m/n/14.4 in-di
+-cates that ev-ery 5000 molecular-dynamics
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
-
+Overfull \hbox (1.03508pt too wide) in paragraph at lines 1722--1734
+\OT1/cmr/m/n/14.4 The con-ver-gence of the one-dimensional free-energy pro-file
+s (par-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
+Underfull \hbox (badness 10000) in paragraph at lines 1734--1734
 
  []
 
@@ -2006,26 +1998,27 @@ Underfull \hbox (badness 10000) in paragraph at lines 1743--1743
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!]
 
-LaTeX Warning: Citation `cossio10jpcb' on page 66 undefined on input line 1760.
+LaTeX Warning: Citation `gerv-laio09review' on page 66 undefined on input line 
+1743.
 
 
+LaTeX Warning: Citation `marinell-crespo10' on page 66 undefined on input line 
+1743.
 
-Overfull \hbox (16.32256pt too wide) in paragraph at lines 1755--1761
-\OT1/cmr/m/n/14.4 where \OT1/cmtt/m/n/14.4 -replex 5000 \OT1/cmr/m/n/14.4 in-di
--cates that ev-ery 5000 molecular-dynamics
- []
+<./figures/be-validation.pdf, id=310, 794.97pt x 614.295pt>
+File: ./figures/be-validation.pdf Graphic file (type pdf)
 
+<use ./figures/be-validation.pdf>
+Package pdftex.def Info: ./figures/be-validation.pdf used on input line 1759.
+(pdftex.def)             Requested size: 398.33858pt x 307.81224pt.
 
-Overfull \hbox (1.03508pt too wide) in paragraph at lines 1764--1776
-\OT1/cmr/m/n/14.4 The con-ver-gence of the one-dimensional free-energy pro-file
-s (par-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 1776--1776
-
+Overfull \hbox (8.33858pt too wide) in paragraph at lines 1759--1761
+ [] 
  []
 
 [66
@@ -2035,37 +2028,10 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
-
-LaTeX Warning: Citation `gerv-laio09review' on page 67 undefined on input line 
-1785.
-
-
-LaTeX Warning: Citation `marinell-crespo10' on page 67 undefined on input line 
-1785.
-
-<./figures/be-validation.pdf, id=314, 794.97pt x 614.295pt>
-File: ./figures/be-validation.pdf Graphic file (type pdf)
-
-<use ./figures/be-validation.pdf>
-Package pdftex.def Info: ./figures/be-validation.pdf used on input line 1801.
-(pdftex.def)             Requested size: 398.33858pt x 307.81224pt.
-
-Overfull \hbox (8.33858pt too wide) in paragraph at lines 1801--1803
- [] 
- []
-
-[67
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [68
+Non-PDF special ignored!] [67
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2073,7 +2039,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/be-validation.pdf, page is rotated 90 degre
-es>] [69
+es>] [68
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2083,10 +2049,10 @@ Non-PDF special ignored!
 Non-PDF special ignored!]
 Chapter 5.
 
-LaTeX Warning: Citation `Juraszek:2007p15828' on page 70 undefined on input lin
-e 1838.
+LaTeX Warning: Citation `Juraszek:2007p15828' on page 69 undefined on input lin
+e 1796.
 
-[70
+[69
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2098,7 +2064,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [71
+Non-PDF special ignored!] [70
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2109,16 +2075,16 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (10.55225pt too wide) in alignment at lines 1889--1891
+Overfull \hbox (10.55225pt too wide) in alignment at lines 1847--1849
  [][][] []
  []
 
 
-Overfull \hbox (40.43565pt too wide) in alignment at lines 1903--1905
+Overfull \hbox (40.43565pt too wide) in alignment at lines 1861--1863
  [][][] []
  []
 
-[72
+[71
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2129,7 +2095,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (93.38881pt too wide) detected at line 1941
+Overfull \hbox (93.38881pt too wide) detected at line 1899
 $ []\OMS/cmsy/m/n/14.4 j\OT1/cmr/bx/n/14.4 ^^B[]\OT1/cmr/m/n/14.4 (\OML/cmm/m/i
 t/14.4 i\OT1/cmr/m/n/14.4 ) \OMS/cmsy/m/n/14.4 ^^@ \OT1/cmr/bx/n/14.4 ^^B[]\OT1
 /cmr/m/n/14.4 (\OML/cmm/m/it/14.4 i \OT1/cmr/m/n/14.4 + 1)\OMS/cmsy/m/n/14.4 j 
@@ -2142,21 +2108,42 @@ OT1/cmr/bx/n/14.4 ^^B[]\OT1/cmr/m/n/14.4 (\OML/cmm/m/it/14.4 i\OT1/cmr/m/n/14.4
 /it/14.4 j\OT1/cmr/m/n/14.4 )\OMS/cmsy/m/n/14.4 j[][]$ []
  []
 
-<./path/badparam.pdf, id=339, 361.35pt x 216.81pt>
+<./path/badparam.pdf, id=335, 361.35pt x 216.81pt>
 File: ./path/badparam.pdf Graphic file (type pdf)
  <use ./path/badparam.pdf>
-Package pdftex.def Info: ./path/badparam.pdf used on input line 1969.
+Package pdftex.def Info: ./path/badparam.pdf used on input line 1927.
 (pdftex.def)             Requested size: 199.16928pt x 119.5006pt.
 
-<./path/goodparam.pdf, id=340, 361.35pt x 216.81pt>
+<./path/goodparam.pdf, id=336, 361.35pt x 216.81pt>
 File: ./path/goodparam.pdf Graphic file (type pdf)
  <use ./path/goodparam.pdf>
-Package pdftex.def Info: ./path/goodparam.pdf used on input line 1969.
+Package pdftex.def Info: ./path/goodparam.pdf used on input line 1927.
 (pdftex.def)             Requested size: 199.16928pt x 119.5006pt.
 
-Overfull \hbox (32.33858pt too wide) in paragraph at lines 1950--1989
+Overfull \hbox (32.33858pt too wide) in paragraph at lines 1908--1947
 []
  []
+
+[72
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+
+LaTeX Warning: Citation `Maragliano:2006p6867' on page 73 undefined on input li
+ne 1949.
 
 [73
 Non-PDF special ignored!
@@ -2168,50 +2155,29 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!]
-
-LaTeX Warning: Citation `Maragliano:2006p6867' on page 74 undefined on input li
-ne 1991.
-
-[74
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 Non-PDF special ignored! <./path/badparam.pdf> <./path/goodparam.pdf>]
 
-LaTeX Warning: Citation `kearsley' on page 75 undefined on input line 2005.
+LaTeX Warning: Citation `kearsley' on page 74 undefined on input line 1963.
 
 
-LaTeX Warning: Citation `Maragliano:2006p6867' on page 75 undefined on input li
-ne 2019.
+LaTeX Warning: Citation `Maragliano:2006p6867' on page 74 undefined on input li
+ne 1977.
 
-<./path/umbrella_sampling/rama_paths.pdf, id=355, 361.35pt x 216.81pt>
+<./path/umbrella_sampling/rama_paths.pdf, id=352, 361.35pt x 216.81pt>
 File: ./path/umbrella_sampling/rama_paths.pdf Graphic file (type pdf)
 
 <use ./path/umbrella_sampling/rama_paths.pdf>
 Package pdftex.def Info: ./path/umbrella_sampling/rama_paths.pdf used on input 
-line 2037.
+line 1995.
 (pdftex.def)             Requested size: 390.0pt x 234.00243pt.
- [75
+ [74
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [76
+Non-PDF special ignored!] [75
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2222,18 +2188,18 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./path/umbrella_sampling/rama_paths.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 2065--2065
+Underfull \hbox (badness 10000) in paragraph at lines 2023--2023
 
  []
 
-[77
+[76
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [78
+Non-PDF special ignored!] [77
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2241,20 +2207,20 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-<./path/colvar1_wrong.pdf, id=373, 361.35pt x 216.81pt>
+<./path/colvar1_wrong.pdf, id=369, 361.35pt x 216.81pt>
 File: ./path/colvar1_wrong.pdf Graphic file (type pdf)
 
 <use ./path/colvar1_wrong.pdf>
-Package pdftex.def Info: ./path/colvar1_wrong.pdf used on input line 2094.
+Package pdftex.def Info: ./path/colvar1_wrong.pdf used on input line 2052.
 (pdftex.def)             Requested size: 284.52756pt x 170.71892pt.
- [79
+ [78
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [80
+Non-PDF special ignored!] [79
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2262,13 +2228,13 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./path/colvar1_wrong.pdf>]
-<./path/colvar1_good.pdf, id=384, 361.35pt x 216.81pt>
+<./path/colvar1_good.pdf, id=381, 361.35pt x 216.81pt>
 File: ./path/colvar1_good.pdf Graphic file (type pdf)
 
 <use ./path/colvar1_good.pdf>
-Package pdftex.def Info: ./path/colvar1_good.pdf used on input line 2114.
+Package pdftex.def Info: ./path/colvar1_good.pdf used on input line 2072.
 (pdftex.def)             Requested size: 284.52756pt x 170.71892pt.
- [81
+ [80
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2281,7 +2247,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [82
+Non-PDF special ignored!] [81
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2292,24 +2258,41 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./path/colvar1_good.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 2153--2153
+Underfull \hbox (badness 10000) in paragraph at lines 2111--2111
 \OT1/cmtt/m/n/8 # the two path variables: metadynamics only on S[]PATH, the oth
 er is just for
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2153--2153
+Underfull \hbox (badness 10000) in paragraph at lines 2111--2111
 \OT1/cmtt/m/n/8 # A wall over Z can be useful to limit the orthogonal explorati
 on and speed up
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2153--2153
+Underfull \hbox (badness 10000) in paragraph at lines 2111--2111
 
  []
 
 
-LaTeX Warning: Citation `Bo.Bra:08' on page 83 undefined on input line 2161.
+LaTeX Warning: Citation `Bo.Bra:08' on page 82 undefined on input line 2119.
+
+[82
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+
+LaTeX Warning: Citation `neb0' on page 83 undefined on input line 2154.
+
+
+LaTeX Warning: Citation `neb1' on page 83 undefined on input line 2154.
+
+
+LaTeX Warning: Citation `neb2' on page 83 undefined on input line 2154.
 
 [83
 Non-PDF special ignored!
@@ -2320,52 +2303,63 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 
-LaTeX Warning: Citation `neb0' on page 84 undefined on input line 2196.
+LaTeX Warning: Citation `ftstringmethod' on page 84 undefined on input line 217
+0.
 
 
-LaTeX Warning: Citation `neb1' on page 84 undefined on input line 2196.
+LaTeX Warning: Citation `dialastringmethod' on page 84 undefined on input line 
+2170.
 
 
-LaTeX Warning: Citation `neb2' on page 84 undefined on input line 2196.
+LaTeX Warning: Citation `maragliano' on page 84 undefined on input line 2170.
 
 [84
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 Non-PDF special ignored!]
 
-LaTeX Warning: Citation `ftstringmethod' on page 85 undefined on input line 221
-2.
+LaTeX Warning: Citation `maragliano' on page 85 undefined on input line 2182.
 
 
-LaTeX Warning: Citation `dialastringmethod' on page 85 undefined on input line 
-2212.
+LaTeX Warning: Citation `neb0' on page 85 undefined on input line 2183.
 
 
-LaTeX Warning: Citation `maragliano' on page 85 undefined on input line 2212.
+LaTeX Warning: Citation `neb1' on page 85 undefined on input line 2183.
+
+
+LaTeX Warning: Citation `neb2' on page 85 undefined on input line 2183.
+
+
+LaTeX Warning: Citation `brand07' on page 85 undefined on input line 2185.
 
 [85
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!]
+<./figures/secstr.pdf, id=405, 599.87915pt x 276.22897pt>
+File: ./figures/secstr.pdf Graphic file (type pdf)
 
-LaTeX Warning: Citation `maragliano' on page 86 undefined on input line 2224.
-
-
-LaTeX Warning: Citation `neb0' on page 86 undefined on input line 2225.
-
-
-LaTeX Warning: Citation `neb1' on page 86 undefined on input line 2225.
+<use ./figures/secstr.pdf>
+Package pdftex.def Info: ./figures/secstr.pdf used on input line 2216.
+(pdftex.def)             Requested size: 369.88582pt x 170.32025pt.
 
 
-LaTeX Warning: Citation `neb2' on page 86 undefined on input line 2225.
+LaTeX Warning: Citation `piana' on page 86 undefined on input line 2227.
 
 
-LaTeX Warning: Citation `brand07' on page 86 undefined on input line 2227.
+LaTeX Warning: Citation `piana08villin' on page 86 undefined on input line 2227
+.
+
+
+LaTeX Warning: Citation `todorova09' on page 86 undefined on input line 2227.
 
 [86
 Non-PDF special ignored!
@@ -2374,26 +2368,20 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 Non-PDF special ignored!]
-<./figures/secstr.pdf, id=408, 599.87915pt x 276.22897pt>
-File: ./figures/secstr.pdf Graphic file (type pdf)
+Underfull \hbox (badness 10000) in paragraph at lines 2266--2266
 
-<use ./figures/secstr.pdf>
-Package pdftex.def Info: ./figures/secstr.pdf used on input line 2258.
-(pdftex.def)             Requested size: 369.88582pt x 170.32025pt.
+ []
 
 
-LaTeX Warning: Citation `piana' on page 87 undefined on input line 2269.
+Underfull \hbox (badness 10000) in paragraph at lines 2266--2266
+
+ []
 
 
-LaTeX Warning: Citation `piana08villin' on page 87 undefined on input line 2269
-.
+Underfull \hbox (badness 10000) in paragraph at lines 2266--2266
 
-
-LaTeX Warning: Citation `todorova09' on page 87 undefined on input line 2269.
+ []
 
 [87
 Non-PDF special ignored!
@@ -2402,18 +2390,54 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 2308--2308
+Non-PDF special ignored! <./figures/secstr.pdf>]
+
+LaTeX Warning: Citation `pietrucci09jctc' on page 88 undefined on input line 22
+72.
+
+
+LaTeX Warning: Citation `pietrucci09jctc' on page 88 undefined on input line 22
+75.
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2308--2308
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2308--2308
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
+\OT1/cmtt/m/n/8 ALPHARMSD LIST <secstr> SIGMA 0.3 R[]0 0.08 NN 8 MM 12 ANGSTROM
+[]SCALE 0.1 STRANDS[]CUTOFF
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
+\OT1/cmtt/m/n/8 ANTIBETARMSD LIST <secstr> SIGMA 0.3 R[]0 0.08 NN 8 MM 12 ANGST
+ROM[]SCALE 0.1
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2317--2317
 
  []
 
@@ -2424,61 +2448,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored! <./figures/secstr.pdf>]
-
-LaTeX Warning: Citation `pietrucci09jctc' on page 89 undefined on input line 23
-14.
-
-
-LaTeX Warning: Citation `pietrucci09jctc' on page 89 undefined on input line 23
-17.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-\OT1/cmtt/m/n/8 ALPHARMSD LIST <secstr> SIGMA 0.3 R[]0 0.08 NN 8 MM 12 ANGSTROM
-[]SCALE 0.1 STRANDS[]CUTOFF
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-\OT1/cmtt/m/n/8 ANTIBETARMSD LIST <secstr> SIGMA 0.3 R[]0 0.08 NN 8 MM 12 ANGST
-ROM[]SCALE 0.1
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2359--2359
-
- []
-
-[89
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
+Non-PDF special ignored!] [89
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2486,24 +2456,55 @@ Non-PDF special ignored!] [90
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!] [91
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [92
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 
-LaTeX Warning: Citation `Bonomi:2009p17105' on page 93 undefined on input line 
-2449.
+LaTeX Warning: Citation `Bonomi:2009p17105' on page 92 undefined on input line 
+2407.
+
+[92
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+Overfull \hbox (22.71349pt too wide) in paragraph at lines 2416--2418
+\OT1/cmr/m/n/14.4 where $\OML/cmm/m/it/14.4 P\OT1/cmr/m/n/14.4 (\OML/cmm/b/it/1
+4.4 R\OML/cmm/m/it/14.4 ; t\OT1/cmr/m/n/14.4 )$ is the bi-ased prob-a-bil-ity d
+is-tri-bu-tion, $[](\OML/cmm/b/it/14.4 S\OT1/cmr/m/n/14.4 (\OML/cmm/b/it/14.4 R
+\OT1/cmr/m/n/14.4 )\OML/cmm/m/it/14.4 ; t\OT1/cmr/m/n/14.4 )$
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2451--2451
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2451--2451
+[]\OT1/cmtt/m/n/8 reweight -colvar COLVAR -hills HILLS -ncv 2 -nvar 3 -stride 1
+ -fes 3 -temp 300
+ []
 
 [93
 Non-PDF special ignored!
@@ -2518,27 +2519,14 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (22.71349pt too wide) in paragraph at lines 2458--2460
-\OT1/cmr/m/n/14.4 where $\OML/cmm/m/it/14.4 P\OT1/cmr/m/n/14.4 (\OML/cmm/b/it/1
-4.4 R\OML/cmm/m/it/14.4 ; t\OT1/cmr/m/n/14.4 )$ is the bi-ased prob-a-bil-ity d
-is-tri-bu-tion, $[](\OML/cmm/b/it/14.4 S\OT1/cmr/m/n/14.4 (\OML/cmm/b/it/14.4 R
-\OT1/cmr/m/n/14.4 )\OML/cmm/m/it/14.4 ; t\OT1/cmr/m/n/14.4 )$
+Overfull \hbox (11.44122pt too wide) in paragraph at lines 2470--2470
+[]\OT1/cmr/bx/n/14.4 Weighted-histogram anal-y-sis of bias-exchange sim-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2493--2493
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2493--2493
-[]\OT1/cmtt/m/n/8 reweight -colvar COLVAR -hills HILLS -ncv 2 -nvar 3 -stride 1
- -fes 3 -temp 300
- []
+LaTeX Warning: Citation `marinelli-trpc09' on page 94 undefined on input line 2
+479.
 
 [94
 Non-PDF special ignored!
@@ -2553,14 +2541,29 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (11.44122pt too wide) in paragraph at lines 2512--2512
-[]\OT1/cmr/bx/n/14.4 Weighted-histogram anal-y-sis of bias-exchange sim-
+Overfull \hbox (19.42667pt too wide) in alignment at lines 2500--2503
+ [][][] []
  []
 
 
 LaTeX Warning: Citation `marinelli-trpc09' on page 95 undefined on input line 2
-521.
+509.
+
+<./figures/bewham-scheme.pdf, id=440, 182.57208pt x 85.75348pt>
+File: ./figures/bewham-scheme.pdf Graphic file (type pdf)
+
+<use ./figures/bewham-scheme.pdf>
+Package pdftex.def Info: ./figures/bewham-scheme.pdf used on input line 2516.
+(pdftex.def)             Requested size: 312.9803pt x 147.01285pt.
+
+Overfull \hbox (20.4392pt too wide) in paragraph at lines 2507--2521
+\OT1/cmr/m/n/14.4 correlated and the shift con-stants $\OML/cmm/m/it/14.4 f[]$ 
+\OT1/cmr/m/n/14.4 are de-ter-mined self-consistently
+ []
 
 [95
 Non-PDF special ignored!
@@ -2578,47 +2581,10 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
-Overfull \hbox (19.42667pt too wide) in alignment at lines 2542--2545
- [][][] []
- []
-
-
-LaTeX Warning: Citation `marinelli-trpc09' on page 96 undefined on input line 2
-551.
-
-<./figures/bewham-scheme.pdf, id=443, 182.57208pt x 85.75348pt>
-File: ./figures/bewham-scheme.pdf Graphic file (type pdf)
-
-<use ./figures/bewham-scheme.pdf>
-Package pdftex.def Info: ./figures/bewham-scheme.pdf used on input line 2558.
-(pdftex.def)             Requested size: 312.9803pt x 147.01285pt.
-
-Overfull \hbox (20.4392pt too wide) in paragraph at lines 2549--2563
-\OT1/cmr/m/n/14.4 correlated and the shift con-stants $\OML/cmm/m/it/14.4 f[]$ 
-\OT1/cmr/m/n/14.4 are de-ter-mined self-consistently
- []
-
-[96
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [97
+Non-PDF special ignored!] [96
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2632,24 +2598,51 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/bewham-scheme.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 2601--2601
+Underfull \hbox (badness 10000) in paragraph at lines 2559--2559
 
+ []
+
+[97
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+<./figures/bewham_gui.pdf, id=458, 446.94579pt x 313.37575pt>
+File: ./figures/bewham_gui.pdf Graphic file (type pdf)
+
+<use ./figures/bewham_gui.pdf>
+Package pdftex.def Info: ./figures/bewham_gui.pdf used on input line 2581.
+(pdftex.def)             Requested size: 398.33858pt x 279.29562pt.
+
+Overfull \hbox (8.33858pt too wide) in paragraph at lines 2581--2582
+ [] 
  []
 
 [98
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
-<./figures/bewham_gui.pdf, id=461, 446.94579pt x 313.37575pt>
-File: ./figures/bewham_gui.pdf Graphic file (type pdf)
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored! <./figures/bewham_gui.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 2602--2602
 
-<use ./figures/bewham_gui.pdf>
-Package pdftex.def Info: ./figures/bewham_gui.pdf used on input line 2623.
-(pdftex.def)             Requested size: 398.33858pt x 279.29562pt.
+ []
 
-Overfull \hbox (8.33858pt too wide) in paragraph at lines 2623--2624
- [] 
+
+Overfull \hbox (46.27791pt too wide) in paragraph at lines 2617--2623
+\OT1/cmr/m/n/14.4 Fig. [][][][]), in file \OT1/cmtt/m/n/14.4 EQUIL[]CLUSTERS.FE
+S\OT1/cmr/m/n/14.4 . The script \OT1/cmtt/m/n/14.4 compare[]clusters.sh
+ []
+
+
+Overfull \hbox (42.1012pt too wide) in paragraph at lines 2617--2623
+\OT1/cmr/m/n/14.4 good sam-pling, therefe-ore the agree-ment be-tween \OT1/cmtt
+/m/n/14.4 EQUIL[]CLUSTERS.FES
  []
 
 [99
@@ -2662,40 +2655,13 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored! <./figures/bewham_gui.pdf>]
-Underfull \hbox (badness 10000) in paragraph at lines 2644--2644
-
- []
-
-
-Overfull \hbox (46.27791pt too wide) in paragraph at lines 2659--2665
-\OT1/cmr/m/n/14.4 Fig. [][][][]), in file \OT1/cmtt/m/n/14.4 EQUIL[]CLUSTERS.FE
-S\OT1/cmr/m/n/14.4 . The script \OT1/cmtt/m/n/14.4 compare[]clusters.sh
- []
-
-
-Overfull \hbox (42.1012pt too wide) in paragraph at lines 2659--2665
-\OT1/cmr/m/n/14.4 good sam-pling, therefe-ore the agree-ment be-tween \OT1/cmtt
-/m/n/14.4 EQUIL[]CLUSTERS.FES
- []
-
-[100
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [101
+Non-PDF special ignored!] [100
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 Chapter 6.
-[102
+[101
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2708,22 +2674,22 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (72.70442pt too wide) in paragraph at lines 2741--2743
+Overfull \hbox (72.70442pt too wide) in paragraph at lines 2699--2701
 \OT1/cmr/m/n/14.4 have to set the proper calls to \OT1/cmtt/m/n/14.4 mtd[]data[
 ]init \OT1/cmr/m/n/14.4 and \OT1/cmtt/m/n/14.4 meta[]force[]calculation\OT1/cmr
 /m/n/14.4 . 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2751--2751
+Underfull \hbox (badness 10000) in paragraph at lines 2709--2709
 
  []
 
-[103
+[102
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [104
+Non-PDF special ignored!] [103
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2731,18 +2697,63 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (42.68115pt too wide) in paragraph at lines 2794--2796
+Overfull \hbox (42.68115pt too wide) in paragraph at lines 2752--2754
 \OT1/cmr/m/n/14.4 The first im-por-tant rou-tine that must be de-fined in \OT1/
 cmtt/m/n/14.4 restraint[]newCV.c
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2797--2802
+Underfull \hbox (badness 10000) in paragraph at lines 2755--2760
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2803--2808
+Underfull \hbox (badness 10000) in paragraph at lines 2761--2766
+
+ []
+
+[104
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+Overfull \hbox (48.37491pt too wide) in paragraph at lines 2767--2770
+\OT1/cmtt/m/n/14.4 int read[]angle (char **word,int count,t[]plumed[]input *inp
+ut,
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2767--2770
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2779--2787
+
+ []
+
+
+Overfull \hbox (3.91498pt too wide) in paragraph at lines 2788--2791
+\OT1/cmtt/m/n/14.4 int read[]rmsdtor (char **word,int count,t[]plumed[]input
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2788--2791
 
  []
 
@@ -2750,44 +2761,28 @@ Underfull \hbox (badness 10000) in paragraph at lines 2803--2808
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (48.37491pt too wide) in paragraph at lines 2809--2812
-\OT1/cmtt/m/n/14.4 int read[]angle (char **word,int count,t[]plumed[]input *inp
-ut,
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2809--2812
+Underfull \hbox (badness 10000) in paragraph at lines 2828--2828
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2821--2829
+Underfull \hbox (badness 10000) in paragraph at lines 2828--2828
 
  []
 
 
-Overfull \hbox (3.91498pt too wide) in paragraph at lines 2830--2833
-\OT1/cmtt/m/n/14.4 int read[]rmsdtor (char **word,int count,t[]plumed[]input
+Underfull \hbox (badness 10000) in paragraph at lines 2828--2828
+
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2830--2833
+Underfull \hbox (badness 10000) in paragraph at lines 2828--2828
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2828--2828
 
  []
 
@@ -2796,50 +2791,34 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 2870--2870
-
+Overfull \hbox (66.96417pt too wide) in paragraph at lines 2844--2848
+\OT1/cmr/m/n/14.4 The sec-ond im-por-tant rou-tine that must be in-cluded in \O
+T1/cmtt/m/n/14.4 restraint[]newCV.c
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2870--2870
-
+Overfull \hbox (18.38297pt too wide) in paragraph at lines 2851--2852
+[]\OT1/cmr/m/n/14.4 The vari-ables that ap-pear in the dec-la-ra-tion of \OT1/c
+mtt/m/n/14.4 newCV[]restraint
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 2870--2870
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2870--2870
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2870--2870
-
+Overfull \hbox (12.21724pt too wide) in paragraph at lines 2859--2863
+[]\OT1/cmr/m/n/14.4 The rou-tine \OT1/cmtt/m/n/14.4 newCV[]restraint \OT1/cmr/m
+/n/14.4 uses the in-for-ma-tion in \OT1/cmtt/m/n/14.4 mtd[]data
  []
 
 [107
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (66.96417pt too wide) in paragraph at lines 2886--2890
-\OT1/cmr/m/n/14.4 The sec-ond im-por-tant rou-tine that must be in-cluded in \O
-T1/cmtt/m/n/14.4 restraint[]newCV.c
- []
-
-
-Overfull \hbox (18.38297pt too wide) in paragraph at lines 2893--2894
-[]\OT1/cmr/m/n/14.4 The vari-ables that ap-pear in the dec-la-ra-tion of \OT1/c
-mtt/m/n/14.4 newCV[]restraint
- []
-
-
-Overfull \hbox (12.21724pt too wide) in paragraph at lines 2901--2905
-[]\OT1/cmr/m/n/14.4 The rou-tine \OT1/cmtt/m/n/14.4 newCV[]restraint \OT1/cmr/m
-/n/14.4 uses the in-for-ma-tion in \OT1/cmtt/m/n/14.4 mtd[]data
+Overfull \hbox (14.23268pt too wide) in paragraph at lines 2870--2872
+[]\OT1/cmr/m/n/14.4 we have to add the dec-la-ra-tion of the new rou-tines \OT1
+/cmtt/m/n/14.4 read[]newCV
  []
 
 [108
@@ -2849,13 +2828,6 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
-Overfull \hbox (14.23268pt too wide) in paragraph at lines 2912--2914
-[]\OT1/cmr/m/n/14.4 we have to add the dec-la-ra-tion of the new rou-tines \OT1
-/cmtt/m/n/14.4 read[]newCV
- []
-
-[109
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2865,13 +2837,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [110
+Non-PDF special ignored!] [109
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2880,83 +2846,83 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 Chapter 7.
+[110
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+Underfull \hbox (badness 10000) in paragraph at lines 2956--2956
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2956--2956
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2956--2956
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2956--2956
+
+ []
+
+<./figures/stone-wales.pdf, id=505, 869.39006pt x 472.23625pt>
+File: ./figures/stone-wales.pdf Graphic file (type pdf)
+
+<use ./figures/stone-wales.pdf>
+Package pdftex.def Info: ./figures/stone-wales.pdf used on input line 2960.
+(pdftex.def)             Requested size: 398.33858pt x 216.36662pt.
+
+Overfull \hbox (8.33858pt too wide) in paragraph at lines 2960--2962
+ [] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 2981--2981
+
+ []
+
+
+LaTeX Warning: Citation `Yang:2004p15845' on page 111 undefined on input line 2
+988.
+
+<./figures/sn2.pdf, id=506, 993.7125pt x 277.035pt>
+File: ./figures/sn2.pdf Graphic file (type pdf)
+ <use ./figures/sn2.pdf>
+Package pdftex.def Info: ./figures/sn2.pdf used on input line 2992.
+(pdftex.def)             Requested size: 398.33858pt x 111.05298pt.
+
+Overfull \hbox (8.33858pt too wide) in paragraph at lines 2992--2993
+ [] 
+ []
+
 [111
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-
-
+Non-PDF special ignored!] [112
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 2998--2998
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2998--2998
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2998--2998
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 2998--2998
-
- []
-
-<./figures/stone-wales.pdf, id=508, 869.39006pt x 472.23625pt>
-File: ./figures/stone-wales.pdf Graphic file (type pdf)
-
-<use ./figures/stone-wales.pdf>
-Package pdftex.def Info: ./figures/stone-wales.pdf used on input line 3002.
-(pdftex.def)             Requested size: 398.33858pt x 216.36662pt.
-
-Overfull \hbox (8.33858pt too wide) in paragraph at lines 3002--3004
- [] 
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3023--3023
-
- []
-
-
-LaTeX Warning: Citation `Yang:2004p15845' on page 112 undefined on input line 3
-030.
-
-<./figures/sn2.pdf, id=509, 993.7125pt x 277.035pt>
-File: ./figures/sn2.pdf Graphic file (type pdf)
- <use ./figures/sn2.pdf>
-Package pdftex.def Info: ./figures/sn2.pdf used on input line 3034.
-(pdftex.def)             Requested size: 398.33858pt x 111.05298pt.
-
-Overfull \hbox (8.33858pt too wide) in paragraph at lines 3034--3035
- [] 
- []
-
-[112
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [113
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored! <./figures/stone-wales.pdf>] [114
+Non-PDF special ignored! <./figures/stone-wales.pdf>] [113
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -2969,81 +2935,81 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored! <./figures/sn2.pdf>] [115
+Non-PDF special ignored! <./figures/sn2.pdf>] [114
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [116
+Non-PDF special ignored!] [115
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
-Overfull \hbox (128.69919pt too wide) in paragraph at lines 3127--3127
+Overfull \hbox (128.69919pt too wide) in paragraph at lines 3085--3085
 []\OT1/cmtt/m/n/14.4 mpirun -np 4 $PATH_TO_ESPRESSO/espresso-4.2.1/PW/pw.x < bo
 .in > bo.out[] 
  []
 
-[117
+[116
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <17.28> on input line 3133.
+(Font)              <17.28> on input line 3091.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 3133.
+(hyperref)                removing `math shift' on input line 3091.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `\beta' on input line 3133.
+(hyperref)                removing `\beta' on input line 3091.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (PDFDocEncoding):
-(hyperref)                removing `math shift' on input line 3133.
+(hyperref)                removing `math shift' on input line 3091.
 
 
-LaTeX Warning: Citation `Serrano' on page 118 undefined on input line 3136.
+LaTeX Warning: Citation `Serrano' on page 117 undefined on input line 3094.
 
 
-LaTeX Warning: Citation `eaton1' on page 118 undefined on input line 3136.
+LaTeX Warning: Citation `eaton1' on page 117 undefined on input line 3094.
 
-<./figures/hpin.pdf, id=538, 54.2025pt x 109.40875pt>
+<./figures/hpin.pdf, id=535, 54.2025pt x 109.40875pt>
 File: ./figures/hpin.pdf Graphic file (type pdf)
  <use ./figures/hpin.pdf>
-Package pdftex.def Info: ./figures/hpin.pdf used on input line 3142.
+Package pdftex.def Info: ./figures/hpin.pdf used on input line 3100.
 (pdftex.def)             Requested size: 144.54pt x 291.83658pt.
 
 
-LaTeX Warning: Citation `Pande2' on page 118 undefined on input line 3153.
+LaTeX Warning: Citation `Pande2' on page 117 undefined on input line 3111.
 
 
-LaTeX Warning: Citation `dinn+99pnas' on page 118 undefined on input line 3153.
-
-
-
-LaTeX Warning: Citation `zhou+01pnas' on page 118 undefined on input line 3153.
+LaTeX Warning: Citation `dinn+99pnas' on page 117 undefined on input line 3111.
 
 
 
-LaTeX Warning: Citation `garc-sanb01prot' on page 118 undefined on input line 3
-153.
+LaTeX Warning: Citation `zhou+01pnas' on page 117 undefined on input line 3111.
 
 
-LaTeX Warning: Citation `PTmetaD' on page 118 undefined on input line 3153.
+
+LaTeX Warning: Citation `garc-sanb01prot' on page 117 undefined on input line 3
+111.
 
 
-LaTeX Warning: Citation `Yoda2007' on page 118 undefined on input line 3153.
+LaTeX Warning: Citation `PTmetaD' on page 117 undefined on input line 3111.
 
 
-LaTeX Warning: Citation `Bo.Bra:08' on page 118 undefined on input line 3153.
+LaTeX Warning: Citation `Yoda2007' on page 117 undefined on input line 3111.
 
 
-LaTeX Warning: Citation `Best:2010p18495' on page 118 undefined on input line 3
-153.
+LaTeX Warning: Citation `Bo.Bra:08' on page 117 undefined on input line 3111.
 
-[118
+
+LaTeX Warning: Citation `Best:2010p18495' on page 117 undefined on input line 3
+111.
+
+[117
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -3060,8 +3026,82 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./figures/hpin.pdf>]
 
-LaTeX Warning: Citation `opls_protein' on page 119 undefined on input line 3166
+LaTeX Warning: Citation `opls_protein' on page 118 undefined on input line 3124
 .
+
+[118
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 3200--3200
+
+ []
 
 [119
 Non-PDF special ignored!
@@ -3070,92 +3110,18 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!]
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 3242--3242
-
- []
-
-[120
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!] [121
+Non-PDF special ignored!] [120
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 No file tutorial.bbl.
 No file tutorial.ind.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 3255.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 3255.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 3213.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 3213.
 (./tutorial.aux)
-Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 3255.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 3255.
+Package atveryend Info: Empty hook `AtVeryEndDocument' on input line 3213.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 3213.
 
 Package rerunfilecheck Info: File `tutorial.out' has not changed.
 (rerunfilecheck)             Checksum: BA475ED9ABA2BC1D6AB4F68E81059BCC;3796.
@@ -3166,7 +3132,7 @@ LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
 LaTeX Warning: There were undefined references.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 3255.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 3213.
  ) 
 Here is how much of TeX's memory you used:
  5815 strings out of 493312
@@ -3201,10 +3167,10 @@ s/type1/public/amsfonts/cm/cmtt8.pfb></usr/local/texlive/2013/texmf-dist/fonts/
 type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/u
 rw/helvetic/uhvr8a.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/urw/helv
 etic/uhvro8a.pfb>
-Output written on tutorial.pdf (122 pages, 3738886 bytes).
+Output written on tutorial.pdf (121 pages, 3737588 bytes).
 PDF statistics:
- 642 PDF objects out of 1000 (max. 8388607)
- 448 compressed objects within 5 object streams
+ 639 PDF objects out of 1000 (max. 8388607)
+ 446 compressed objects within 5 object streams
  0 named destinations out of 1000 (max. 500000)
  131 words of extra memory for PDF output out of 10000 (max. 10000000)
 

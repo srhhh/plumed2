@@ -25,28 +25,28 @@
 \contentsline {subsection}{\numberline {4.3.1}Parallel tempering}{57}{subsection.4.3.1}
 \contentsline {subsection}{\numberline {4.3.2}The best from both worlds}{59}{subsection.4.3.2}
 \contentsline {section}{\numberline {4.4}Bias-exchange metadynamics}{60}{section.4.4}
-\contentsline {subsection}{\numberline {4.4.1}Convergence of the simulation}{66}{subsection.4.4.1}
-\contentsline {chapter}{\numberline {5}Advanced techniques}{70}{chapter.5}
-\contentsline {section}{\numberline {5.1}Path based collective variables}{70}{section.5.1}
-\contentsline {subsection}{\numberline {5.1.1}Metadynamics on a sub-optimal path}{75}{subsection.5.1.1}
-\contentsline {subsection}{\numberline {5.1.2}Metadynamics on a correct path}{81}{subsection.5.1.2}
-\contentsline {subsection}{\numberline {5.1.3}Path optimization}{84}{subsection.5.1.3}
-\contentsline {section}{\numberline {5.2}Variables for secondary structure in proteins}{86}{section.5.2}
-\contentsline {subsection}{\numberline {5.2.1}{\tt ALPHABETA}}{87}{subsection.5.2.1}
-\contentsline {subsection}{\numberline {5.2.2}{\tt ALPHARMSD} and {\tt ANTIBETARMSD}}{89}{subsection.5.2.2}
-\contentsline {section}{\numberline {5.3}Potentials on a grid}{91}{section.5.3}
-\contentsline {section}{\numberline {5.4}Reweighting techniques}{93}{section.5.4}
-\contentsline {subsection}{\numberline {5.4.1}Well-tempered metadynamics calculations}{93}{subsection.5.4.1}
-\contentsline {subsection}{\numberline {5.4.2}Weighted-histogram analysis of bias-exchange simulations}{95}{subsection.5.4.2}
-\contentsline {chapter}{\numberline {6}Inside PLUMED}{102}{chapter.6}
-\contentsline {section}{\numberline {6.1}How to plug PLUMED in your MD code}{102}{section.6.1}
-\contentsline {section}{\numberline {6.2}How to add a new CV}{104}{section.6.2}
-\contentsline {subsection}{\numberline {6.2.1}Creating {\tt restraint\_newCV.c}}{105}{subsection.6.2.1}
-\contentsline {subsubsection}{The parser}{105}{section*.2}
-\contentsline {subsubsection}{CV definition and derivatives}{108}{section*.3}
-\contentsline {subsection}{\numberline {6.2.2}Modifying the {\tt PLUMED}\ source code}{109}{subsection.6.2.2}
-\contentsline {subsection}{\numberline {6.2.3}Final steps}{110}{subsection.6.2.3}
-\contentsline {chapter}{\numberline {7}Real life applications}{111}{chapter.7}
-\contentsline {section}{\numberline {7.1}The Stone-Wales transformation in a carbon nanotube}{111}{section.7.1}
-\contentsline {section}{\numberline {7.2}A SN2 reaction in vacuum with quantum espresso}{114}{section.7.2}
-\contentsline {section}{\numberline {7.3}Folding of the GB1 C-terminal $\beta $--hairpin}{118}{section.7.3}
+\contentsline {subsection}{\numberline {4.4.1}Convergence of the simulation}{65}{subsection.4.4.1}
+\contentsline {chapter}{\numberline {5}Advanced techniques}{69}{chapter.5}
+\contentsline {section}{\numberline {5.1}Path based collective variables}{69}{section.5.1}
+\contentsline {subsection}{\numberline {5.1.1}Metadynamics on a sub-optimal path}{74}{subsection.5.1.1}
+\contentsline {subsection}{\numberline {5.1.2}Metadynamics on a correct path}{80}{subsection.5.1.2}
+\contentsline {subsection}{\numberline {5.1.3}Path optimization}{83}{subsection.5.1.3}
+\contentsline {section}{\numberline {5.2}Variables for secondary structure in proteins}{85}{section.5.2}
+\contentsline {subsection}{\numberline {5.2.1}{\tt ALPHABETA}}{86}{subsection.5.2.1}
+\contentsline {subsection}{\numberline {5.2.2}{\tt ALPHARMSD} and {\tt ANTIBETARMSD}}{88}{subsection.5.2.2}
+\contentsline {section}{\numberline {5.3}Potentials on a grid}{90}{section.5.3}
+\contentsline {section}{\numberline {5.4}Reweighting techniques}{92}{section.5.4}
+\contentsline {subsection}{\numberline {5.4.1}Well-tempered metadynamics calculations}{92}{subsection.5.4.1}
+\contentsline {subsection}{\numberline {5.4.2}Weighted-histogram analysis of bias-exchange simulations}{94}{subsection.5.4.2}
+\contentsline {chapter}{\numberline {6}Inside PLUMED}{101}{chapter.6}
+\contentsline {section}{\numberline {6.1}How to plug PLUMED in your MD code}{101}{section.6.1}
+\contentsline {section}{\numberline {6.2}How to add a new CV}{103}{section.6.2}
+\contentsline {subsection}{\numberline {6.2.1}Creating {\tt restraint\_newCV.c}}{104}{subsection.6.2.1}
+\contentsline {subsubsection}{The parser}{104}{section*.2}
+\contentsline {subsubsection}{CV definition and derivatives}{107}{section*.3}
+\contentsline {subsection}{\numberline {6.2.2}Modifying the {\tt PLUMED}\ source code}{108}{subsection.6.2.2}
+\contentsline {subsection}{\numberline {6.2.3}Final steps}{109}{subsection.6.2.3}
+\contentsline {chapter}{\numberline {7}Real life applications}{110}{chapter.7}
+\contentsline {section}{\numberline {7.1}The Stone-Wales transformation in a carbon nanotube}{110}{section.7.1}
+\contentsline {section}{\numberline {7.2}A SN2 reaction in vacuum with quantum espresso}{113}{section.7.2}
+\contentsline {section}{\numberline {7.3}Folding of the GB1 C-terminal $\beta $--hairpin}{117}{section.7.3}

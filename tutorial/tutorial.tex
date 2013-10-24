@@ -1165,29 +1165,25 @@ This code is very flexible and can be executed with several options (see the man
 The most commonly used are:
 
 \esempio{{\tt
-  sum\_hills -file HILLS -out fes.dat -ndim 3 -ndw 1 2 -kt 0.6 -ngrid 100 100 100 \vspace {10pt} \\
+  plumed sum\_hills --hills HILLS --outfile fes.dat --idw cv1 cv2 --kt 0.6 --bin 100 100 100 \vspace {10pt} \\
    \begin{tabular}{ l l }
-   -file           & input file with the list of Gaussians\\
-   -out            & output file with the FES\\
-   -ndim           & number of collective variables \\
-   -ndw            & ID of the variables for FES in output \\ 
-   -ngrid          & grid mesh dimension\\
-   -dp             & grid bin size\\
-   -kt             & $kT$ in the energy units\\
-   -stride         & how often the FES is written\\
-   -2pi            & ID of the variables with $[0;2\pi]$ periodicity \\
-   -pi             & ID of the variables with $[-\pi;\pi]$ periodicity \\
+   --hills         & input file with the list of Gaussians\\
+   --outfile       & output file with the FES\\
+   --idw           & ID of the variables for FES in output \\ 
+   --bin           & grid mesh dimension\\
+   --kt            & $kT$ in the energy units\\
+   --stride        & how often the FES is written\\
   \end{tabular}
 }}
 
 The file in output {\tt fes.dat} contains the estimate of the free-energy calculated
-on a regular grid whose dimension is specified by either {\tt -ngrid} or {\tt -dp}. 
+on a regular grid whose dimension is specified by {\tt --bin}. 
 These parameters should be chosen with care. To calculate accurately the potential in a given point of the CV space, 
 a practical rule is to choose the bin size to be half the Gaussian sigma.
 
 The {\tt sum\_hills} code should be used to monitor the convergence of a metadynamics simulation. 
 This can be easily achieved by calculating the estimate of the FES at regular interval in time
-using the {\tt -stride} option and then evaluating the free-energy difference among 
+using the {\tt --stride} option and then evaluating the free-energy difference among 
 relevant regions (minima) of the FES as a function of time.
 Below we report an example of bash script that can be used for this purpose.
 
@@ -1199,7 +1195,7 @@ The free-energy difference between F and U is calculated as a function of time
 and saved in the file {\tt DeltaF}. \vspace{0.5cm} \\
 {\tt
 \#!/bin/bash \\
- sum\_hills -stride 100 -ndim 2 -ndw 1 -ngrid 100 100 -kt 0.6 -file HILLS \\
+ plumed sum\_hills --stride 100 --idw cv1 --bin 100 100 --kt 0.6 --hills HILLS \\
  for file in fes.dat.? fes.dat.?? fes.dat.??? \\
  do \\
   if [ -f \${file} ]; then \\
@@ -1239,9 +1235,9 @@ where $T$ is the temperature of the system and $C$ a costant.
 The quantity $T+\Delta T$ is often referred to as the (fictitous) CV temperature, while
 the ratio $(T+\Delta T) / T$ as bias factor. 
 To perform a WT metadynamics simulation with \plumed \ you have to 
-use the directive {\tt WELLTEMPERED} and specify one of the parameters described above using
-either the keyword {\tt CV\_TEMPERATURE} or {\tt BIASFACTOR}.
-In addition, the temperature of the system must be specified explicitly with {\tt SIMTEMP}.
+specify in the directive of {\tt METAD} the parameters described above using
+the keyword {\tt BIASFACTOR}.
+In addition, the temperature of the system must be specified explicitly with {\tt TEMP}.
 
 Here are some practical rules to choose wisely the parameters in WT metadynamics simulations:
 \begin{itemize} 
@@ -1386,16 +1382,23 @@ To use multiple walkers, you should set up an independent directory
 and use an independent {\tt plumed.dat} file for each walker.
 Here is a template {\tt plumed.dat} which can be used with the {\tt ala3} system.
 \esempio{
-HILLS HEIGHT 0.25 W\_STRIDE 100 \\
-WELLTEMPERED SIMTEMP 300 BIASFACTOR 7 \\
-MULTIPLE\_WALKERS R\_STRIDE 1000 NWALKERS 10 ID @id@ HILLS\_DIR ../ \\
+phi: TORSION ATOMS=11,13,15,21 \\
+psi: TORSION ATOMS=21,23,25,31 \\
  \\
-PRINT W\_STRIDE 100 \\
+METAD ...
+ARG=phi,psi
+HEIGHT=0.25 PACE=100 SIGMA=0.35,0.35 \\
+TEMP=300 BIASFACTOR=7 \\
+WALKERS\_N=10
+WALKERS\_ID=@id@
+WALKERS\_DIR=../
+WALKERS\_RSTRIDE=1000
+LABEL=mtd
+... METAD
  \\
-TORSION LIST 11 13 15 21 SIGMA 0.35 \\
-TORSION LIST 21 23 25 31 SIGMA 0.35 \\
+PRINT ARG=phi,psi,mtd.bias STRIDE=100 FILE=COLVAR \\
  \\
-ENDMETA \\
+ENDPLUMED \\
  \\
 }
 The @id@ string is then substituted with the proper walker number in each of
@@ -1412,14 +1415,14 @@ done \\
 Each walker shoud receive a unique identifier ({\tt ID} keyword) and will write
 the hills in a file {\tt HILLS.X} where {\tt X} is the walker number.
 The file will be placed in the upper directory
-({\tt HILLS\_DIR} keyword).
+({\tt WALKERS\_DIR} keyword).
 Each replica should also be instructed about the maximum number
 of allowed walkers, so as to know which HILLS files need to be searched for
-({\tt NWALKERS} keyword).
+({\tt WALKERS\_N} keyword).
 This is just an upper estimate of the number of actual replicas, which can be even decided
-a posteriori. Just avoid to put "NWALKERS 1000000", otherwise the system will spend a lot of time
+a posteriori. Just avoid to put "WALKERS\_N=1000000", otherwise the system will spend a lot of time
 in trying to open not-existent files.
-The {\tt R\_STRIDE} keyword allows to set the number of steps between subsequent trial to load
+The {\tt WALKERS\_RSTRIDE} keyword allows to set the number of steps between subsequent trial to load
 new hills added by the other walkers. This number should be as small as possible provided that there
 is no impact on the performance due to input/output overhead. A thousand step should be a reasonable value.
 
@@ -1457,17 +1460,16 @@ the two $\phi$ angles as CVs we use the end-to-end distance of the oligo-peptide
 This distance is related to the backbone dihedrals, but is not a good CV, as it
 can be seen running metadynamics on it with the following input
 \esempio{
-HILLS HEIGHT 0.1 W\_STRIDE 100 \\
-WELLTEMPERED SIMTEMP 300 BIASFACTOR 10 \\
- \\
-PRINT W\_STRIDE 100 \\ 
- \\
-DISTANCE LIST 11 31     SIGMA 0.01  \\
+d1: DISTANCE ATOMS=11,31  \\
 \# we just monitor the two dihedral angles \\
-TORSION LIST 11 13 15 21 \\
-TORSION LIST 21 23 25 31 \\
+phi: TORSION ATOMS=11,13,15,21 \\
+psi: TORSION ATOMS=21,23,25,31 \\
  \\
-ENDMETA \\
+mtd: METAD ARG=d1 HEIGHT=0.1 PACE=100 SIGMA=0.1 TEMP=300 BIASFACTOR=10 \\
+ \\
+PRINT ARG=d1,phi,psi,mtd.bias STRIDE=100 FILE=COLVAR \\ 
+ \\
+ENDPLUMED \\
  \\
 
 }
@@ -1557,7 +1559,7 @@ P=\min\left(
 \end{equation}
 where $V_{b,i}(s_j)$ is the bias in replica $i$ calculated at the coordinates of replica $j$.
 
-To run parallel-tempering-metadynamics you also need to add the {\tt PTMETAD} directive to
+To run parallel-tempering-metadynamics you don't need to add anything to
 the {\tt plumed.dat} input file and run GROMACS as follows
 \esempio{
 mpirun -np 16 mdrun -multi 8 -replex 100 -plumed plumed.dat
@@ -1567,7 +1569,7 @@ the replica index.
 All the replicas will run in the same directory and acccess to the same plumed.dat file.
 Notice that hills will be rescaled proportionally to system temperature, thus adding
 larger hills to high temperature replicas.
-The free energy profile can be reconstructed for each replica using {\tt sum\_hills} in the
+The free energy profile can be reconstructed for each replica using {\tt plumed sum\_hills} in the
 usual manner. Notice that with this approach one can reconstruct at the same time
 the free energy surface at different temperatures.
 
@@ -1585,7 +1587,7 @@ Histeresis is strongly decreased with respect to serial metadynamics.
 
 \section{Bias-exchange metadynamics}\label{bemeta}
 %fabio
-{\bf This algorithm is only implemented for GROMACS; in Plumed 1.3 it will be implemented via bash script for all MD engines}.
+{\bf This algorithm is only implemented for GROMACS}.
 
 In all variants of metadynamics the free-energy landscape of the system is reconstructed by gradually
 filling the local minima with gaussian hills. The dimensionality of the landscape is equal to the
@@ -1643,103 +1645,59 @@ $\psi_2$ = (N$^2$-C$^2_\alpha$-C$^2$-N$^3$), $\phi_2$ = (C$^2$-N$^3$-C$^3_\alpha
 \end{figure}
 %
 Four replicas of the system are employed, each one biased on a different CV,
-thus four similar Plumed input files are prepared as follows:
+thus four similar Plumed input files are prepared, or even better a single
+common input file included in four different plumed files as follows:
 %
 \esempio{ 
-first input file plumed0.dat for bias-exchange on Ala$_3$ \\ \\
+common input file plumed-common.dat for bias-exchange on Ala$_3$ \\ \\
 {\tt
-\# 1 kJ/mol (gromacs units) every 4 ps (timestep = 1 fs)	\\
-HILLS HEIGHT 1.0 W\_STRIDE 4000					\\
-PRINT W\_STRIDE 500						\\
-BIASXMD								\\
-								\\
-\# psi1					\\
-TORSION LIST  1  5 11 13 SIGMA 0.314	\\
-\# phi1					\\
-TORSION LIST 11 13 15 21 SIGMA 0.314	\\
-\# psi2					\\
-TORSION LIST 13 15 21 23 SIGMA 0.314	\\
-\# phi2					\\
-TORSION LIST 21 23 25 31 SIGMA 0.314	\\
-					\\
-\#NOHILLS CV 1				\\
-NOHILLS CV 2				\\
-NOHILLS CV 3				\\
-NOHILLS CV 4				\\
-					\\
-ENDMETA					
+RANDOM\_EXCHANGES \\
+\# psi1	\\
+psi1: TORSION ATOMS=1,5,11,13\\
+\# phi1	\\
+phi1: TORSION ATOMS=11,13,15,21\\
+\# psi2	\\
+psi2: TORSION ATOMS=13,15,21,23\\
+\# phi2	\\
+phi2: TORSION ATOMS=21,23,25,31\\
+
+FLUSH STRIDE=500
 }}
 \esempio{ 
-second input file plumed1.dat for bias-exchange on Ala$_3$ \\ \\
+first input file plumed.dat.0 for bias-exchange on Ala$_3$ \\ \\
 {\tt
 \# 1 kJ/mol (gromacs units) every 4 ps (timestep = 1 fs)	\\
-HILLS HEIGHT 1.0 W\_STRIDE 4000					\\
-PRINT W\_STRIDE 500						\\
-BIASXMD								\\
-								\\
-\# psi1					\\
-TORSION LIST  1  5 11 13 SIGMA 0.314	\\
-\# phi1					\\
-TORSION LIST 11 13 15 21 SIGMA 0.314	\\
-\# psi2					\\
-TORSION LIST 13 15 21 23 SIGMA 0.314	\\
-\# phi2					\\
-TORSION LIST 21 23 25 31 SIGMA 0.314	\\
-					\\
-NOHILLS CV 1				\\
-\#NOHILLS CV 2				\\
-NOHILLS CV 3				\\
-NOHILLS CV 4				\\
-					\\
-ENDMETA					
+INCLUDE FILE=plumed-common.dat\\
+mtd: METAD ARG=psi1 HEIGHT=1.0 PACE=4000 SIGMA=0.314\\
+PRINT ARG=psi1,phi1,psi2,phi2,mtd.bias STRIDE=500 FILE=COLVAR\\
+ENDPLUMED\\					
 }}
 \esempio{ 
-third input file plumed2.dat for bias-exchange on Ala$_3$ \\ \\
+second input file plumed.dat.1 for bias-exchange on Ala$_3$ \\ \\
 {\tt
+INCLUDE FILE=plumed-common.dat\\
+mtd: METAD ARG=phi1 HEIGHT=1.0 PACE=4000 SIGMA=0.314\\
+PRINT ARG=psi1,phi1,psi2,phi2,mtd.bias STRIDE=500 FILE=COLVAR\\
+ENDPLUMED\\					
 \# 1 kJ/mol (gromacs units) every 4 ps (timestep = 1 fs)	\\
-HILLS HEIGHT 1.0 W\_STRIDE 4000					\\
-PRINT W\_STRIDE 500						\\
-BIASXMD								\\
-								\\
-\# psi1					\\
-TORSION LIST  1  5 11 13 SIGMA 0.314	\\
-\# phi1					\\
-TORSION LIST 11 13 15 21 SIGMA 0.314	\\
-\# psi2					\\
-TORSION LIST 13 15 21 23 SIGMA 0.314	\\
-\# phi2					\\
-TORSION LIST 21 23 25 31 SIGMA 0.314	\\
-					\\
-NOHILLS CV 1				\\
-NOHILLS CV 2				\\
-\#NOHILLS CV 3				\\
-NOHILLS CV 4				\\
-					\\
-ENDMETA					
 }}
 \esempio{ 
-fourth input file plumed3.dat for bias-exchange on Ala$_3$ \\ \\
+third input file plumed.dat.2 for bias-exchange on Ala$_3$ \\ \\
 {\tt
 \# 1 kJ/mol (gromacs units) every 4 ps (timestep = 1 fs)	\\
-HILLS HEIGHT 1.0 W\_STRIDE 4000					\\
-PRINT W\_STRIDE 500						\\
-BIASXMD								\\
-								\\
-\# psi1					\\
-TORSION LIST  1  5 11 13 SIGMA 0.314	\\
-\# phi1					\\
-TORSION LIST 11 13 15 21 SIGMA 0.314	\\
-\# psi2					\\
-TORSION LIST 13 15 21 23 SIGMA 0.314	\\
-\# phi2					\\
-TORSION LIST 21 23 25 31 SIGMA 0.314	\\
-					\\
-NOHILLS CV 1				\\
-NOHILLS CV 2				\\
-NOHILLS CV 3				\\
-\#NOHILLS CV 4				\\
-					\\
-ENDMETA					
+INCLUDE FILE=plumed-common.dat\\
+mtd: METAD ARG=psi2 HEIGHT=1.0 PACE=4000 SIGMA=0.314\\
+PRINT ARG=psi1,phi1,psi2,phi2,mtd.bias STRIDE=500 FILE=COLVAR\\
+ENDPLUMED\\					
+}}
+\esempio{ 
+fourth input file plumed.dat.3 for bias-exchange on Ala$_3$ \\ \\
+{\tt
+\# 1 kJ/mol (gromacs units) every 4 ps (timestep = 1 fs)	\\
+INCLUDE FILE=plumed-common.dat\\
+mtd: METAD ARG=phi2 HEIGHT=1.0 PACE=4000 SIGMA=0.314\\
+PRINT ARG=psi1,phi1,psi2,phi2,mtd.bias STRIDE=500 FILE=COLVAR\\
+ENDPLUMED\\					
 }}
 %
 Note that Plumed automatically enforces the periodicity of the CV {\tt TORSION}
@@ -1765,9 +1723,9 @@ The convergence of the one-dimensional free-energy profiles (parallel growth)
 can be monitored by plotting the sum of the hills at diferent times with the program {\tt sum\_hills.x}:
 %
 \esempio{
-generate FES profiles from HILLS0 every 100 hills (important: -pi 1 declares a (-$\pi$,$\pi$) periodic range): \\
+generate FES profiles from HILLS.0 every 100 hills (important: -pi 1 declares a (-$\pi$,$\pi$) periodic range): \\
 {\tt
-sum\_hills.x -file HILLS0 -ndim 1 -ndw 1 -stride 100 -pi 1 \\
+plumed sum\_hills --hills HILLS.0 --stride 100 \\
 }
 \\
 plot the FES profiles fes.dat.1, fes.dat.2, etc.: \\
@@ -1783,11 +1741,11 @@ the instantaneous bias profiles after the filling time:
  F(s) \approx -\frac{1}{t-t_F}\int_{t_F}^t dt \ V_G(s,t)
 \end{eqnarray}
 as discussed in Ref.~\cite{gerv-laio09review,marinell-crespo10}.
-This can be simply done with the option {\tt -aver} of {\tt sum\_hills.x}, e.g. making
-an average over the last 500 hills:
-\esempio{{\tt
-  sum\_hills.x -file HILLS0 -ndim 1 -ndw 1 -pi 1 -aver 500
-}}
+%This can be simply done with the option {\tt -aver} of {\tt sum\_hills.x}, e.g. making
+%an average over the last 500 hills:
+%\esempio{{\tt
+%  sum\_hills.x -file HILLS0 -ndim 1 -ndw 1 -pi 1 -aver 500
+%}}
 The resulting estimate of the FES profile can be finally compared to the files {\tt EQUIL\_FESx} which contain
 the "exact" FES computed from a very long (3~$\mu$s) equilibrium MD simulation without any bias (Fig.~\ref{be-validation}).
 In the latter case the free energy along each dihedral angle is simply obtained as 
