@@ -1,0 +1,9 @@
+#
+# the two distances for hydrogen bonds 
+#
+d1: DISTANCE ATOMS=18,6  
+d2: DISTANCE ATOMS=16,8  
+
+PRINT ARG=d1,d2 STRIDE=1 FILE=COLVAR
+
+ENDPLUMED

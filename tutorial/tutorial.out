@@ -1,0 +1,50 @@
+\BOOKMARK [0][-]{chapter.1}{Compilation}{}% 1
+\BOOKMARK [1][-]{section.1.1}{PLUMED compilation}{chapter.1}% 2
+\BOOKMARK [2][-]{subsection.1.1.1}{Compile PLUMED with GROMACS}{section.1.1}% 3
+\BOOKMARK [2][-]{subsection.1.1.2}{Compile PLUMED with QUANTUM ESPRESSO}{section.1.1}% 4
+\BOOKMARK [2][-]{subsection.1.1.3}{Compile PLUMED with LAMMPS}{section.1.1}% 5
+\BOOKMARK [0][-]{chapter.2}{Basics: monitoring simulations}{}% 6
+\BOOKMARK [1][-]{section.2.1}{Syntax for collective variables}{chapter.2}% 7
+\BOOKMARK [1][-]{section.2.2}{Monitoring a CV}{chapter.2}% 8
+\BOOKMARK [1][-]{section.2.3}{Postprocessing with driver}{chapter.2}% 9
+\BOOKMARK [0][-]{chapter.3}{Basics: biasing simulations}{}% 10
+\BOOKMARK [1][-]{section.3.1}{Restrained/steered molecular dynamics}{chapter.3}% 11
+\BOOKMARK [2][-]{subsection.3.1.1}{An umbrella sampling calculation. Alanine dipeptide.}{section.3.1}% 12
+\BOOKMARK [2][-]{subsection.3.1.2}{A steered molecular dynamics example: targeted MD.}{section.3.1}% 13
+\BOOKMARK [2][-]{subsection.3.1.3}{A programmed steered MD with steerplan.}{section.3.1}% 14
+\BOOKMARK [2][-]{subsection.3.1.4}{Soft walls}{section.3.1}% 15
+\BOOKMARK [1][-]{section.3.2}{Committment analysis}{chapter.3}% 16
+\BOOKMARK [1][-]{section.3.3}{Metadynamics}{chapter.3}% 17
+\BOOKMARK [1][-]{section.3.4}{Restarting metadynamics}{chapter.3}% 18
+\BOOKMARK [1][-]{section.3.5}{Free-energy reconstruction}{chapter.3}% 19
+\BOOKMARK [1][-]{section.3.6}{Well-tempered metadynamics}{chapter.3}% 20
+\BOOKMARK [0][-]{chapter.4}{Parallel machines}{}% 21
+\BOOKMARK [1][-]{section.4.1}{Exploiting MD parallelization}{chapter.4}% 22
+\BOOKMARK [1][-]{section.4.2}{Multiple-walkers metadynamics}{chapter.4}% 23
+\BOOKMARK [1][-]{section.4.3}{Parallel-tempering metadynamics}{chapter.4}% 24
+\BOOKMARK [2][-]{subsection.4.3.1}{Parallel tempering}{section.4.3}% 25
+\BOOKMARK [2][-]{subsection.4.3.2}{The best from both worlds}{section.4.3}% 26
+\BOOKMARK [1][-]{section.4.4}{Bias-exchange metadynamics}{chapter.4}% 27
+\BOOKMARK [2][-]{subsection.4.4.1}{Convergence of the simulation}{section.4.4}% 28
+\BOOKMARK [0][-]{chapter.5}{Advanced techniques}{}% 29
+\BOOKMARK [1][-]{section.5.1}{Path based collective variables}{chapter.5}% 30
+\BOOKMARK [2][-]{subsection.5.1.1}{Metadynamics on a sub-optimal path}{section.5.1}% 31
+\BOOKMARK [2][-]{subsection.5.1.2}{Metadynamics on a correct path}{section.5.1}% 32
+\BOOKMARK [2][-]{subsection.5.1.3}{Path optimization}{section.5.1}% 33
+\BOOKMARK [1][-]{section.5.2}{Variables for secondary structure in proteins}{chapter.5}% 34
+\BOOKMARK [2][-]{subsection.5.2.1}{ALPHABETA}{section.5.2}% 35
+\BOOKMARK [2][-]{subsection.5.2.2}{ALPHARMSD and ANTIBETARMSD}{section.5.2}% 36
+\BOOKMARK [1][-]{section.5.3}{Potentials on a grid}{chapter.5}% 37
+\BOOKMARK [1][-]{section.5.4}{Reweighting techniques}{chapter.5}% 38
+\BOOKMARK [2][-]{subsection.5.4.1}{Well-tempered metadynamics calculations}{section.5.4}% 39
+\BOOKMARK [2][-]{subsection.5.4.2}{Weighted-histogram analysis of bias-exchange simulations}{section.5.4}% 40
+\BOOKMARK [0][-]{chapter.6}{Inside PLUMED}{}% 41
+\BOOKMARK [1][-]{section.6.1}{How to plug PLUMED in your MD code}{chapter.6}% 42
+\BOOKMARK [1][-]{section.6.2}{How to add a new CV}{chapter.6}% 43
+\BOOKMARK [2][-]{subsection.6.2.1}{Creating restraint\137newCV.c}{section.6.2}% 44
+\BOOKMARK [2][-]{subsection.6.2.2}{Modifying the PLUMED source code}{section.6.2}% 45
+\BOOKMARK [2][-]{subsection.6.2.3}{Final steps}{section.6.2}% 46
+\BOOKMARK [0][-]{chapter.7}{Real life applications}{}% 47
+\BOOKMARK [1][-]{section.7.1}{The Stone-Wales transformation in a carbon nanotube}{chapter.7}% 48
+\BOOKMARK [1][-]{section.7.2}{A SN2 reaction in vacuum with quantum espresso}{chapter.7}% 49
+\BOOKMARK [1][-]{section.7.3}{Folding of the GB1 C-terminal \205hairpin}{chapter.7}% 50

@@ -1,0 +1,16 @@
+#
+# create a cv that measure MSD from a reference structure
+#
+rmsd: RMSD REFERENCE=min.pdb TYPE=OPTIMAL SQUARED
+#
+# steer this CV to a value of 0.0
+#
+stmd: MOVINGRESTRAINT ARG=rmsd STEP0=0 AT0=0.02757 KAPPA0=10000000.0 STEP1=270000 AT1=0.0 KAPPA1=10000000.0
+#
+# additional variables that may be useful
+#
+phi: TORSION ATOMS=5,7,9,15   
+psi: TORSION ATOMS=7,9,15,17 
+
+PRINT ARG=rmsd,phi,psi,stmd.bias STRIDE=100 FILE=COLVAR
+ENDPLUMED

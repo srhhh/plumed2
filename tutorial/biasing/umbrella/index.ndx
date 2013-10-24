@@ -1,0 +1,31 @@
+[ System ]
+   1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
+  16   17   18   19   20   21   22 
+[ Protein ]
+   1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
+  16 
+[ Protein-H ]
+   2    5    6    7    9   11   15   16 
+[ C-alpha ]
+   9 
+[ Backbone ]
+   5    7    9   15 
+[ MainChain ]
+   5    6    7    9   15   16 
+[ MainChain+Cb ]
+   5    6    7    9   11   15   16 
+[ MainChain+H ]
+   5    6    7    8    9   15   16 
+[ SideChain ]
+   1    2    3    4   10   11   12   13   14 
+[ SideChain-H ]
+   2   11 
+[ Prot-Masses ]
+   1    2    3    4    5    6    7    8    9   10   11   12   13   14   15 
+  16 
+[ Non-Protein ]
+  17   18   19   20   21   22 
+[ NME ]
+  17   18   19   20   21   22 
+[ Other ]
+  17   18   19   20   21   22 

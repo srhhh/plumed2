@@ -1,0 +1,13 @@
+#
+# Phi and psi angles
+#
+phi: TORSION ATOMS=5,7,9,15   
+psi: TORSION ATOMS=7,9,15,17 
+#
+# LWALL: a lower wall  
+# UWALL : an upper wall
+#
+uwl: UPPER_WALLS ARG=phi AT=0.1 KAPPA=100.0 
+lwl: LOWER_WALLS ARG=psi AT=-0.1 KAPPA=100.0 
+PRINT ARG=phi,psi,uwl.bias,lwl.bias STRIDE=100 FILE=COLVAR
+ENDPLUMED
