@@ -1,0 +1,6 @@
+.DS_Store
+*~
+*.idx
+*.log
+*.out
+*.toc
