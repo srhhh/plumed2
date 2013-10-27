@@ -2004,22 +2004,22 @@ In \plumed\ the input for path collective variables is as follows:
 \esempio{
 The following is an example of input file for a path collective variable run. \vspace{10pt} \\
 {\tt
-PRINT W\_STRIDE 100 \\
+\# the two path variables are the two components (sss,zzz) of the PATHMSD cv
 \#\\
-\# a rather rude metadynamics. do not take this as production conditions\\
-\#\\
-HILLS W\_STRIDE 200.0 HEIGHT 0.4 \\
-\#\\
-\# the two path variables
-\#\\
-S\_PATH TYPE RMSD FRAMESET frame\_ NFRAMES 12 LAMBDA 10300 SIGMA 0.3  \\
-Z\_PATH TYPE RMSD FRAMESET frame\_ NFRAMES 12 LAMBDA 10300 SIGMA 0.002 \\
+p1: PATHMSD REFERENCE=frames.pdb LAMBDA=10300
 \#\\
 \# additional ramachandran variables might be useful to understand what is happening\\
 \#\\
-TORSION LIST 5 7 9 15   \\
-TORSION LIST 7 9 15 17 \\
-ENDMETA \\
+phi: TORSION ATOMS=5,7,9,15 \\
+psi: TORSION ATOMS=7,9,15,17 \\
+\#\\
+\# a rather rude metadynamics. do not take this as production conditions\\
+\#\\
+mtd: METAD ARG=p1.sss,p1.zzz PACE=200 HEIGHT=0.4 SIGMA=0.3,0.002 \\
+\#\\
+PRINT ARG=p1.sss,p1.zzz,phi,psi,mtd.bias STRIDE=100 FILE=COLVAR \\
+\#\\
+ENDPLUMED \\
 }}
 The syntax for path collective variables consists of a initial directives \keyword{S\_PATH} or \keyword{Z\_PATH}. 
 
@@ -2088,26 +2088,26 @@ A possible input can be something like this:
 \esempio{
 The following is an example of input file for a free energy calculation along the path in a limited region of the path itself. \vspace{10pt} \\
 {\tt
-PRINT W\_STRIDE 100 \\
 \#\\
-\# a rather rude metadynamics. do not take this as production conditions\\
-\#\\
-HILLS W\_STRIDE 400.0 HEIGHT 0.4 \\
-\#\\
-\# the two path variables: metadynamics only on S\_PATH, the other is just for monitoring\\
-\#\\
-S\_PATH TYPE RMSD FRAMESET frame\_ NFRAMES 12 LAMBDA 10300 SIGMA 0.25  \\
-Z\_PATH TYPE RMSD FRAMESET frame\_ NFRAMES 12 LAMBDA 10300  \\
-\#\\
-\# A wall over Z can be useful to limit the orthogonal exploration and speed up convergence\\
-\#\\
-U\_WALL CV 2 LIMIT 0.0 KAPPA 100.0 \\
+p1: PATHMSD REFERENCE=frames.pdb LAMBDA=10300
 \#\\
 \# additional ramachandran variables might be useful to understand what is happening\\
 \#\\
-TORSION LIST 5 7 9 15   \\
-TORSION LIST 7 9 15 17 \\
-ENDMETA \\
+phi: TORSION ATOMS=5,7,9,15 \\
+psi: TORSION ATOMS=7,9,15,17 \\
+\#\\
+\# A wall over Z can be useful to limit the orthogonal exploration and speed up convergence\\
+\#\\
+UPPPER\_WALLS ARG=p1.zzz AT=0.0 KAPPA=100.0 \\
+\#\\
+\# a rather rude metadynamics. do not take this as production conditions\\
+\# metadynamics only on S, the other is just for monitoring\\
+\#\\
+mtd: METAD ARG=p1.sss PACE=400 HEIGHT=0.4 SIGMA=0.25 \\
+\#\\
+PRINT ARG=p1.sss,p1.zzz,phi,psi,mtd.bias STRIDE=100 FILE=COLVAR \\
+\#\\
+ENDPLUMED \\
 }}
 At the end you can integrate simply with the usual command {\tt sum\_hills -ndim 1 -ndw 1 -file HILLS} you can retrieve the 
 free energy file {\tt fes.dat} that you can easily plot with gnuplot and the command {\tt p "./fes.dat" u 1:(\$2/4.186) w lp}. Note that the factor 4.186
@@ -2204,7 +2204,7 @@ in the beta sheet they form pairs which are alternatively above or below the she
 
 In Plumed there are several CVs which can induce changes of secondary structure based on the previous
 structural features:
-the H-bonds (CVs {\tt COORD}, {\tt HBONDS}), the typical dihedrals (CVs {\tt TORSION}, {\tt DIHCOR}, {\tt ALPHABETA}), or the detailed
+the H-bonds (CVs {\tt COORD} ), the typical dihedrals (CVs {\tt TORSION},  {\tt ALPHABETA}), or the detailed
 chain conformation (CVs {\tt ALPHARMSD}, {\tt ANTI/ PARABETARMSD}). Here we will illustrate only the CVs {\tt ALPHABETA}
 and {\tt xRMSD}.
 As protein model we consider a poly-valine peptide Val$_{20}$ in vacuum (with ACE/NME capping groups, 
@@ -2236,33 +2236,36 @@ extended simulations due to the complexity of the conformational space of a 20-a
 %
 \esempio{ Input for secondary structure exploration in a Val$_{20}$ peptide\\ \\
 {\tt
-\# 5 kJ/mol (gromacs units) every 5 ps (timestep = 2 fs)	\\
-HILLS  HEIGHT 5.0  W\_STRIDE 2500			\\
-PRINT W\_STRIDE 500					\\
 \\
 \# psi dihedrals: reference = -45 deg = -0.78540 rad	\\
-ALPHABETA NDIH 19 SIGMA 1.0				\\
-    7     9    21    23  -0.78540	\\
-   23    25    37    39  -0.78540	\\
-   39    41    53    55  -0.78540	\\
-   55    57    69    71  -0.78540	\\
-   71    73    85    87  -0.78540	\\
-   87    89   101   103  -0.78540	\\
-  103   105   117   119  -0.78540	\\
-  119   121   133   135  -0.78540	\\
-  135   137   149   151  -0.78540	\\
-  151   153   165   167  -0.78540	\\
-  167   169   181   183  -0.78540	\\
-  183   185   197   199  -0.78540	\\
-  199   201   213   215  -0.78540	\\
-  215   217   229   231  -0.78540	\\
-  231   233   245   247  -0.78540	\\
-  247   249   261   263  -0.78540	\\
-  263   265   277   279  -0.78540	\\
-  279   281   293   295  -0.78540	\\
-  295   297   309   311  -0.78540	\\
-	\\
-ENDMETA
+ALPHABETA ...
+ATOMS1=7,9,21,23 REFERENCE=-0.78540	\\
+ATOMS2=23,25,37,39\\
+ATOMS3=39,41,53,55\\
+ATOMS4=55,57,69,71\\
+ATOMS5=71,73,85,87\\
+ATOMS6=87,89,101,103\\
+ATOMS7=103,105,117,119\\
+ATOMS8=119,121,133,135\\
+ATOMS9=135,137,149,151\\
+ATOMS10=151,153,165,167\\
+ATOMS11=167,169,181,183\\
+ATOMS12=183,185,197,199\\
+ATOMS13=199,201,213,215\\
+ATOMS14=215,217,229,231\\
+ATOMS15=231,233,245,247\\
+ATOMS16=247,249,261,263\\
+ATOMS17=263,265,277,279\\
+ATOMS18=279,281,293,295\\
+ATOMS19=295,297,309,311\\
+LABEL=ab
+... ALPHABETA\\
+
+\# 5 kJ/mol (gromacs units) every 5 ps (timestep = 2 fs)\\
+mtd: METAD ARG=ab HEIGHT=5.0 PACE=2500 SIGMA=1.0\\
+PRINT ARG=ab,mtd.bias STRIDE=500 FILE=COLVAR\\
+
+ENDPLUMED
 }}	
 
 \subsection{{\tt ALPHARMSD} and {\tt ANTIBETARMSD}}
@@ -2278,42 +2281,15 @@ to observe the formation of beta sheets in explicit solvent simulations of large
 %
 \esempio{ Input for secondary structure exploration in a Val$_{20}$ peptide\\ \\
 {\tt
-\# 5 kJ/mol (gromacs units) every 5 ps (timestep = 2 fs)				\\
-HILLS  HEIGHT 5.0  W\_STRIDE 2500						\\
-PRINT W\_STRIDE 500								\\
-										\\
-\# with gromacs4+domain decomp. it's important to use this:			\\
-ALIGN\_ATOMS LIST <secstr>				\\
-secstr->						\\
-\#   N    CA     C     O    CB				\\
-    7     9    21    22    11				\\
-   23    25    37    38    27				\\
-   39    41    53    54    43				\\
-   55    57    69    70    59				\\
-   71    73    85    86    75				\\
-   87    89   101   102    91				\\
-  103   105   117   118   107				\\
-  119   121   133   134   123				\\
-  135   137   149   150   139				\\
-  151   153   165   166   155				\\
-  167   169   181   182   171				\\
-  183   185   197   198   187				\\
-  199   201   213   214   203				\\
-  215   217   229   230   219				\\
-  231   233   245   246   235				\\
-  247   249   261   262   251				\\
-  263   265   277   278   267				\\
-  279   281   293   294   283				\\
-  295   297   309   310   299				\\
-  311   313   325   326   315				\\
-secstr<-						\\
-							\\
-\# 0.1 = conversion from nm (gromacs) to angstrom (internal reference structures)			\\
-ALPHARMSD    LIST <secstr> SIGMA 0.3 R\_0 0.08 NN 8 MM 12 ANGSTROM\_SCALE 0.1 STRANDS\_CUTOFF 1. NOPBC	\\
-													\\
-ANTIBETARMSD LIST <secstr> SIGMA 0.3 R\_0 0.08 NN 8 MM 12 ANGSTROM\_SCALE 0.1 STRANDS\_CUTOFF 1. NOPBC	\\
-													\\
-ENDMETA													\\
+MOLINFO STRUCTURE=val20.pdb\\
+alpha: ALPHARMSD RESIDUES=all TYPE=DRMSD LESS\_THAN={RATIONAL R\_0=0.08 NN=8 MM=12}\\
+abeta: ANTIBETARMSD RESIDUES=all TYPE=DRMSD LESS\_THAN={RATIONAL R\_0=0.08 NN=8 MM=12} STRANDS\_CUTOFF=1.\\
+
+\# 5 kJ/mol (gromacs units) every 5 ps (timestep = 2 fs)\\
+mtd: METAD ARG=alpha.less\_then,beta.less\_then SIGMA=0.3,0.3 HEIGHT=5.0 PACE=2500\\
+PRINT ARG=alpha.less\_then,beta.less\_then STRIDE=500 FILE=COLVAR\\ 
+
+ENDPLUMED\\
 }}
 %
 In the latter input file the {\tt R\_0}, {\tt NN}, {\tt MM} parameters are optimized to count $\sim 1$
@@ -2345,7 +2321,7 @@ In this way the computational cost of metadynamics becomes constant during the s
 This corresponds to the cost of evaluating a single Gaussian function on the whole grid with a frequency given by the
 stride between subsequent hills.
 
-In order to activate the grid in \plumed, the directive \keyword{GRID} must be specified for every
+In order to activate the grid in \plumed, the keyword \tt{GRID} can be specified in \keyword{METAD} for every
 collective variable {\tt CV}. The keyword  {\tt MIN} and {\tt MAX} are used to fix the CV interval, {\tt NBIN} the number of bins
 and the flag {\tt PBC} if the CV is periodic.
 
@@ -2365,11 +2341,9 @@ as {\tt -pi, +pi, +2pi, -2pi, pi, 2pi}. These labels may be particularly useful 
 \esempio{In this example we run metadynamics using a dihedral angle as CV. 
 The bias potential is put on a grid of 100 bins defined between $-\pi$ and $+\pi$. The grid is periodic. \vspace{10pt} \\
 {\tt
-HILLS W\_STRIDE 1000 HEIGHT 0.4\\
-WELLTEMPERED SIMTEMP 300 BIASFACTOR 8\\
-TORSION LIST 5 7 9 15 SIGMA 0.35\\
-GRID CV 1 MIN -pi MAX +pi NBIN 100 PBC\\
-ENDMETA
+phi: TORSION ATOMS=5,7,9,15\\
+mtd: METAD ARG=phi PACE=1000 HEIGHT=0.4 SIGMA=0.35 GRID\_MIN=-pi GRID\_MAX=pi GRID\_BIN=100 TEMP=300 BIASFACTOR=8\\
+ENDPLUMED
 }}
 
 As in standard metadynamics, a {\tt HILLS} file containing the list of Gaussians deposited is produced.
