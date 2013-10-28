@@ -101,6 +101,8 @@ public:
   virtual void set( const PDB& );
 /// Do all local business for setting the configuration 
   virtual void read( const PDB& )=0;
+/// Set the weight for this frame
+  void setWeight( const double& ww );
 /// Return the weight for this frame
   double getWeight() const ;
 /// Calculate the distance from the reference configuration
@@ -156,6 +158,11 @@ inline
 double ReferenceConfiguration::getArgumentDerivative( const unsigned& ider ) const {
   plumed_dbg_assert( ider<arg_ders.size() );
   return arg_ders[ider];
+}
+
+inline
+void ReferenceConfiguration::setWeight( const double& ww ){
+  weight=ww;
 }
 
 inline

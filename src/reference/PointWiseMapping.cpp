@@ -103,7 +103,7 @@ void PointWiseMapping::print( const std::string& method, const unsigned& time, O
      descr2="%s=%-" + fmt.substr(psign+1);
   }
   for(unsigned i=0;i<frames.size();++i){
-      afile.printf(descr.c_str(), weights[i], property[0].c_str(), low_dim[i][0] );
+      afile.printf(descr.c_str(), frames[i]->getWeight(), property[0].c_str(), low_dim[i][0] );
       for(unsigned j=1;j<property.size();++j) afile.printf(descr2.c_str(), property[j].c_str(), low_dim[i][j]);
       afile.printf("\n"); 
       frames[i]->print( afile, fmt );

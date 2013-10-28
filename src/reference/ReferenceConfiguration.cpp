@@ -59,7 +59,7 @@ void ReferenceConfiguration::set( const PDB& pdb ){
 }
 
 void ReferenceConfiguration::setNumberOfArguments( const unsigned& n ){
-  arg_ders.resize(n); 
+  arg_ders.resize(n); tmparg.resize(n);
 }
 
 void ReferenceConfiguration::setNumberOfAtoms( const unsigned& n ){
