@@ -27,6 +27,7 @@
 #include <cmath>
 #include "Exception.h"
 #include "MatrixSquareBracketsAccess.h"
+#include "Tools.h"
 #include "Log.h"
 
 #if defined(F77_NO_UNDERSCORE)
@@ -46,6 +47,9 @@ void F77_FUNC(dsyevr,DSYEVR)(const char *jobz, const char *range, const char *up
                              int *lwork, int *iwork, int *liwork, int *info);
 void F77_FUNC(dgetrf,DGETRF)(int* m, int* n, double* da, int* lda, int* ipiv, int* info);
 void F77_FUNC(dgetri,DGETRI)(int* m, double* da, int* lda, int* ipiv, double* work, int* lwork, int* info);
+void F77_FUNC(dgesvd,DGESVD)(const char *jobu, const char *jobvt, int *m, int *n, double *a, int *lda, 
+                             double *s, double *u, int *ldu, double *vt, int *ldvt, double *word, int *lwork,
+                             int *info);
 }
 
 namespace PLMD{
@@ -84,6 +88,8 @@ class Matrix:
    template <typename U> friend void matrixOut( Log&, const Matrix<U>& );
    /// Diagonalize a symmetric matrix - returns zero if diagonalization worked
    template <typename U> friend int diagMat( const Matrix<U>& , std::vector<double>& , Matrix<double>& );
+   /// Calculate the Moore-Penrose Pseudoinverse of a matrix
+   template <typename U> friend int pseudoInvert( const Matrix<U>& , Matrix<double>& ); 
    /// Calculate the logarithm of the determinant of a symmetric matrix - returns zero if succesfull
    template <typename U> friend int logdet( const Matrix<U>& , double& );
    /// Invert a matrix (works for both symmetric and assymetric matrices) - returns zero if sucesfull
@@ -255,6 +261,51 @@ template <typename T> int diagMat( const Matrix<T>& A, std::vector<double>& eige
    // Deallocate all the memory used by the various arrays
    delete[] da; delete [] work; delete [] evals; delete[] evecs; delete [] iwork; delete [] isup;
    return 0;
+}
+
+template <typename T> int pseudoInvert( const Matrix<T>& A, Matrix<double>& pseudoinverse ){
+  double *da=new double[A.sz]; unsigned k=0; 
+  // Transfer the matrix to the local array
+  for (unsigned i=0; i<A.cl; ++i) for (unsigned j=0; j<A.rw; ++j) da[k++]=static_cast<double>( A(j,i) );
+
+  int nsv, info, nrows=A.rw, ncols=A.cl;   
+  if(A.rw>A.cl){nsv=A.cl;}else{nsv=A.rw;}
+
+  // Create some containers for stuff from single value decomposition
+  double *S=new double[nsv]; double *U=new double[nrows*nrows];
+  double *VT=new double[ncols*ncols];
+
+  // This optimizes the size of the work array used in lapack singular value decomposition
+  int lwork=-1; double* work=new double[1];
+  F77_FUNC(dgesvd,DGESVD)( "A", "A", &nrows, &ncols, da, &nrows, S, U, &nrows, VT, &ncols, work, &lwork, &info );
+  if(info!=0) return info;
+
+  // Retrieve correct sizes for work and rellocate
+  lwork=(int) work[0]; delete [] work; work=new double[lwork];
+
+  // This does the singular value decomposition
+  F77_FUNC(dgesvd,DGESVD)( "A", "A", &nrows, &ncols, da, &nrows, S, U, &nrows, VT, &ncols, work, &lwork, &info );
+  if(info!=0) return info; 
+
+  // Compute the tolerance on the singular values ( machine epsilon * number of singular values * maximum singular value )
+  double tol; tol=S[0]; for(unsigned i=1;i<nsv;++i){ if( S[i]>tol ){ tol=S[i]; } } tol*=nsv*epsilon;
+
+  // Get the inverses of the singlular values
+  Matrix<double> Si( ncols, nrows ); Si=0.0;
+  for(unsigned i=0;i<nsv;++i){ if( S[i]>tol ){ Si(i,i)=1./S[i]; }else{ Si(i,i)=0.0; } }
+
+  // Now extract matrices for pseudoinverse
+  Matrix<double> V( ncols, ncols ), UT( nrows, nrows ), tmp( ncols, nrows ); 
+  k=0; for(unsigned i=0;i<nrows;++i){ for(unsigned j=0;j<nrows;++j){ UT(i,j)=U[k++]; } }
+  k=0; for(unsigned i=0;i<ncols;++i){ for(unsigned j=0;j<ncols;++j){ V(i,j)=VT[k++]; } }
+
+  // And do matrix algebra to construct the pseudoinverse
+  if( pseudoinverse.rw!=ncols || pseudoinverse.cl!=nrows ) pseudoinverse.resize( ncols, nrows );
+  mult( V, Si, tmp ); mult( tmp, UT, pseudoinverse );
+
+  // Deallocate all the memory
+  delete S; delete U; delete VT; delete work; delete da;
+  return 0;
 }
 
 template <typename T> int Invert( const Matrix<T>& A, Matrix<double>& inverse ){
