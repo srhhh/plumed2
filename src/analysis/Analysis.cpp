@@ -260,9 +260,9 @@ void Analysis::calculate(){
      double energy=plumed.getAtoms().getEnergy()+bias;
      // Reweighting because of temperature difference
      ww=-( (1.0/rtemp) - (1.0/simtemp) )*(energy+bias) / plumed.getAtoms().getKBoltzmann();
-     // Reweighting because of biases
-     if( !biases.empty() ) ww += bias/( plumed.getAtoms().getKBoltzmann()*simtemp );
   }
+  // Reweighting because of biases
+  if( !biases.empty() ) ww += bias/( plumed.getAtoms().getKBoltzmann()*simtemp );
 
   // Get the arguments ready to transfer to reference configuration
   for(unsigned i=0;i<getNumberOfArguments();++i) current_args[i]=getArgument(i);
