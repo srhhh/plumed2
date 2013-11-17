@@ -20,13 +20,13 @@
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "vesselbase/VesselRegister.h"
-#include "vesselbase/FunctionAndDerivativesOnGrid.h"
+#include "vesselbase/FieldGridBase.h"
 #include "Mapping.h"
 
 namespace PLMD {
 namespace mapping {
 
-class StressGrid : public vesselbase::FunctionAndDerivativesOnGrid {
+class StressGrid : public vesselbase::FieldGridBase {
 private:
   bool firsttime;
   Mapping* map;
@@ -43,7 +43,7 @@ public:
 PLUMED_REGISTER_VESSEL(StressGrid,"STRESS_GRID")
 
 void StressGrid::registerKeywords( Keywords& keys ){
-  FunctionAndDerivativesOnGrid::registerKeywords( keys );
+  FieldGridBase::registerKeywords( keys );
 }
 
 void StressGrid::reserveKeyword( Keywords& keys ){
@@ -51,7 +51,7 @@ void StressGrid::reserveKeyword( Keywords& keys ){
 }
 
 StressGrid::StressGrid( const vesselbase::VesselOptions& da ):
-FunctionAndDerivativesOnGrid(da),
+FieldGridBase(da),
 firsttime(true)
 {
   map=dynamic_cast<Mapping*>( getAction() );
@@ -63,7 +63,7 @@ firsttime(true)
   std::vector<std::string> names( ntot ); unsigned k=0;
   for(unsigned i=0;i<nprop;++i){ names[k]=map->getPropertyName( i ); k++; } 
   names[k]="chi2"; k++;
-  for(unsigned i=0;i<nprop;++i){ names[i+1]="dchi2_" + map->getPropertyName( i ); k++; }
+  for(unsigned i=0;i<nprop;++i){ names[k]="dchi2_" + map->getPropertyName( i ); k++; }
 
   for(unsigned j=0;j<map->getNumberOfDerivatives();++j){
       names[k]="dchi2_" + map->getArgumentName(j); k++;

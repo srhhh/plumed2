@@ -60,13 +60,14 @@ protected:
  unsigned currentGridPoint;
 /// Get a description of the grid to output to the log
  std::string getGridDescription() const ;
+/// Return a description of the quantity stored in a particular column of the grid
+ std::string getQuantityDescription(const unsigned& ) const;
 /// Get the indices fof a point
  void getIndices( const unsigned& index, std::vector<unsigned>& indices ) const ;
 /// Get the indices at which a particular point resides
  void getIndices(const std::vector<double>& x, std::vector<unsigned>& indices) const ; 
 
 /// Operations on one of the elements of grid point i
- double getGridElement( const unsigned&, const unsigned& ) const ; 
  void setGridElement( const unsigned&, const unsigned&, const double& );
  void addToGridElement( const unsigned&, const unsigned&, const double& );
 
@@ -91,11 +92,23 @@ public:
   void getGridPointCoordinates( const unsigned& , std::vector<double>& );
 /// Write the grid on a file
   void writeToFile( OFile& , const std::string& fmt );
+/// Copy the input to a grid
+  std::string getGridInput() const ;
+/// Return the volume of one of the grid cells
+  double getCellVolume() const ;
+/// Get the value of the ith grid element 
+  double getGridElement( const unsigned&, const unsigned& ) const ;
 };
 
 inline
 unsigned GridVesselBase::getNumberOfPoints() const {
   return npoints;
+}
+
+inline
+double GridVesselBase::getCellVolume() const {
+  double myvol=1.0; for(unsigned i=0;i<dimension;++i) myvol *= dx[i];
+  return myvol;
 }
 
 }

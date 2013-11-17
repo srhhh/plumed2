@@ -19,15 +19,15 @@
    You should have received a copy of the GNU Lesser General Public License
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-#ifndef __PLUMED_vesselbase_FunctionAndDerivativesOnGrid_h
-#define __PLUMED_vesselbase_FunctionAndDerivativesOnGrid_h
+#ifndef __PLUMED_vesselbase_FieldGridBase_h
+#define __PLUMED_vesselbase_FieldGridBase_h
 
 #include "GridVesselBase.h"
 
 namespace PLMD {
 namespace vesselbase{
 
-class FunctionAndDerivativesOnGrid : public GridVesselBase {
+class FieldGridBase : public GridVesselBase {
 private:
 /// The derivatives wrt to the low-dimensional properties
   std::vector<double> derlow;
@@ -42,20 +42,43 @@ public:
 /// Create the keywords
   static void registerKeywords( Keywords& keys );
 /// The constructor
-  FunctionAndDerivativesOnGrid( const VesselOptions& );
+  FieldGridBase( const VesselOptions& );
 /// Resize the field
   void resize();
 /// Apply some forces to the field
   bool applyForce(std::vector<double>&);
 /// Set the forces on the quantities underlying the fields
   void setForces( const std::vector<double>& );
+/// Get the number of base cvs
+  unsigned getNumberOfBaseCVs() const ;
+/// Return the name of the base CVs
+  std::string getBaseCVName( const unsigned& ) const ;
+/// Get the value of the field
+  double getValue( const unsigned& ip ) const ;
+/// Get the derivative
+  double getDerivative( const unsigned& ip, const unsigned& jd ) const ;
 };
 
 inline
-void FunctionAndDerivativesOnGrid::setForces( const std::vector<double>& ff ){
+void FieldGridBase::setForces( const std::vector<double>& ff ){
   plumed_dbg_assert( ff.size()==forces.size() );
   wasforced=true;
   for(unsigned i=0;i<ff.size();++i) forces[i]=ff[i];
+}
+
+inline
+unsigned FieldGridBase::getNumberOfBaseCVs() const {
+  return nper/(1+dimension) - 1;
+}
+
+inline
+double FieldGridBase::getValue( const unsigned& ip ) const {
+  return getGridElement( ip, 0 );
+}
+
+inline
+double FieldGridBase::getDerivative( const unsigned& ip, const unsigned& jd ) const {
+  return getGridElement( ip, (jd+1)*(dimension+1) );
 }
 
 }

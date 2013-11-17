@@ -176,7 +176,7 @@ double SwitchingFunction::calculate(double distance,double&dfunc)const{
     if(type==smap){
       double sx=c*pow( rdist, a ); 
       result=pow( 1.0 + sx, d ); 
-      dfunc=-b*sx/rdist*result/(1.0+sx); 
+      dfunc=-b*(sx/rdist)*result/(1.0+sx); 
     } else if(type==spline){
       if(2*nn==mm){
 // if 2*N==M, then (1.0-rdist^N)/(1.0-rdist^M) = 1.0/(1.0+rdist^N)

@@ -148,7 +148,7 @@ void GridVesselBase::getIndices(const std::vector<double>& x, std::vector<unsign
 
 double GridVesselBase::getGridElement( const unsigned& ipoint, const unsigned& jelement ) const {
   plumed_dbg_assert( ipoint<npoints && jelement<nper );
-  return getBufferElement( nper*ipoint + jelement );
+  return  getBufferElement( nper*ipoint + jelement );
 }
 
 void GridVesselBase::setGridElement( const unsigned& ipoint, const unsigned& jelement, const double& value ){
@@ -171,6 +171,26 @@ void GridVesselBase::setGridElement( const std::vector<unsigned>& indices, const
 
 void GridVesselBase::addToGridElement( const std::vector<unsigned>& indices, const unsigned& jelement, const double& value ){
   addToGridElement( getIndex( indices ), jelement, value );
+}
+
+std::string GridVesselBase::getQuantityDescription( const unsigned& icv ) const {
+  plumed_assert( icv<arg_names.size() );
+  return arg_names[icv];
+}
+
+std::string GridVesselBase::getGridInput() const {
+  std::string num, gstr; 
+  gstr = "MIN=" + str_min[0]; for(unsigned i=1;i<str_min.size();++i) gstr+="," + str_min[i];
+  gstr += " MAX=" + str_max[0]; for(unsigned i=1;i<str_max.size();++i) gstr+="," + str_max[i]; 
+  if( pbc[0] ) Tools::convert(nbin[0], num ); 
+  else Tools::convert(nbin[0]-1,num);
+  gstr += " NBIN=" + num; 
+  for(unsigned i=1;i<nbin.size();++i){ 
+     if( pbc[i] ) Tools::convert(nbin[i], num ); 
+     else Tools::convert(nbin[i]-1, num );
+     gstr+="," + num; 
+  }
+  return gstr;
 }
 
 void GridVesselBase::writeToFile( OFile& ofile, const std::string& fmt ){

@@ -19,27 +19,31 @@
    You should have received a copy of the GNU Lesser General Public License
    along with plumed.  If not, see <http://www.gnu.org/licenses/>.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-#include "FunctionAndDerivativesOnGrid.h"
+#include "FieldGridBase.h"
 
 namespace PLMD{
 namespace vesselbase{
 
-void FunctionAndDerivativesOnGrid::registerKeywords( Keywords& keys ){
+void FieldGridBase::registerKeywords( Keywords& keys ){
   GridVesselBase::registerKeywords( keys );
 }
 
-FunctionAndDerivativesOnGrid::FunctionAndDerivativesOnGrid( const VesselOptions& da ):
+FieldGridBase::FieldGridBase( const VesselOptions& da ):
 GridVesselBase(da)
 {
 }
 
-void FunctionAndDerivativesOnGrid::resize(){
+void FieldGridBase::resize(){
   GridVesselBase::resize();
   forces.resize( getAction()->getNumberOfDerivatives() );
   derlow.resize( dimension );
 }
 
-void FunctionAndDerivativesOnGrid::accumulate( const double& val, const double& lowdv, const double& highdv, const double& crossder, const unsigned& derno ){
+std::string FieldGridBase::getBaseCVName( const unsigned& icv ) const {
+  return getQuantityDescription( dimension+(icv+1)*(1+dimension) );
+}
+
+void FieldGridBase::accumulate( const double& val, const double& lowdv, const double& highdv, const double& crossder, const unsigned& derno ){
   // Retrieve the derivative in the low dimenisonal space
   for(unsigned i=0;i<dimension;++i) derlow[i]=getAction()->getElementDerivative(i);
   // Add the value to the grid value
@@ -55,7 +59,7 @@ void FunctionAndDerivativesOnGrid::accumulate( const double& val, const double& 
   }
 }
 
-bool FunctionAndDerivativesOnGrid::applyForce(std::vector<double>& ff){
+bool FieldGridBase::applyForce(std::vector<double>& ff){
   plumed_dbg_assert( ff.size()==getAction()->getNumberOfDerivatives() );
   if( wasforced ){
       for(unsigned i=0;i<ff.size();++i) ff[i]=forces[i];
