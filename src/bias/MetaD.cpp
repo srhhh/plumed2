@@ -227,6 +227,7 @@ private:
   string mw_dir_;
   int mw_id_;
   int mw_rstride_;
+  bool walkers_mpi;
   vector<IFile*> ifiles;
   vector<string> ifilesnames;
   double uppI_;
@@ -284,6 +285,7 @@ void MetaD::registerKeywords(Keywords& keys){
   keys.add("optional","GRID_RFILE","a grid file from which the bias should be read at the initial step of the simulation");
   keys.add("optional","SIGMA_MAX","the upper bounds for the sigmas (in CV units) when using adaptive hills. Negative number means no bounds ");
   keys.add("optional","SIGMA_MIN","the lower bounds for the sigmas (in CV units) when using adaptive hills. Negative number means no bounds ");
+  keys.addFlag("WALKERS_MPI",false,"Switch on MPI version of multiple walkers - not compatible with other WALKERS_* options");
 }
 
 MetaD::~MetaD(){
@@ -311,6 +313,7 @@ dp_(NULL), adaptive_(FlexibleBin::none),
 flexbin(NULL),
 // Multiple walkers initialization
 mw_n_(1), mw_dir_("./"), mw_id_(0), mw_rstride_(1),
+walkers_mpi(false),
 // Interval initialization
 uppI_(-1), lowI_(-1), doInt_(false),
 isFirstStep(true)
@@ -412,6 +415,9 @@ isFirstStep(true)
   parse("WALKERS_DIR",mw_dir_);
   parse("WALKERS_RSTRIDE",mw_rstride_);
 
+  // MPI version
+  parseFlag("WALKERS_MPI",walkers_mpi);
+
   // Inteval keyword
   vector<double> tmpI(2);
   parseVector("INTERVAL",tmpI);
@@ -472,6 +478,12 @@ isFirstStep(true)
    std::string funcl=getLabel() + ".bias";
    if(!sparsegrid){BiasGrid_=new Grid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
    else{BiasGrid_=new SparseGrid(funcl,getArguments(),gmin,gmax,gbin,spline,true);}
+   std::vector<std::string> actualmin=BiasGrid_->getMin();
+   std::vector<std::string> actualmax=BiasGrid_->getMax();
+   for(unsigned i=0;i<getNumberOfArguments();i++){
+     if(gmin[i]!=actualmin[i]) log<<"  WARNING: GRID_MIN["<<i<<"] has been adjusted to "<<actualmin[i]<<" to fit periodicity\n";
+     if(gmax[i]!=actualmax[i]) log<<"  WARNING: GRID_MAX["<<i<<"] has been adjusted to "<<actualmax[i]<<" to fit periodicity\n";
+   }
   }
 
   if(wgridstride_>0){
@@ -492,6 +504,8 @@ isFirstStep(true)
      if( getPntrToArgument(i)->isPeriodic()!=ExtGrid_->getIsPeriodic()[i] ) error("periodicity mismatch between arguments and input bias");
    }
   }
+
+  if(walkers_mpi && mw_n_>1) error("MPI version of multiple walkers is not compatible with filesystem version of multiple walkers");
 
 // creating vector of ifile* for hills reading 
 // open all files at the beginning and read Gaussians if restarting
@@ -882,10 +896,52 @@ void MetaD::update(){
    }else{
 	thissigma=sigma0_;    // returns normal sigma
    }
-   Gaussian newhill=Gaussian(cv,thissigma,height,multivariate);
-   addGaussian(newhill);
+// In case we use walkers_mpi, it is now necessary to communicate with other replicas.
+   if(walkers_mpi){
+     int nw=0;
+     int mw=0;
+     if(comm.Get_rank()==0){
+// Only root of group can communicate with other walkers
+       nw=multi_sim_comm.Get_size();
+       mw=multi_sim_comm.Get_rank();
+     }
+// Communicate to the other members of the same group
+// info abount number of walkers and walker index
+     comm.Bcast(nw,0);
+     comm.Bcast(mw,0);
+// Allocate arrays to store all walkers hills
+     std::vector<double> all_cv(nw*cv.size(),0.0);
+     std::vector<double> all_sigma(nw*thissigma.size(),0.0);
+     std::vector<double> all_height(nw,0.0);
+     std::vector<int>    all_multivariate(nw,0);
+     if(comm.Get_rank()==0){
+// Communicate (only root)
+       multi_sim_comm.Allgather(cv,all_cv);
+       multi_sim_comm.Allgather(thissigma,all_sigma);
+       multi_sim_comm.Allgather(height,all_height);
+       multi_sim_comm.Allgather(int(multivariate),all_multivariate);
+     }
+// Share info with group members
+     comm.Bcast(all_cv,0);
+     comm.Bcast(all_sigma,0);
+     comm.Bcast(all_height,0);
+     comm.Bcast(all_multivariate,0);
+     for(int i=0;i<nw;i++){
+// actually add hills one by one
+       std::vector<double> cv_now(cv.size());
+       std::vector<double> sigma_now(thissigma.size());
+       for(int j=0;j<cv.size();j++) cv_now[j]=all_cv[i*cv.size()+j];
+       for(int j=0;j<thissigma.size();j++) sigma_now[j]=all_sigma[i*thissigma.size()+j];
+       Gaussian newhill=Gaussian(cv_now,sigma_now,all_height[i],all_multivariate[i]);
+       addGaussian(newhill);
+       writeGaussian(newhill,hillsOfile_);
+     }
+   } else {
+     Gaussian newhill=Gaussian(cv,thissigma,height,multivariate);
+     addGaussian(newhill);
 // print on HILLS file
-   writeGaussian(newhill,hillsOfile_);
+     writeGaussian(newhill,hillsOfile_);
+   }
   }
 // dump grid on file
   if(wgridstride_>0&&getStep()%wgridstride_==0){
