@@ -21,6 +21,7 @@
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
 #include "AnalysisWithLandmarks.h"
 #include "ClassicalScaling.h"
+#include "SMACOF.h"
 #include "reference/PointWiseMapping.h"
 #include "core/ActionRegister.h"
 
@@ -30,6 +31,7 @@ namespace analysis {
 class ClassicalMultiDimensionalScaling : public AnalysisWithLandmarks {
 private:
   unsigned nlow;
+  bool nosmacof;
   std::string ofilename;
   std::string efilename;
   PointWiseMapping* myembedding;
@@ -47,6 +49,7 @@ void ClassicalMultiDimensionalScaling::registerKeywords( Keywords& keys ){
   keys.add("compulsory","NLOW_DIM","number of low-dimensional coordinates required");
   keys.add("compulsory","OUTPUT_FILE","file on which to output the final embedding coordinates");
   keys.add("compulsory","EMBEDDING_OFILE","dont output","file on which to output the embedding in plumed input format");
+  keys.addFlag("NOSMACOF",false,"do classical scaling calculation only");
 }
 
 ClassicalMultiDimensionalScaling::ClassicalMultiDimensionalScaling( const ActionOptions& ao ):
@@ -56,7 +59,7 @@ AnalysisWithLandmarks(ao)
   myembedding = new PointWiseMapping( getMetricName(), false );
   setDataToAnalyze( dynamic_cast<MultiReferenceBase*>(myembedding) );
 
-  parse("NLOW_DIM",nlow);
+  parse("NLOW_DIM",nlow); parseFlag("NOSMACOF",nosmacof);
   if( nlow<1 ) error("dimensionality of low dimensional space must be at least one");
   std::vector<std::string> propnames( nlow ); std::string num;
   for(unsigned i=0;i<propnames.size();++i){
@@ -80,6 +83,9 @@ void ClassicalMultiDimensionalScaling::analyzeLandmarks(){
 
   // Run multidimensional scaling
   ClassicalScaling::run( myembedding );
+
+  // Run Smacof
+  if( !nosmacof ) SMACOF::run( myembedding );
 
   // Output the embedding as long lists of data
 //  std::string gfname=saveResultsFromPreviousAnalyses( ofilename );
