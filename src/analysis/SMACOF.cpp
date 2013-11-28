@@ -26,7 +26,6 @@ namespace PLMD {
 namespace analysis {
 
 void SMACOF::run( PointWiseMapping* mymap ){
-    printf("In SMACOF run\n");
     Matrix<double> Distances( mymap->modifyDmat() ); unsigned M = Distances.nrows();
     Matrix<double> InitialZ( M, mymap->getNumberOfProperties() );     //want Mx2 Z matrix but you set columns to M dimension first and then changes to 2 underneath
     for(unsigned i=0; i<M; ++i){
@@ -34,25 +33,39 @@ void SMACOF::run( PointWiseMapping* mymap ){
             InitialZ(i,j) =  mymap->getProjectionCoordinate( i, j );    
        }
     }
-    printf("Retrieved projection coordinates\n");
     
      //create the matrix of weights
-Matrix<double> Weights(M, M); //Empty space created V
-for(unsigned i=0; i<M; ++i){
-    for(unsigned j=0; j<M; ++j){
-    if(i==j) continue;
-    double w_i,w_j=0;
-    w_i=mymap->getWeight(i);
-    w_j=mymap->getWeight(j);
-    Weights(i,j) = w_i * w_j;  
-    }
-}
-Matrix<double> mypseudo(M, M);   //V+
-pseudoInvert(Weights, mypseudo);
+     Matrix<double> Weights(M, M); Weights=0; //Empty space created V
+     for(unsigned i=0; i<M; ++i){
+         for(unsigned j=0; j<M; ++j){
+         if(i==j) continue;
+         double w_i,w_j=0;
+         w_i=mymap->getWeight(i);
+         w_j=mymap->getWeight(j);
+         Weights(i,j) = w_i * w_j;  
+         }
+     }
+
+    // Calculate V
+    Matrix<double> V(M,M);
+    for(unsigned i=0; i<M; ++i){
+      for(unsigned j=0; j<M; ++j){
+         if(i==j) continue;
+         V(i,j)=-Weights(i,j);
+      }
+      for(unsigned j=0; j<M; ++j){
+        if(i==j)continue;
+        V(i,i)-=V(i,j);
+      }   
+    }    
+    
+    // And invert V
+    Matrix<double> mypseudo(M, M);
+    pseudoInvert(V, mypseudo);
 
     double myfirstsig = calculateSigma( Weights, Distances, InitialZ );    //this is a function that outputs the initial sigma values
     // initial sigma is made up of the original distances minus the distances between the projections all squared.
-    unsigned MAXSTEPS=100; double tol=1.E-4; Matrix<double> BZ( M, M ), newZ( M, mymap->getNumberOfProperties() );
+    unsigned MAXSTEPS=100; double tol=1.E-4; Matrix<double> temp( M, M ), BZ( M, M ), newZ( M, mymap->getNumberOfProperties() );
     for(unsigned i=0;i<MAXSTEPS;++i){
         if(i==MAXSTEPS-1) plumed_merror("ran out of steps in SMACOF algorithm");
         printf("Doing step %d of SMACOF %d %d \n",i,M,mymap->getNumberOfProperties() );        
@@ -72,7 +85,7 @@ pseudoInvert(Weights, mypseudo);
             } 
             //off diagonal elements are [-1x(dissimilarities/distances)]/M i.e. BZ isn't symmetric
             //If it was symmetric that line would simply read BZ(i,j)=BZ(j,i)=sqrt(dist)
-            BZ(i,j)=-(Distances(i,j) / sqrt(dist)) / (static_cast<double>(M)); 
+            BZ(i,j)=-(Weights(i,j)*Distances(i,j) / sqrt(dist)); 
             //static_cast<double>(M) is the M that we want to dive by in the code 
            }
            //the diagonal elements are -off diagonal elements BZ(i,i)-=BZ(i,j)   (Equation 8.25)
@@ -83,9 +96,8 @@ pseudoInvert(Weights, mypseudo);
            }
         }
         
-       // Matrix matrix multiply B(Z) times Z and multiply by 1/M. This is the Guttman transform for w(ij)=1, which calculates X which we know is exactly equal to the newZ value
-         Matrix<double> temp(M, M);
-         mult( mypseudo, BZ, temp); mult(temp, InitialZ, newZ);   
+        // Matrix matrix multiply B(Z) times Z and multiply by 1/M. This is the Guttman transform for w(ij)=1, which calculates X which we know is exactly equal to the newZ value
+        mult( mypseudo, BZ, temp); mult(temp, InitialZ, newZ);   
         //Compute new sigma
         double newsig = calculateSigma( Weights, Distances, newZ );
         printf("CHECKING VALUE OF SIGMA %d %f %f %f \n",i,myfirstsig,newsig,myfirstsig-newsig);
