@@ -35,8 +35,22 @@ void SMACOF::run( PointWiseMapping* mymap ){
        }
     }
     printf("Retrieved projection coordinates\n");
+    
+     //create the matrix of weights
+Matrix<double> Weights(M, M); //Empty space created V
+for(unsigned i=0; i<M; ++i){
+    for(unsigned j=0; j<M; ++j){
+    if(i==j) continue;
+    double w_i,w_j=0;
+    w_i=mymap->getWeight(i);
+    w_j=mymap->getWeight(j);
+    Weights(i,j) = w_i * w_j;  
+    }
+}
+Matrix<double> mypseudo(M, M);   //V+
+pseudoInvert(Weights, mypseudo);
 
-    double myfirstsig = calculateSigma( Distances, InitialZ );    //this is a function that outputs the initial sigma values
+    double myfirstsig = calculateSigma( Weights, Distances, InitialZ );    //this is a function that outputs the initial sigma values
     // initial sigma is made up of the original distances minus the distances between the projections all squared.
     unsigned MAXSTEPS=100; double tol=1.E-4; Matrix<double> BZ( M, M ), newZ( M, mymap->getNumberOfProperties() );
     for(unsigned i=0;i<MAXSTEPS;++i){
@@ -68,10 +82,12 @@ void SMACOF::run( PointWiseMapping* mymap ){
               BZ(i,i)-=BZ(i,j); 
            }
         }
+        
        // Matrix matrix multiply B(Z) times Z and multiply by 1/M. This is the Guttman transform for w(ij)=1, which calculates X which we know is exactly equal to the newZ value
-        mult( BZ, InitialZ, newZ ); 
+         Matrix<double> temp(M, M);
+         mult( mypseudo, BZ, temp); mult(temp, InitialZ, newZ);   
         //Compute new sigma
-        double newsig = calculateSigma( Distances, newZ );
+        double newsig = calculateSigma( Weights, Distances, newZ );
         printf("CHECKING VALUE OF SIGMA %d %f %f %f \n",i,myfirstsig,newsig,myfirstsig-newsig);
         //Computing whether the algorithm has converged (has the mass of the potato change
         //when we put it back in the oven!)
@@ -90,7 +106,7 @@ void SMACOF::run( PointWiseMapping* mymap ){
 
 }
 
-double SMACOF::calculateSigma( const Matrix<double>& Distances, const Matrix<double>& InitialZ ){    //& sign always put in a function as routine but dont need to know why
+double SMACOF::calculateSigma( const Matrix<double>& Weights, const Matrix<double>& Distances, const Matrix<double>& InitialZ ){    //& sign always put in a function as routine but dont need to know why
     unsigned M = Distances.nrows();
     double sigma=0;  //Sigma is a scalar hence why it needs to be written in this format
     for(unsigned i=1; i<M; ++i){
@@ -102,8 +118,7 @@ double SMACOF::calculateSigma( const Matrix<double>& Distances, const Matrix<dou
           dlow+=tmp2*tmp2;
           }
        double tmp3= Distances(i,j) - sqrt(dlow);
-       sigma+= tmp3*tmp3;   
-             
+       sigma+= Weights(i,j)*tmp3*tmp3;         
        }
     }
     return sigma;     //Returns the value you have specified in the function- a function always needs to return something
